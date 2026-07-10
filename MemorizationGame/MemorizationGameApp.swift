@@ -10,6 +10,7 @@ struct MemorizationGameApp: App {
                 .environment(store)
                 .tint(Theme.accent)
                 .preferredColorScheme(.dark)
+                .task { ReminderScheduler.sync(store.settings) }
         }
     }
 }
