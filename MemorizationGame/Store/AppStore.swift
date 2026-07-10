@@ -6,7 +6,7 @@ final class AppStore {
     private(set) var passages: [Passage]
     private(set) var reviewables: [Reviewable]
     private(set) var practiceLog: PracticeLog
-    private(set) var lastPracticedPassageRef: UUID?
+    private(set) var recentPassageRefs: [UUID]
     var settings: AppSettings {
         didSet {
             persist()
@@ -27,13 +27,15 @@ final class AppStore {
             self.passages = snapshot.passages
             self.reviewables = snapshot.reviewables
             self.practiceLog = snapshot.practiceLog ?? PracticeLog()
-            self.lastPracticedPassageRef = snapshot.lastPracticedPassageRef
+            self.recentPassageRefs = snapshot.recentPassageRefs
+                ?? snapshot.lastPracticedPassageRef.map { [$0] }
+                ?? []
             self.settings = snapshot.settings
         } else {
             self.passages = []
             self.reviewables = []
             self.practiceLog = PracticeLog()
-            self.lastPracticedPassageRef = nil
+            self.recentPassageRefs = []
             self.settings = .default
         }
     }
@@ -67,11 +69,11 @@ final class AppStore {
     }
 
     var streakTarget: (passage: Passage, card: Reviewable)? {
-        let sorted = passagesSorted
-        guard let passage = sorted.first(where: { $0.id == lastPracticedPassageRef }) ?? sorted.first else { return nil }
-        let q = queue(for: passage)
-        guard !q.isEmpty else { return nil }
-        return (passage, q[q.lastIndex { !$0.hiddenWords.isEmpty } ?? 0])
+        StreakTargetPicker(engine: engine).target(
+            passages: passagesSorted,
+            reviewables: reviewables,
+            recentPassageRefs: recentPassageRefs
+        )
     }
 
     func progress(for passage: Passage) -> (memorized: Int, total: Int) {
@@ -98,9 +100,7 @@ final class AppStore {
     func deletePassage(_ passage: Passage) {
         passages.removeAll { $0.id == passage.id }
         reviewables.removeAll { $0.passageRef == passage.id }
-        if lastPracticedPassageRef == passage.id {
-            lastPracticedPassageRef = nil
-        }
+        recentPassageRefs.removeAll { $0 == passage.id }
         persist()
     }
 
@@ -130,7 +130,8 @@ final class AppStore {
         let newlyHidden = new.hiddenWords.subtracting(old.hiddenWords).count
         guard newlyHidden > 0 else { return }
         practiceLog.record(words: newlyHidden)
-        lastPracticedPassageRef = passage.id
+        recentPassageRefs.removeAll { $0 == passage.id }
+        recentPassageRefs.insert(passage.id, at: 0)
     }
 
     private func passage(of card: Reviewable) -> Passage {
@@ -147,6 +148,7 @@ final class AppStore {
         var passages: [Passage]
         var reviewables: [Reviewable]
         var practiceLog: PracticeLog?
+        var recentPassageRefs: [UUID]?
         var lastPracticedPassageRef: UUID?
         var settings: AppSettings
     }
@@ -156,7 +158,8 @@ final class AppStore {
             passages: passages,
             reviewables: reviewables,
             practiceLog: practiceLog,
-            lastPracticedPassageRef: lastPracticedPassageRef,
+            recentPassageRefs: recentPassageRefs,
+            lastPracticedPassageRef: nil,
             settings: settings
         )
         guard let data = try? JSONEncoder().encode(snapshot) else { return }

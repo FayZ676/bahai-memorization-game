@@ -9,14 +9,11 @@ struct StreakCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             counterRow
-            Rectangle()
-                .fill(Theme.hairline)
-                .frame(height: 1)
-                .padding(.top, 15)
-            if store.practicedToday {
-                practicedRow
-                    .padding(.top, 14)
-            } else if let target = store.streakTarget {
+            if !store.practicedToday, let target = store.streakTarget {
+                Rectangle()
+                    .fill(Theme.hairline)
+                    .frame(height: 1)
+                    .padding(.top, 15)
                 chunkPrompt(target.passage, target.card)
                     .padding(.top, 14)
             }
@@ -61,10 +58,7 @@ struct StreakCard: View {
                 if words > 0 {
                     Circle().fill(Theme.accent.opacity(Self.fillOpacity(forWords: words)))
                 } else if isToday {
-                    Circle().strokeBorder(
-                        Theme.accent.opacity(0.55),
-                        style: StrokeStyle(lineWidth: 1.5, dash: [2.4, 2.2])
-                    )
+                    Circle().strokeBorder(Theme.accent.opacity(0.55), lineWidth: 1.5)
                 }
             }
             .frame(width: 10, height: 10)
@@ -101,30 +95,6 @@ struct StreakCard: View {
                 .foregroundStyle(Theme.faint)
                 .frame(maxWidth: .infinity)
                 .padding(.top, 12)
-        }
-    }
-
-    private var practicedRow: some View {
-        HStack(spacing: 12) {
-            Circle()
-                .fill(Theme.accent)
-                .frame(width: 26, height: 26)
-                .overlay {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 12, weight: .heavy))
-                        .foregroundStyle(Theme.bg)
-                }
-            VStack(alignment: .leading, spacing: 3) {
-                Text("Practiced today")
-                    .font(.system(size: 11.5, weight: .semibold))
-                    .foregroundStyle(Theme.accent)
-                if let target = store.streakTarget {
-                    Text(target.card.expectedText)
-                        .font(.scripture(14))
-                        .foregroundStyle(Theme.muted)
-                        .lineLimit(1)
-                }
-            }
         }
     }
 }
