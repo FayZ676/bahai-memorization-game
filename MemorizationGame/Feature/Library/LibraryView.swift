@@ -111,7 +111,7 @@ private struct PassageRow: View {
                 .foregroundStyle(Theme.ink)
 
             ChunkHeatStrip(heats: store.chunkHeats(for: passage))
-                .frame(height: 3)
+                .frame(height: 6)
         }
         .padding(.vertical, 6)
     }
