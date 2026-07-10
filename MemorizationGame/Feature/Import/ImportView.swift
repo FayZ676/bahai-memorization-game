@@ -47,14 +47,14 @@ struct ImportView: View {
                     ZStack(alignment: .topLeading) {
                         if content.isEmpty {
                             Text(Self.placeholder)
-                                .font(.scripture(18))
+                                .font(.scripture(19))
                                 .foregroundStyle(Theme.muted.opacity(0.6))
                                 .padding(.horizontal, 5)
                                 .padding(.vertical, 8)
                                 .allowsHitTesting(false)
                         }
                         TextEditor(text: $content)
-                            .font(.scripture(18))
+                            .font(.scripture(19))
                             .foregroundStyle(Theme.ink)
                             .scrollContentBackground(.hidden)
                             .frame(minHeight: 320)

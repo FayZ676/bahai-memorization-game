@@ -29,7 +29,9 @@ struct ScreenHeader: View {
                 .frame(width: 38, height: 38)
 
             Text(title)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(size: 12.5, weight: .semibold))
+                .tracking(1.6)
+                .textCase(.uppercase)
                 .foregroundStyle(Theme.inkBright)
                 .lineLimit(1)
                 .frame(maxWidth: .infinity)

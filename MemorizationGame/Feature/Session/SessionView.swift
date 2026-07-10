@@ -159,7 +159,7 @@ struct SessionView: View {
         FlowLayout(spacing: 7, lineSpacing: 12) {
             ForEach(Array(card.words.enumerated()), id: \.offset) { idx, word in
                 WordView(token: String(word), hidden: vm.isHidden(idx))
-                    .font(.scripture(23))
+                    .font(.scripture(24))
                     .contentShape(Rectangle())
                     .allowsHitTesting(vm.isPracticing)
                     .onTapGesture {
