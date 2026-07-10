@@ -187,14 +187,10 @@ struct SessionView: View {
             showingOptions = true
         } label: {
             Image(systemName: "slider.horizontal.3")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(Theme.accentPale)
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(Theme.muted)
                 .frame(width: 48, height: 48)
-                .background(Theme.accent.opacity(0.22), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 13, style: .continuous)
-                        .stroke(Theme.accent.opacity(0.42), lineWidth: 1)
-                )
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
