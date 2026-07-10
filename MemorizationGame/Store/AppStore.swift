@@ -5,6 +5,8 @@ import Observation
 final class AppStore {
     private(set) var passages: [Passage]
     private(set) var reviewables: [Reviewable]
+    private(set) var practiceLog: PracticeLog
+    private(set) var lastPracticedPassageRef: UUID?
     var settings: AppSettings {
         didSet {
             persist()
@@ -24,10 +26,14 @@ final class AppStore {
            let snapshot = try? JSONDecoder().decode(Snapshot.self, from: data) {
             self.passages = snapshot.passages
             self.reviewables = snapshot.reviewables
+            self.practiceLog = snapshot.practiceLog ?? PracticeLog()
+            self.lastPracticedPassageRef = snapshot.lastPracticedPassageRef
             self.settings = snapshot.settings
         } else {
             self.passages = []
             self.reviewables = []
+            self.practiceLog = PracticeLog()
+            self.lastPracticedPassageRef = nil
             self.settings = .default
         }
     }
@@ -50,6 +56,22 @@ final class AppStore {
         queue(for: passage).map { card in
             card.wordCount > 0 ? Double(card.hiddenWords.count) / Double(card.wordCount) : 0
         }
+    }
+
+    var practicedToday: Bool {
+        practiceLog.practiced(on: Date())
+    }
+
+    var streakCount: Int {
+        practiceLog.streak()
+    }
+
+    var streakTarget: (passage: Passage, card: Reviewable)? {
+        let sorted = passagesSorted
+        guard let passage = sorted.first(where: { $0.id == lastPracticedPassageRef }) ?? sorted.first else { return nil }
+        let q = queue(for: passage)
+        guard !q.isEmpty else { return nil }
+        return (passage, q[q.lastIndex { !$0.hiddenWords.isEmpty } ?? 0])
     }
 
     func progress(for passage: Passage) -> (memorized: Int, total: Int) {
@@ -76,26 +98,39 @@ final class AppStore {
     func deletePassage(_ passage: Passage) {
         passages.removeAll { $0.id == passage.id }
         reviewables.removeAll { $0.passageRef == passage.id }
+        if lastPracticedPassageRef == passage.id {
+            lastPracticedPassageRef = nil
+        }
         persist()
     }
 
     func hideMore(_ card: Reviewable) {
         let p = passage(of: card)
         let cards = engine.hideMore(cards(for: p), cardID: card.id)
+        recordPractice(from: card, in: cards, passage: p)
         replaceCards(for: p, with: cards)
     }
 
     func setAllWords(_ card: Reviewable, hidden: Bool) {
         let p = passage(of: card)
         let cards = engine.setAllHidden(cards(for: p), cardID: card.id, hidden: hidden)
+        recordPractice(from: card, in: cards, passage: p)
         replaceCards(for: p, with: cards)
     }
 
     func toggleWord(_ card: Reviewable, index: Int) {
         let p = passage(of: card)
-        var cards = cards(for: p)
-        cards = engine.toggleWord(cards, cardID: card.id, index: index)
+        let cards = engine.toggleWord(cards(for: p), cardID: card.id, index: index)
+        recordPractice(from: card, in: cards, passage: p)
         replaceCards(for: p, with: cards)
+    }
+
+    private func recordPractice(from old: Reviewable, in updated: [Reviewable], passage: Passage) {
+        guard let new = updated.first(where: { $0.id == old.id }) else { return }
+        let newlyHidden = new.hiddenWords.subtracting(old.hiddenWords).count
+        guard newlyHidden > 0 else { return }
+        practiceLog.record(words: newlyHidden)
+        lastPracticedPassageRef = passage.id
     }
 
     private func passage(of card: Reviewable) -> Passage {
@@ -111,11 +146,19 @@ final class AppStore {
     private struct Snapshot: Codable {
         var passages: [Passage]
         var reviewables: [Reviewable]
+        var practiceLog: PracticeLog?
+        var lastPracticedPassageRef: UUID?
         var settings: AppSettings
     }
 
     private func persist() {
-        let snapshot = Snapshot(passages: passages, reviewables: reviewables, settings: settings)
+        let snapshot = Snapshot(
+            passages: passages,
+            reviewables: reviewables,
+            practiceLog: practiceLog,
+            lastPracticedPassageRef: lastPracticedPassageRef,
+            settings: settings
+        )
         guard let data = try? JSONEncoder().encode(snapshot) else { return }
         try? data.write(to: storeURL, options: .atomic)
     }

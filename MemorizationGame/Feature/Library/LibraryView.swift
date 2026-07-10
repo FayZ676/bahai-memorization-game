@@ -57,34 +57,78 @@ struct LibraryView: View {
 
     private var list: some View {
         List {
-            ForEach(store.passagesSorted) { passage in
-                PassageRow(passage: passage)
-                    .overlay {
-                        NavigationLink(value: passage) { EmptyView() }
-                            .opacity(0)
-                    }
-                .listRowBackground(
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(Theme.rowBg)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16)
-                                .stroke(Theme.hairline, lineWidth: 1)
-                        )
-                )
-                .listRowSeparator(.hidden)
-                .swipeActions(edge: .trailing) {
-                    Button(role: .destructive) {
-                        pendingDelete = passage
-                    } label: {
-                        Label("Delete", systemImage: "trash")
+            Section {
+                StreakCard()
+                    .listRowBackground(streakBackground)
+                    .listRowSeparator(.hidden)
+            } header: {
+                sectionHeader("Practice Streak")
+            }
+
+            Section {
+                ForEach(store.passagesSorted) { passage in
+                    PassageRow(passage: passage)
+                        .overlay {
+                            NavigationLink(value: passage) { EmptyView() }
+                                .opacity(0)
+                        }
+                    .listRowBackground(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Theme.rowBg)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(Theme.hairline, lineWidth: 1)
+                            )
+                    )
+                    .listRowSeparator(.hidden)
+                    .swipeActions(edge: .trailing) {
+                        Button(role: .destructive) {
+                            pendingDelete = passage
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
                     }
                 }
+            } header: {
+                sectionHeader("Passages")
             }
         }
         .listRowSpacing(12)
         .contentMargins(.top, 4, for: .scrollContent)
         .scrollContentBackground(.hidden)
         .background(Theme.bg)
+    }
+
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title)
+            .font(.system(size: 10, weight: .semibold))
+            .tracking(1.6)
+            .textCase(.uppercase)
+            .foregroundStyle(Theme.faint)
+    }
+
+    private var streakBackground: some View {
+        let shape = RoundedRectangle(cornerRadius: 16)
+        return shape
+            .fill(Theme.rowBg)
+            .overlay {
+                if store.practicedToday {
+                    shape.fill(
+                        RadialGradient(
+                            colors: [Theme.accent.opacity(0.10), .clear],
+                            center: UnitPoint(x: 0.18, y: 0),
+                            startRadius: 0,
+                            endRadius: 240
+                        )
+                    )
+                }
+            }
+            .overlay(
+                shape.stroke(
+                    store.practicedToday ? Theme.accent.opacity(0.3) : Theme.hairline,
+                    lineWidth: 1
+                )
+            )
     }
 
     private var emptyState: some View {
