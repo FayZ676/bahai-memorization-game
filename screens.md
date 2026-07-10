@@ -9,9 +9,10 @@ No tab bar. Library is the root screen. No global Review entry point — review 
 
 ## Library
 
-The root screen. Shows all imported passages.
+The root screen. Shows a practice-streak card above all imported passages.
 
 - **Nav bar:** gear (Settings) / "Library" / + (Import)
+- **Practice streak card:** day-streak count beside a strip of the last 7 days — each dot's fill deepens with how many words were hidden that day; today shows a dashed outline until practiced. Below a divider, the last-practiced passage's working chunk with a "Practice this chunk" button that opens its session. Hiding any word today flips the card to a glowing "Practiced today" state and fills today's dot. A day with no hidden words breaks the streak; hidden state is never gated by it.
 - **Rows:** passage title + progress fraction (e.g. "3 of 8 merged") + muted chevron. Sorted alphabetically by title.
 - **Tap a row** → enters that passage's Review Session.
 - **Swipe left** → reveals "Delete" (red). Confirmed before deleting. No rename — title is fixed at import.
