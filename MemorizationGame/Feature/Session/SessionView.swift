@@ -18,7 +18,7 @@ struct SessionView: View {
         ZStack {
             Theme.bg.ignoresSafeArea()
             VStack(spacing: 0) {
-                ScreenHeader(title: passage.title, onBack: { dismiss() }, onOptions: { showingOptions = true })
+                ScreenHeader(title: passage.title, onBack: { dismiss() })
                 if vm.current != nil {
                     progressRow
                     readingArea
@@ -172,11 +172,31 @@ struct SessionView: View {
     // MARK: Bottom bar
 
     private var bottomBar: some View {
-        hideButton
+        HStack(spacing: 10) {
+            hideButton
+            optionsButton
+        }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 20)
         .padding(.top, 14)
         .padding(.bottom, 8)
+    }
+
+    private var optionsButton: some View {
+        Button {
+            showingOptions = true
+        } label: {
+            Image(systemName: "slider.horizontal.3")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Theme.accentPale)
+                .frame(width: 48, height: 48)
+                .background(Theme.accent.opacity(0.22), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 13, style: .continuous)
+                        .stroke(Theme.accent.opacity(0.42), lineWidth: 1)
+                )
+        }
+        .buttonStyle(.plain)
     }
 
     private var hideButton: some View {
