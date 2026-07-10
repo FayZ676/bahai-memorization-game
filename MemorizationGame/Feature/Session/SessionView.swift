@@ -75,7 +75,7 @@ struct SessionView: View {
             let unit = geo.size.width / CGFloat(count)
             ZStack(alignment: .leading) {
                 ChunkHeatStrip(heats: heats, animated: false)
-                    .frame(height: scrubbing ? 9 : 3)
+                    .frame(height: scrubbing ? 12 : 6)
                 let currentHeat = heats.indices.contains(vm.step) ? heats[vm.step] : 0
                 Capsule()
                     .fill(Color.white.opacity(0.25))
