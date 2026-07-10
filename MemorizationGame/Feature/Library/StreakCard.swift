@@ -86,7 +86,7 @@ struct StreakCard: View {
                 .frame(height: 44)
                 .background(Theme.accent, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
                 .overlay {
-                    NavigationLink(value: passage) { EmptyView() }
+                    NavigationLink(value: SessionRoute(passage: passage, focusCardID: card.id)) { EmptyView() }
                         .opacity(0)
                 }
                 .padding(.top, 14)

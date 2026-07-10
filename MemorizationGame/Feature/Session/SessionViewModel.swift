@@ -58,9 +58,11 @@ final class SessionViewModel {
         return min(store.settings.hideAmount, visible)
     }
 
-    func start() {
+    func start(focusing cardID: UUID? = nil) {
         let q = store.queue(for: passage)
-        step = q.lastIndex { !$0.hiddenWords.isEmpty } ?? 0
+        step = cardID.flatMap { id in q.firstIndex { $0.id == id } }
+            ?? q.lastIndex { !$0.hiddenWords.isEmpty }
+            ?? 0
         mode = .reading
         presentationEpoch += 1
     }

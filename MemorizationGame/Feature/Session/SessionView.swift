@@ -1,5 +1,10 @@
 import SwiftUI
 
+struct SessionRoute: Hashable {
+    let passage: Passage
+    let focusCardID: UUID
+}
+
 struct SessionView: View {
     @Environment(AppStore.self) private var store
     @Environment(\.dismiss) private var dismiss
@@ -8,9 +13,11 @@ struct SessionView: View {
     @State private var showingOptions = false
     @State private var scrubbing = false
     let passage: Passage
+    let focusCardID: UUID?
 
-    init(passage: Passage) {
+    init(passage: Passage, focusCardID: UUID? = nil) {
         self.passage = passage
+        self.focusCardID = focusCardID
         _vm = State(initialValue: SessionViewModel(passage: passage, store: AppStore()))
     }
 
@@ -42,7 +49,7 @@ struct SessionView: View {
             guard !started else { return }
             started = true
             vm = SessionViewModel(passage: passage, store: store)
-            vm.start()
+            vm.start(focusing: focusCardID)
         }
     }
 

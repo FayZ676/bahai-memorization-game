@@ -38,6 +38,9 @@ struct LibraryView: View {
             .navigationDestination(for: Passage.self) { passage in
                 SessionView(passage: passage)
             }
+            .navigationDestination(for: SessionRoute.self) { route in
+                SessionView(passage: route.passage, focusCardID: route.focusCardID)
+            }
         }
         .confirmationDialog(
             "Delete this passage?",
