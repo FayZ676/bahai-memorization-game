@@ -6,37 +6,76 @@ struct SettingsView: View {
     @State private var permissionDenied = false
 
     var body: some View {
-        @Bindable var store = store
-
         VStack(spacing: 0) {
             ScreenHeader(title: "Settings", onBack: { dismiss() })
 
-            Form {
-                Section {
-                    Picker("Appearance", selection: $store.settings.appearanceMode) {
-                        ForEach(AppearanceMode.allCases, id: \.self) { mode in
-                            Text(mode.label).tag(mode)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 22) {
+                    OptionSection(label: "Appearance") {
+                        appearancePicker
+                    }
+
+                    OptionSection(
+                        label: "Reminders",
+                        footer: permissionDenied
+                            ? "Notifications are turned off for this app. Enable them in the Settings app to get reminders."
+                            : nil
+                    ) {
+                        Toggle(isOn: reminderEnabled) {
+                            Text("Daily reminder")
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundStyle(Theme.ink)
+                        }
+                        .tint(Theme.accent)
+                        .padding(.vertical, 12)
+                        .padding(.horizontal, 16)
+
+                        if store.settings.reminderEnabled {
+                            Rectangle()
+                                .fill(Theme.hairline)
+                                .frame(height: 1)
+                            DatePicker(selection: reminderTime, displayedComponents: .hourAndMinute) {
+                                Text("Time")
+                                    .font(.system(size: 15, weight: .medium))
+                                    .foregroundStyle(Theme.ink)
+                            }
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 16)
                         }
                     }
-                    .pickerStyle(.segmented)
                 }
-
-                Section {
-                    Toggle("Daily reminder", isOn: reminderEnabled)
-                    if store.settings.reminderEnabled {
-                        DatePicker("Time", selection: reminderTime, displayedComponents: .hourAndMinute)
-                    }
-                } footer: {
-                    if permissionDenied {
-                        Text("Notifications are turned off for this app. Enable them in the Settings app to get reminders.")
-                    }
-                }
+                .padding(.horizontal, 18)
+                .padding(.top, 4)
+                .padding(.bottom, 24)
             }
-            .scrollContentBackground(.hidden)
         }
         .background(Theme.bg)
         .toolbar(.hidden, for: .navigationBar)
         .navigationBarBackButtonHidden(true)
+    }
+
+    private var appearancePicker: some View {
+        HStack(spacing: 3) {
+            ForEach(AppearanceMode.allCases, id: \.self) { mode in
+                let selected = store.settings.appearanceMode == mode
+                Button {
+                    store.settings.appearanceMode = mode
+                } label: {
+                    Text(mode.label)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(selected ? Theme.ink : Theme.muted)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(
+                            selected ? Color.white.opacity(0.08) : .clear,
+                            in: RoundedRectangle(cornerRadius: 8)
+                        )
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(3)
     }
 
     private var reminderEnabled: Binding<Bool> {

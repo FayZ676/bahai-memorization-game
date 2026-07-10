@@ -82,6 +82,7 @@ struct LibraryView: View {
             }
         }
         .listRowSpacing(12)
+        .contentMargins(.top, 4, for: .scrollContent)
         .scrollContentBackground(.hidden)
         .background(Theme.bg)
     }
@@ -106,7 +107,7 @@ private struct PassageRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text(passage.title)
-                .font(.body.weight(.medium))
+                .font(.scripture(19, weight: .medium))
                 .foregroundStyle(Theme.ink)
 
             ChunkHeatStrip(heats: store.chunkHeats(for: passage))
