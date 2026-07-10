@@ -6,7 +6,13 @@ final class AppStore {
     private(set) var passages: [Passage]
     private(set) var reviewables: [Reviewable]
     var settings: AppSettings {
-        didSet { persist() }
+        didSet {
+            persist()
+            if oldValue.reminderEnabled != settings.reminderEnabled
+                || oldValue.reminderMinuteOfDay != settings.reminderMinuteOfDay {
+                ReminderScheduler.sync(settings)
+            }
+        }
     }
 
     private let storeURL: URL

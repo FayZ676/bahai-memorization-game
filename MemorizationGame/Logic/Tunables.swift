@@ -26,6 +26,8 @@ enum AppearanceMode: String, Codable, CaseIterable {
 struct AppSettings: Codable, Equatable {
     var hideAmount: Int = 3
     var appearanceMode: AppearanceMode = .system
+    var reminderEnabled: Bool = false
+    var reminderMinuteOfDay: Int = 9 * 60
 
     static let `default` = AppSettings()
 
@@ -36,5 +38,7 @@ struct AppSettings: Codable, Equatable {
         let d = AppSettings.default
         hideAmount = try container.decodeIfPresent(Int.self, forKey: .hideAmount) ?? d.hideAmount
         appearanceMode = try container.decodeIfPresent(AppearanceMode.self, forKey: .appearanceMode) ?? d.appearanceMode
+        reminderEnabled = try container.decodeIfPresent(Bool.self, forKey: .reminderEnabled) ?? d.reminderEnabled
+        reminderMinuteOfDay = try container.decodeIfPresent(Int.self, forKey: .reminderMinuteOfDay) ?? d.reminderMinuteOfDay
     }
 }
