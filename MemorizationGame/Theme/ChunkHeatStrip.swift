@@ -77,7 +77,7 @@ struct ChunkHeatStrip: View {
             .fill(Color.white.opacity(selected ? 0.3 : 0.07))
             .overlay(shape.fill(complete ? fill : fill.opacity(heat > 0 ? 0.35 + 0.65 * hot : 0)))
             .shadow(color: fill.opacity(complete ? 0 : 0.8 * hot * hot), radius: 1 + 3 * hot)
-            .scaleEffect(selected ? CGSize(width: 1.25, height: 2.1) : CGSize(width: 1, height: 1))
+            .scaleEffect(selected ? CGSize(width: 1, height: 2.1) : CGSize(width: 1, height: 1))
         if complete {
             let glowing = base
                 .shadow(color: Theme.ember.opacity(0.4), radius: 2)
