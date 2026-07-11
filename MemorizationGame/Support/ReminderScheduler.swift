@@ -18,9 +18,10 @@ enum ReminderScheduler {
             let status = await center.notificationSettings().authorizationStatus
             guard status == .authorized || status == .provisional else { return }
 
+            let message = settings.reminderMessage.trimmingCharacters(in: .whitespacesAndNewlines)
             let content = UNMutableNotificationContent()
             content.title = "Time to memorize"
-            content.body = "A few minutes with your passages keeps them fresh."
+            content.body = message.isEmpty ? AppSettings.default.reminderMessage : message
             content.sound = .default
 
             var time = DateComponents()

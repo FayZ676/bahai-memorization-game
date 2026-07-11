@@ -11,7 +11,8 @@ final class AppStore {
         didSet {
             persist()
             if oldValue.reminderEnabled != settings.reminderEnabled
-                || oldValue.reminderMinuteOfDay != settings.reminderMinuteOfDay {
+                || oldValue.reminderMinuteOfDay != settings.reminderMinuteOfDay
+                || oldValue.reminderMessage != settings.reminderMessage {
                 ReminderScheduler.sync(settings)
             }
         }

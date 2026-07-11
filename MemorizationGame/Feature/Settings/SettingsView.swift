@@ -41,6 +41,22 @@ struct SettingsView: View {
                             }
                             .padding(.vertical, 8)
                             .padding(.horizontal, 16)
+
+                            Rectangle()
+                                .fill(Theme.hairline)
+                                .frame(height: 1)
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("Message")
+                                    .font(.system(size: 15, weight: .medium))
+                                    .foregroundStyle(Theme.ink)
+                                TextField("Reminder message", text: reminderMessage, axis: .vertical)
+                                    .font(.system(size: 15))
+                                    .foregroundStyle(Theme.muted)
+                                    .lineLimit(1...4)
+                                    .tint(Theme.accent)
+                            }
+                            .padding(.vertical, 12)
+                            .padding(.horizontal, 16)
                         }
                     }
                 }
@@ -92,6 +108,13 @@ struct SettingsView: View {
                     permissionDenied = !granted
                 }
             }
+        )
+    }
+
+    private var reminderMessage: Binding<String> {
+        Binding(
+            get: { store.settings.reminderMessage },
+            set: { store.settings.reminderMessage = $0 }
         )
     }
 
