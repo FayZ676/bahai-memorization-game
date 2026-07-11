@@ -198,10 +198,10 @@ struct SessionView: View {
     // MARK: Bottom bar
 
     private var bottomBar: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
+            optionsButton
             hideButton
             micButton
-            optionsButton
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 20)
@@ -244,8 +244,7 @@ struct SessionView: View {
                         .foregroundStyle(Theme.muted)
                 }
             }
-            .frame(width: 48, height: 48)
-            .contentShape(Rectangle())
+            .iconButtonChrome()
         }
         .buttonStyle(.plain)
     }
@@ -257,8 +256,7 @@ struct SessionView: View {
             Image(systemName: "slider.horizontal.3")
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(Theme.muted)
-                .frame(width: 48, height: 48)
-                .contentShape(Rectangle())
+                .iconButtonChrome()
         }
         .buttonStyle(.plain)
     }
@@ -329,5 +327,18 @@ private struct WordView: View {
             }
             if !p.trail.isEmpty { Text(p.trail).foregroundStyle(Theme.ink) }
         }
+    }
+}
+
+private extension View {
+    func iconButtonChrome() -> some View {
+        self
+            .frame(width: 48, height: 48)
+            .background(Theme.muted.opacity(0.06), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 13, style: .continuous)
+                    .stroke(Theme.muted.opacity(0.22), lineWidth: 1)
+            )
+            .contentShape(Rectangle())
     }
 }
