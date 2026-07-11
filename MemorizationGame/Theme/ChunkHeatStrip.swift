@@ -93,25 +93,9 @@ struct ChunkHeatStrip: View {
                             .opacity(0.9 * pow(glow, 2.2))
                     }
                 )
-            if animated {
-                glowing.modifier(LiftMotion())
-            } else {
-                glowing.offset(y: -2.2)
-            }
+            glowing
         } else {
             base
         }
-    }
-}
-
-private struct LiftMotion: ViewModifier {
-    @State private var lifted = false
-
-    func body(content: Content) -> some View {
-        content
-            .offset(y: lifted ? -2.2 : 0)
-            .animation(.easeInOut(duration: 1.3).repeatForever(autoreverses: true), value: lifted)
-            .transaction { $0.animation = nil }
-            .onAppear { lifted = true }
     }
 }
