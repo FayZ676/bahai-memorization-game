@@ -27,7 +27,9 @@ struct SessionView: View {
         ZStack {
             Theme.bg.ignoresSafeArea()
             VStack(spacing: 0) {
-                ScreenHeader(title: passage.title, onBack: { dismiss() })
+                ScreenHeader(title: passage.title, onBack: { dismiss() }) {
+                    if vm.isPracticing { micButton }
+                }
                 if vm.current != nil {
                     progressRow
                     readingArea
@@ -201,7 +203,6 @@ struct SessionView: View {
         HStack(spacing: 8) {
             optionsButton
             hideButton
-            micButton
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 20)
@@ -223,30 +224,27 @@ struct SessionView: View {
                 break
             }
         } label: {
-            Group {
-                switch voice.state {
-                case .preparingModel:
-                    ProgressView()
-                        .controlSize(.small)
-                        .tint(Theme.muted)
-                case .listening:
-                    Image(systemName: "mic.fill")
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(Theme.ember)
-                        .symbolEffect(.pulse, options: .repeating)
-                case .micDenied:
-                    Image(systemName: "mic.slash")
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(Theme.muted.opacity(0.5))
-                case .idle, .failed:
-                    Image(systemName: "mic")
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(Theme.muted)
-                }
+            switch voice.state {
+            case .preparingModel:
+                ProgressView()
+                    .controlSize(.small)
+                    .tint(Theme.muted)
+            case .listening:
+                Image(systemName: "mic.fill")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Theme.ember)
+                    .symbolEffect(.pulse, options: .repeating)
+            case .micDenied:
+                Image(systemName: "mic.slash")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Theme.muted.opacity(0.5))
+            case .idle, .failed:
+                Image(systemName: "mic")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Theme.navIcon)
             }
-            .iconButtonChrome()
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.icon)
     }
 
     private var optionsButton: some View {
