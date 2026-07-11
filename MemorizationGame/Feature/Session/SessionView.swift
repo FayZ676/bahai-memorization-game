@@ -68,6 +68,22 @@ struct SessionView: View {
         } message: {
             Text("Allow microphone access in Settings to reveal words by reciting them.")
         }
+        .overlay(alignment: .top) {
+            if store.dailyGoalReached {
+                DailyGoalToast()
+                    .padding(.top, 10)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(.spring(response: 0.42, dampingFraction: 0.8), value: store.dailyGoalReached)
+        .onChange(of: store.dailyGoalReached) { _, reached in
+            guard reached else { return }
+            Feedback.sessionComplete()
+            Task {
+                try? await Task.sleep(for: .seconds(3))
+                store.dailyGoalReached = false
+            }
+        }
     }
 
     private func revealThroughFrontier(_ frontier: Int) {
@@ -107,7 +123,7 @@ struct SessionView: View {
             let heats = vm.chunkHeats
             let count = max(heats.count, 1)
             let unit = geo.size.width / CGFloat(count)
-            ChunkHeatStrip(heats: heats, animated: false, highlight: vm.step)
+            HeatStrip(heats: heats, animated: false, highlight: vm.step)
                 .frame(height: scrubbing ? 12 : 6)
                 .frame(maxHeight: .infinity)
                 .contentShape(Rectangle())
@@ -353,5 +369,31 @@ private extension View {
                     .stroke(Theme.muted.opacity(0.22), lineWidth: 1)
             )
             .contentShape(Rectangle())
+    }
+}
+
+private struct DailyGoalToast: View {
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "flame.fill")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(Theme.emberHot)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Daily goal complete")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Theme.ink)
+                Text("Today's heat is full — streak secured.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Theme.muted)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(
+            Capsule(style: .continuous)
+                .fill(Theme.rowBg)
+                .overlay(Capsule(style: .continuous).stroke(Theme.ember.opacity(0.5), lineWidth: 1))
+                .shadow(color: Theme.ember.opacity(0.35), radius: 10)
+        )
     }
 }
