@@ -4,6 +4,7 @@ struct SettingsView: View {
     @Environment(AppStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     @State private var permissionDenied = false
+    @State private var remindersExpanded = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -16,45 +17,71 @@ struct SettingsView: View {
                     }
 
                     OptionSection(
-                        label: "Reminders",
                         footer: permissionDenied
                             ? "Notifications are turned off for this app. Enable them in the Settings app to get reminders."
                             : nil
                     ) {
-                        Toggle(isOn: reminderEnabled) {
-                            Text("Daily reminders")
-                                .font(.system(size: 15, weight: .medium))
-                                .foregroundStyle(Theme.ink)
-                        }
-                        .tint(Theme.accent)
-                        .padding(.vertical, 12)
-                        .padding(.horizontal, 16)
-
-                        if store.settings.reminderEnabled {
-                            ForEach(store.settings.reminders) { reminder in
-                                Rectangle()
-                                    .fill(Theme.hairline)
-                                    .frame(height: 1)
-                                reminderRow(reminder)
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.2)) { remindersExpanded.toggle() }
+                        } label: {
+                            HStack(spacing: 8) {
+                                Text("Reminders")
+                                    .font(.system(size: 15, weight: .medium))
+                                    .foregroundStyle(Theme.ink)
+                                Spacer()
+                                Text(remindersSummary)
+                                    .font(.system(size: 15))
+                                    .foregroundStyle(Theme.muted)
+                                Image(systemName: "chevron.down")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(Theme.faint)
+                                    .rotationEffect(.degrees(remindersExpanded ? 180 : 0))
                             }
+                            .padding(.vertical, 12)
+                            .padding(.horizontal, 16)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
 
+                        if remindersExpanded {
                             Rectangle()
                                 .fill(Theme.hairline)
                                 .frame(height: 1)
-                            Button(action: addReminder) {
-                                HStack(spacing: 6) {
-                                    Image(systemName: "plus")
-                                        .font(.system(size: 13, weight: .semibold))
-                                    Text("Add reminder")
-                                        .font(.system(size: 15, weight: .medium))
-                                }
-                                .foregroundStyle(Theme.accent)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.vertical, 12)
-                                .padding(.horizontal, 16)
-                                .contentShape(Rectangle())
+                            Toggle(isOn: reminderEnabled) {
+                                Text("Daily reminders")
+                                    .font(.system(size: 15, weight: .medium))
+                                    .foregroundStyle(Theme.ink)
                             }
-                            .buttonStyle(.plain)
+                            .tint(Theme.accent)
+                            .padding(.vertical, 12)
+                            .padding(.horizontal, 16)
+
+                            if store.settings.reminderEnabled {
+                                ForEach(store.settings.reminders) { reminder in
+                                    Rectangle()
+                                        .fill(Theme.hairline)
+                                        .frame(height: 1)
+                                    reminderRow(reminder)
+                                }
+
+                                Rectangle()
+                                    .fill(Theme.hairline)
+                                    .frame(height: 1)
+                                Button(action: addReminder) {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "plus")
+                                            .font(.system(size: 13, weight: .semibold))
+                                        Text("Add reminder")
+                                            .font(.system(size: 15, weight: .medium))
+                                    }
+                                    .foregroundStyle(Theme.accent)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.vertical, 12)
+                                    .padding(.horizontal, 16)
+                                    .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                            }
                         }
                     }
                 }
@@ -138,6 +165,12 @@ struct SettingsView: View {
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 16)
+    }
+
+    private var remindersSummary: String {
+        guard store.settings.reminderEnabled else { return "Off" }
+        let count = store.settings.reminders.count
+        return count == 1 ? "On" : "\(count) reminders"
     }
 
     private func addReminder() {
