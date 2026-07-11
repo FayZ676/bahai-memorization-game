@@ -9,8 +9,10 @@ struct SessionView: View {
     @Environment(AppStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     @State private var vm: SessionViewModel
+    @State private var voice = VoiceRecitationController()
     @State private var started = false
     @State private var showingOptions = false
+    @State private var showingMicDenied = false
     @State private var scrubbing = false
     let passage: Passage
     let focusCardID: UUID?
@@ -50,7 +52,33 @@ struct SessionView: View {
             started = true
             vm = SessionViewModel(passage: passage, store: store)
             vm.start(focusing: focusCardID)
+            voice.onFrontierAdvance = { revealThroughFrontier($0) }
         }
+        .onChange(of: vm.presentationEpoch) { voice.stop() }
+        .onChange(of: vm.isPracticing) {
+            if !vm.isPracticing { voice.stop() }
+        }
+        .onDisappear { voice.stop() }
+        .alert("Microphone Access Needed", isPresented: $showingMicDenied) {
+            Button("Open Settings") {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Allow microphone access in Settings to reveal words by reciting them.")
+        }
+    }
+
+    private func revealThroughFrontier(_ frontier: Int) {
+        guard let card = vm.current else { return }
+        let revealed = card.hiddenWords.filter { $0 <= frontier }.sorted()
+        guard !revealed.isEmpty else { return }
+        withAnimation(.easeInOut(duration: 0.22)) {
+            revealed.forEach { vm.revealWord($0) }
+        }
+        Feedback.wordSpoken()
     }
 
     // MARK: Progress
@@ -172,12 +200,54 @@ struct SessionView: View {
     private var bottomBar: some View {
         HStack(spacing: 10) {
             hideButton
+            micButton
             optionsButton
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 20)
         .padding(.top, 14)
         .padding(.bottom, 8)
+    }
+
+    private var micButton: some View {
+        Button {
+            switch voice.state {
+            case .listening:
+                voice.stop()
+            case .micDenied:
+                showingMicDenied = true
+            case .idle, .failed:
+                guard let card = vm.current else { return }
+                Task { await voice.start(reference: card.words.map(String.init)) }
+            case .preparingModel:
+                break
+            }
+        } label: {
+            Group {
+                switch voice.state {
+                case .preparingModel:
+                    ProgressView()
+                        .controlSize(.small)
+                        .tint(Theme.muted)
+                case .listening:
+                    Image(systemName: "mic.fill")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(Theme.ember)
+                        .symbolEffect(.pulse, options: .repeating)
+                case .micDenied:
+                    Image(systemName: "mic.slash")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(Theme.muted.opacity(0.5))
+                case .idle, .failed:
+                    Image(systemName: "mic")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(Theme.muted)
+                }
+            }
+            .frame(width: 48, height: 48)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     private var optionsButton: some View {
