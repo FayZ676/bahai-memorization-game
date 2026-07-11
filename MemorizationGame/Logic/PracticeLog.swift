@@ -1,6 +1,8 @@
 import Foundation
 
 struct PracticeLog: Codable, Equatable {
+    static let dailyGoal = 24
+
     private(set) var wordsByDay: [String: Int] = [:]
 
     mutating func record(words: Int, on date: Date = Date()) {
@@ -10,6 +12,14 @@ struct PracticeLog: Codable, Equatable {
 
     func words(on date: Date) -> Int {
         wordsByDay[Self.dayKey(for: date)] ?? 0
+    }
+
+    func heat(on date: Date) -> Double {
+        min(Double(words(on: date)) / Double(Self.dailyGoal), 1)
+    }
+
+    func reachedGoal(on date: Date = Date()) -> Bool {
+        words(on: date) >= Self.dailyGoal
     }
 
     func practiced(on date: Date) -> Bool {

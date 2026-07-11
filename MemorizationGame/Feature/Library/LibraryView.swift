@@ -157,7 +157,7 @@ private struct PassageRow: View {
                 .font(.scripture(19, weight: .medium))
                 .foregroundStyle(Theme.ink)
 
-            ChunkHeatStrip(heats: store.chunkHeats(for: passage))
+            HeatStrip(heats: store.chunkHeats(for: passage))
                 .frame(height: 6)
         }
         .padding(.vertical, 6)

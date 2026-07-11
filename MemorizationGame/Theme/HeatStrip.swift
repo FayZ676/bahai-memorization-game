@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct ChunkHeatStrip: View {
+struct HeatStrip: View {
     let heats: [Double]
     var animated = true
     var highlight: Int? = nil
@@ -8,15 +8,6 @@ struct ChunkHeatStrip: View {
     private static let waveSpeed = 13.0
     private static let waveMargin = 4.0
     private static let waveWidth = 1.6
-
-    private static let heatCurve = 2.5
-    private static let heatStops: [(position: Double, hex: UInt32)] = [
-        (0.0, 0x160B07),
-        (0.30, 0x6E2410),
-        (0.60, 0xC2431B),
-        (0.85, 0xF5A03C),
-        (1.0, 0xFFDFA0),
-    ]
 
     var body: some View {
         if animated {
@@ -49,29 +40,11 @@ struct ChunkHeatStrip: View {
         return exp(-distance * distance / (2 * Self.waveWidth * Self.waveWidth))
     }
 
-    private func intensity(_ heat: Double) -> Double {
-        (exp(Self.heatCurve * heat) - 1) / (exp(Self.heatCurve) - 1)
-    }
-
-    private func heatColor(_ intensity: Double) -> Color {
-        let upper = Self.heatStops.firstIndex { $0.position >= intensity } ?? Self.heatStops.count - 1
-        guard upper > 0 else { return Color(hex: Self.heatStops[0].hex) }
-        let lo = Self.heatStops[upper - 1]
-        let hi = Self.heatStops[upper]
-        let t = (intensity - lo.position) / (hi.position - lo.position)
-        let mix = { (shift: Int) -> Double in
-            let a = Double((lo.hex >> shift) & 0xFF)
-            let b = Double((hi.hex >> shift) & 0xFF)
-            return (a + (b - a) * t) / 255
-        }
-        return Color(.sRGB, red: mix(16), green: mix(8), blue: mix(0))
-    }
-
     @ViewBuilder
     private func segment(heat: Double, glow: Double, selected: Bool) -> some View {
         let complete = heat >= 1
-        let hot = intensity(heat)
-        let fill = heatColor(complete ? 1 : hot * 0.85)
+        let hot = Heat.intensity(heat)
+        let fill = Heat.color(complete ? 1 : hot * 0.85)
         let shape = RoundedRectangle(cornerRadius: 1.5)
         let base = shape
             .fill(Color.white.opacity(selected ? 0.3 : 0.07))

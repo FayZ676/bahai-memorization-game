@@ -7,6 +7,7 @@ final class AppStore {
     private(set) var reviewables: [Reviewable]
     private(set) var practiceLog: PracticeLog
     private(set) var recentPassageRefs: [UUID]
+    var dailyGoalReached = false
     var settings: AppSettings {
         didSet {
             persist()
@@ -129,7 +130,11 @@ final class AppStore {
         guard let new = updated.first(where: { $0.id == old.id }) else { return }
         let newlyHidden = new.hiddenWords.subtracting(old.hiddenWords).count
         guard newlyHidden > 0 else { return }
+        let reachedGoalBefore = practiceLog.reachedGoal()
         practiceLog.record(words: newlyHidden)
+        if !reachedGoalBefore && practiceLog.reachedGoal() {
+            dailyGoalReached = true
+        }
         recentPassageRefs.removeAll { $0 == passage.id }
         recentPassageRefs.insert(passage.id, at: 0)
     }
