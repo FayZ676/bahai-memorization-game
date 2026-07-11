@@ -22,7 +22,7 @@ struct SettingsView: View {
                             : nil
                     ) {
                         Toggle(isOn: reminderEnabled) {
-                            Text("Daily reminder")
+                            Text("Daily reminders")
                                 .font(.system(size: 15, weight: .medium))
                                 .foregroundStyle(Theme.ink)
                         }
@@ -31,32 +31,30 @@ struct SettingsView: View {
                         .padding(.horizontal, 16)
 
                         if store.settings.reminderEnabled {
-                            Rectangle()
-                                .fill(Theme.hairline)
-                                .frame(height: 1)
-                            DatePicker(selection: reminderTime, displayedComponents: .hourAndMinute) {
-                                Text("Time")
-                                    .font(.system(size: 15, weight: .medium))
-                                    .foregroundStyle(Theme.ink)
+                            ForEach(store.settings.reminders) { reminder in
+                                Rectangle()
+                                    .fill(Theme.hairline)
+                                    .frame(height: 1)
+                                reminderRow(reminder)
                             }
-                            .padding(.vertical, 8)
-                            .padding(.horizontal, 16)
 
                             Rectangle()
                                 .fill(Theme.hairline)
                                 .frame(height: 1)
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("Message")
-                                    .font(.system(size: 15, weight: .medium))
-                                    .foregroundStyle(Theme.ink)
-                                TextField("Reminder message", text: reminderMessage, axis: .vertical)
-                                    .font(.system(size: 15))
-                                    .foregroundStyle(Theme.muted)
-                                    .lineLimit(1...4)
-                                    .tint(Theme.accent)
+                            Button(action: addReminder) {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "plus")
+                                        .font(.system(size: 13, weight: .semibold))
+                                    Text("Add reminder")
+                                        .font(.system(size: 15, weight: .medium))
+                                }
+                                .foregroundStyle(Theme.accent)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.vertical, 12)
+                                .padding(.horizontal, 16)
+                                .contentShape(Rectangle())
                             }
-                            .padding(.vertical, 12)
-                            .padding(.horizontal, 16)
+                            .buttonStyle(.plain)
                         }
                     }
                 }
@@ -111,22 +109,65 @@ struct SettingsView: View {
         )
     }
 
-    private var reminderMessage: Binding<String> {
+    private func reminderRow(_ reminder: Reminder) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                DatePicker(selection: reminderTime(reminder.id), displayedComponents: .hourAndMinute) {
+                    Text("Time")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(Theme.ink)
+                }
+                if store.settings.reminders.count > 1 {
+                    Button {
+                        removeReminder(reminder.id)
+                    } label: {
+                        Image(systemName: "trash")
+                            .font(.system(size: 15))
+                            .foregroundStyle(Theme.muted)
+                            .padding(.leading, 12)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            TextField("Reminder message", text: reminderMessage(reminder.id), axis: .vertical)
+                .font(.system(size: 15))
+                .foregroundStyle(Theme.muted)
+                .lineLimit(1...4)
+                .tint(Theme.accent)
+        }
+        .padding(.vertical, 12)
+        .padding(.horizontal, 16)
+    }
+
+    private func addReminder() {
+        store.settings.reminders.append(Reminder())
+    }
+
+    private func removeReminder(_ id: UUID) {
+        store.settings.reminders.removeAll { $0.id == id }
+    }
+
+    private func reminderMessage(_ id: UUID) -> Binding<String> {
         Binding(
-            get: { store.settings.reminderMessage },
-            set: { store.settings.reminderMessage = $0 }
+            get: { store.settings.reminders.first(where: { $0.id == id })?.message ?? "" },
+            set: { newValue in
+                guard let index = store.settings.reminders.firstIndex(where: { $0.id == id }) else { return }
+                store.settings.reminders[index].message = newValue
+            }
         )
     }
 
-    private var reminderTime: Binding<Date> {
+    private func reminderTime(_ id: UUID) -> Binding<Date> {
         Binding(
             get: {
-                let minute = store.settings.reminderMinuteOfDay
+                let minute = store.settings.reminders.first(where: { $0.id == id })?.minuteOfDay ?? 0
                 return Calendar.current.date(bySettingHour: minute / 60, minute: minute % 60, second: 0, of: .now) ?? .now
             },
             set: { date in
+                guard let index = store.settings.reminders.firstIndex(where: { $0.id == id }) else { return }
                 let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
-                store.settings.reminderMinuteOfDay = (parts.hour ?? 0) * 60 + (parts.minute ?? 0)
+                store.settings.reminders[index].minuteOfDay = (parts.hour ?? 0) * 60 + (parts.minute ?? 0)
             }
         )
     }

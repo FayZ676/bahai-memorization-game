@@ -23,14 +23,26 @@ enum AppearanceMode: String, Codable, CaseIterable {
     }
 }
 
+struct Reminder: Codable, Equatable, Identifiable {
+    var id: UUID = UUID()
+    var minuteOfDay: Int = 9 * 60
+    var message: String = AppSettings.defaultReminderMessage
+}
+
 struct AppSettings: Codable, Equatable {
+    static let defaultReminderMessage = "A few minutes with your passages keeps them fresh."
+
     var hideAmount: Int = 3
     var appearanceMode: AppearanceMode = .system
     var reminderEnabled: Bool = false
-    var reminderMinuteOfDay: Int = 9 * 60
-    var reminderMessage: String = "A few minutes with your passages keeps them fresh."
+    var reminders: [Reminder] = [Reminder()]
 
     static let `default` = AppSettings()
+
+    private enum CodingKeys: String, CodingKey {
+        case hideAmount, appearanceMode, reminderEnabled, reminders
+        case reminderMinuteOfDay, reminderMessage
+    }
 
     init() {}
 
@@ -40,7 +52,20 @@ struct AppSettings: Codable, Equatable {
         hideAmount = try container.decodeIfPresent(Int.self, forKey: .hideAmount) ?? d.hideAmount
         appearanceMode = try container.decodeIfPresent(AppearanceMode.self, forKey: .appearanceMode) ?? d.appearanceMode
         reminderEnabled = try container.decodeIfPresent(Bool.self, forKey: .reminderEnabled) ?? d.reminderEnabled
-        reminderMinuteOfDay = try container.decodeIfPresent(Int.self, forKey: .reminderMinuteOfDay) ?? d.reminderMinuteOfDay
-        reminderMessage = try container.decodeIfPresent(String.self, forKey: .reminderMessage) ?? d.reminderMessage
+        if let stored = try container.decodeIfPresent([Reminder].self, forKey: .reminders) {
+            reminders = stored
+        } else {
+            let minute = try container.decodeIfPresent(Int.self, forKey: .reminderMinuteOfDay) ?? Reminder().minuteOfDay
+            let message = try container.decodeIfPresent(String.self, forKey: .reminderMessage) ?? AppSettings.defaultReminderMessage
+            reminders = [Reminder(minuteOfDay: minute, message: message)]
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(hideAmount, forKey: .hideAmount)
+        try container.encode(appearanceMode, forKey: .appearanceMode)
+        try container.encode(reminderEnabled, forKey: .reminderEnabled)
+        try container.encode(reminders, forKey: .reminders)
     }
 }
