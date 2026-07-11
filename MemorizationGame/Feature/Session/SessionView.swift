@@ -79,17 +79,22 @@ struct SessionView: View {
         GeometryReader { geo in
             let heats = vm.chunkHeats
             let count = max(heats.count, 1)
+            let spacing: CGFloat = 2
+            let segment = (geo.size.width - spacing * CGFloat(count - 1)) / CGFloat(count)
             let unit = geo.size.width / CGFloat(count)
+            let stripHeight: CGFloat = scrubbing ? 12 : 6
             ZStack(alignment: .leading) {
                 ChunkHeatStrip(heats: heats, animated: false)
-                    .frame(height: scrubbing ? 12 : 6)
+                    .frame(height: stripHeight)
                 let currentHeat = heats.indices.contains(vm.step) ? heats[vm.step] : 0
-                Capsule()
-                    .fill(Color.white.opacity(0.25))
-                    .overlay(Capsule().fill(Theme.accentBright.opacity(currentHeat)))
-                    .background(Capsule().fill(Theme.bg).padding(-1.5))
-                    .frame(width: 3, height: scrubbing ? 16 : 10)
-                    .offset(x: min(unit * CGFloat(vm.step + 1), geo.size.width) - 3)
+                RoundedRectangle(cornerRadius: 3, style: .continuous)
+                    .stroke(Color.white.opacity(0.85), lineWidth: 1.5)
+                    .background(
+                        RoundedRectangle(cornerRadius: 3, style: .continuous)
+                            .fill(Theme.accentBright.opacity(0.18 + 0.32 * currentHeat))
+                    )
+                    .frame(width: segment + 4, height: stripHeight + 8)
+                    .offset(x: CGFloat(vm.step) * (segment + spacing) - 2)
             }
             .frame(maxHeight: .infinity)
             .contentShape(Rectangle())
