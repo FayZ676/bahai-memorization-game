@@ -43,7 +43,7 @@ struct StreakCard: View {
 
     private var dotStrip: some View {
         let days = store.practiceLog.recentDays(7)
-        return HStack(spacing: 6) {
+        return HStack(spacing: 4) {
             ForEach(days.indices, id: \.self) { i in
                 dot(for: days[i], isToday: i == days.count - 1)
             }
@@ -52,13 +52,14 @@ struct StreakCard: View {
 
     private func dot(for date: Date, isToday: Bool) -> some View {
         let words = store.practiceLog.words(on: date)
-        return Circle()
+        let shape = RoundedRectangle(cornerRadius: 1.5)
+        return shape
             .fill(Color.white.opacity(0.07))
             .overlay {
                 if words > 0 {
-                    Circle().fill(Theme.accent.opacity(Self.fillOpacity(forWords: words)))
+                    shape.fill(Theme.accent.opacity(Self.fillOpacity(forWords: words)))
                 } else if isToday {
-                    Circle().strokeBorder(Theme.accent.opacity(0.55), lineWidth: 1.5)
+                    shape.strokeBorder(Theme.accent.opacity(0.55), lineWidth: 1.5)
                 }
             }
             .frame(width: 10, height: 10)
