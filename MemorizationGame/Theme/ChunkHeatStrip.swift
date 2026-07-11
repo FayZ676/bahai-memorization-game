@@ -8,6 +8,10 @@ struct ChunkHeatStrip: View {
     private static let waveMargin = 4.0
     private static let waveWidth = 1.6
 
+    private static let heatCurve = 2.5
+    private static let coolFill: UInt32 = 0xE7B878
+    private static let hotFill: UInt32 = 0xF5A03C
+
     var body: some View {
         if animated {
             let hasComplete = heats.contains { $0 >= 1 }
@@ -39,13 +43,27 @@ struct ChunkHeatStrip: View {
         return exp(-distance * distance / (2 * Self.waveWidth * Self.waveWidth))
     }
 
+    private func intensity(_ heat: Double) -> Double {
+        (exp(Self.heatCurve * heat) - 1) / (exp(Self.heatCurve) - 1)
+    }
+
+    private func heatColor(_ intensity: Double) -> Color {
+        let mix = { (shift: Int) -> Double in
+            let cool = Double((Self.coolFill >> shift) & 0xFF)
+            let hot = Double((Self.hotFill >> shift) & 0xFF)
+            return (cool + (hot - cool) * intensity) / 255
+        }
+        return Color(.sRGB, red: mix(16), green: mix(8), blue: mix(0))
+    }
+
     @ViewBuilder
     private func segment(heat: Double, glow: Double) -> some View {
         let complete = heat >= 1
+        let hot = intensity(heat)
         let shape = RoundedRectangle(cornerRadius: 1.5)
         let base = shape
             .fill(Color.white.opacity(0.07))
-            .overlay(shape.fill(Theme.accentBright.opacity(complete ? 1 : heat * 0.72)))
+            .overlay(shape.fill(complete ? Theme.accentBright : heatColor(hot).opacity(hot * 0.72)))
         if complete {
             let glowing = base
                 .shadow(color: Theme.ember.opacity(0.4), radius: 2)
