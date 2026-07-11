@@ -28,7 +28,7 @@ struct SessionView: View {
             Theme.bg.ignoresSafeArea()
             VStack(spacing: 0) {
                 ScreenHeader(title: passage.title, onBack: { dismiss() }) {
-                    if vm.isPracticing { micButton }
+                    if vm.current != nil { micButton }
                 }
                 if vm.current != nil {
                     progressRow
@@ -57,9 +57,6 @@ struct SessionView: View {
             voice.onFrontierAdvance = { revealThroughFrontier($0) }
         }
         .onChange(of: vm.presentationEpoch) { voice.stop() }
-        .onChange(of: vm.isPracticing) {
-            if !vm.isPracticing { voice.stop() }
-        }
         .onDisappear { voice.stop() }
         .alert("Microphone Access Needed", isPresented: $showingMicDenied) {
             Button("Open Settings") {
@@ -224,27 +221,45 @@ struct SessionView: View {
                 break
             }
         } label: {
-            switch voice.state {
-            case .preparingModel:
-                ProgressView()
-                    .controlSize(.small)
-                    .tint(Theme.muted)
-            case .listening:
-                Image(systemName: "mic.fill")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(Theme.ember)
-                    .symbolEffect(.pulse, options: .repeating)
-            case .micDenied:
-                Image(systemName: "mic.slash")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(Theme.muted.opacity(0.5))
-            case .idle, .failed:
-                Image(systemName: "mic")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(Theme.navIcon)
-            }
+            micIcon
+                .frame(width: 38, height: 38)
+                .background(micFill, in: Circle())
+                .overlay(Circle().stroke(micStroke, lineWidth: 1))
+                .contentShape(Circle())
         }
-        .buttonStyle(.icon)
+        .buttonStyle(.plain)
+        .animation(.easeInOut(duration: 0.18), value: voice.state)
+    }
+
+    @ViewBuilder
+    private var micIcon: some View {
+        switch voice.state {
+        case .preparingModel:
+            ProgressView()
+                .controlSize(.small)
+                .tint(Theme.muted)
+        case .listening:
+            Image(systemName: "mic.fill")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Theme.emberHot)
+                .symbolEffect(.pulse, options: .repeating)
+        case .micDenied:
+            Image(systemName: "mic.slash")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Theme.muted.opacity(0.5))
+        case .idle, .failed:
+            Image(systemName: "mic")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Theme.navIcon)
+        }
+    }
+
+    private var micFill: Color {
+        voice.state == .listening ? Theme.ember.opacity(0.28) : Theme.surface
+    }
+
+    private var micStroke: Color {
+        voice.state == .listening ? Theme.emberHot.opacity(0.7) : Theme.hairline
     }
 
     private var optionsButton: some View {
