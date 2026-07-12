@@ -1,6 +1,6 @@
 import AVFoundation
 import Observation
-import WhisperKit
+import Speech
 
 @MainActor
 @Observable
@@ -14,17 +14,18 @@ final class VoiceRecitationController {
     }
 
     private(set) var state: State = .idle
-    var onFrontierAdvance: ((Int) -> Void)?
+    private(set) var nextExpectedIndex: Int?
+    var onWordsMatched: (([Int]) -> Void)?
+    var onMiss: (() -> Void)?
+    var onCompleted: (() -> Void)?
 
-    private static var cachedWhisper: WhisperKit?
-    private var reference: [String] = []
-    private var revealedFrontier = -1
-    private var tickTask: Task<Void, Never>?
-
-    private let tickInterval: Duration = .milliseconds(400)
-    private let sampleRate = 16000
-    private let maxBufferSeconds = 28
-    private let speechEnergyThreshold: Float = 0.25
+    private let audioEngine = AVAudioEngine()
+    private var analyzer: SpeechAnalyzer?
+    private var transcriber: SpeechTranscriber?
+    private var inputBuilder: AsyncStream<AnalyzerInput>.Continuation?
+    private var resultsTask: Task<Void, Never>?
+    private var matcher = RecitationMatcher(reference: [])
+    private var finalizedTokens: [String] = []
 
     var isListening: Bool { state == .listening }
 
@@ -36,83 +37,149 @@ final class VoiceRecitationController {
         }
         state = .preparingModel
         do {
-            let whisper = try await Self.loadedWhisper()
+            let transcriber = SpeechTranscriber(
+                locale: Locale(identifier: "en-US"),
+                transcriptionOptions: [],
+                reportingOptions: [.volatileResults],
+                attributeOptions: []
+            )
+            try await Self.ensureModelInstalled(for: transcriber)
+            let analyzerFormat = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber])
             guard state == .preparingModel else { return }
-            self.reference = reference
-            revealedFrontier = -1
+            matcher = RecitationMatcher(reference: reference)
+            finalizedTokens = []
+            nextExpectedIndex = matcher.nextExpectedIndex
+            let analyzer = SpeechAnalyzer(modules: [transcriber])
+            self.transcriber = transcriber
+            self.analyzer = analyzer
             try Self.activateAudioSession()
-            try whisper.audioProcessor.startRecordingLive(callback: nil)
+            let (inputSequence, inputBuilder) = AsyncStream<AnalyzerInput>.makeStream()
+            self.inputBuilder = inputBuilder
+            try startAudioEngine(feeding: inputBuilder, format: analyzerFormat)
+            try await analyzer.start(inputSequence: inputSequence)
             state = .listening
-            beginTicking(whisper)
+            observeResults(from: transcriber)
         } catch {
             state = .failed
-            Self.deactivateAudioSession()
+            teardown()
         }
     }
 
     func stop() {
-        tickTask?.cancel()
-        tickTask = nil
-        Self.cachedWhisper?.audioProcessor.stopRecording()
-        Self.deactivateAudioSession()
-        reference = []
-        revealedFrontier = -1
+        guard state != .idle else { return }
         if state != .micDenied {
             state = .idle
         }
+        teardown()
     }
 
-    private func beginTicking(_ whisper: WhisperKit) {
-        let promptTokens = whisper.tokenizer.map { $0.encode(text: " " + reference.joined(separator: " ")) }
-        tickTask = Task {
-            var transcribedSampleCount = 0
-            while !Task.isCancelled {
-                try? await Task.sleep(for: tickInterval)
-                guard !Task.isCancelled, state == .listening else { return }
-                let samples = Array(whisper.audioProcessor.audioSamples)
-                if samples.count > maxBufferSeconds * sampleRate {
-                    stop()
-                    return
+    private func observeResults(from transcriber: SpeechTranscriber) {
+        resultsTask = Task {
+            do {
+                for try await result in transcriber.results {
+                    guard state == .listening else { return }
+                    ingest(result)
+                    if matcher.isComplete {
+                        stop()
+                        onCompleted?()
+                        return
+                    }
                 }
-                guard samples.count > transcribedSampleCount + sampleRate / 2 else { continue }
-                guard whisper.audioProcessor.relativeEnergy.contains(where: { $0 > speechEnergyThreshold }) else { continue }
-                transcribedSampleCount = samples.count
-                let options = DecodingOptions(
-                    task: .transcribe,
-                    language: "en",
-                    temperature: 0,
-                    usePrefillPrompt: true,
-                    skipSpecialTokens: true,
-                    withoutTimestamps: true,
-                    promptTokens: promptTokens
-                )
-                let text = (try? await whisper.transcribe(audioArray: samples, decodeOptions: options))?
-                    .map(\.text)
-                    .joined(separator: " ") ?? ""
-                guard !Task.isCancelled, state == .listening else { return }
-                advanceFrontier(with: text)
-                if revealedFrontier == reference.count - 1 {
-                    stop()
-                    Feedback.sessionComplete()
-                    return
-                }
+            } catch {
+                guard state == .listening else { return }
+                state = .failed
+                teardown()
             }
         }
     }
 
-    private func advanceFrontier(with transcript: String) {
-        let spoken = transcript.split(separator: " ").map(String.init)
-        guard let frontier = RecitationAligner.matchedFrontier(reference: reference, transcript: spoken),
-              frontier > revealedFrontier else { return }
-        revealedFrontier = frontier
-        onFrontierAdvance?(frontier)
+    private func ingest(_ result: SpeechTranscriber.Result) {
+        let tokens = String(result.text.characters)
+            .split(whereSeparator: \.isWhitespace)
+            .map(String.init)
+        let transcript: [String]
+        if result.isFinal {
+            finalizedTokens += tokens
+            transcript = finalizedTokens
+        } else {
+            transcript = finalizedTokens + tokens
+        }
+        dispatch(matcher.consume(partialTranscript: transcript, isFinal: result.isFinal))
+        nextExpectedIndex = matcher.nextExpectedIndex
     }
 
-    private static func loadedWhisper() async throws -> WhisperKit {
-        if let cachedWhisper { return cachedWhisper }
-        let whisper = try await WhisperKit(WhisperKitConfig(model: "openai_whisper-tiny.en", verbose: false, logLevel: .error))
-        cachedWhisper = whisper
-        return whisper
+    private func dispatch(_ event: RecitationMatcher.Event) {
+        switch event {
+        case .matched(let indices):
+            onWordsMatched?(indices)
+        case .missed:
+            onMiss?()
+        case .idle:
+            break
+        }
+    }
+
+    private func startAudioEngine(
+        feeding inputBuilder: AsyncStream<AnalyzerInput>.Continuation,
+        format analyzerFormat: AVAudioFormat?
+    ) throws {
+        let input = audioEngine.inputNode
+        let tapFormat = input.outputFormat(forBus: 0)
+        guard let analyzerFormat,
+              let converter = AVAudioConverter(from: tapFormat, to: analyzerFormat) else {
+            throw CancellationError()
+        }
+        input.removeTap(onBus: 0)
+        input.installTap(onBus: 0, bufferSize: 4096, format: tapFormat) { buffer, _ in
+            guard let converted = Self.converted(buffer, with: converter, to: analyzerFormat) else { return }
+            inputBuilder.yield(AnalyzerInput(buffer: converted))
+        }
+        audioEngine.prepare()
+        try audioEngine.start()
+    }
+
+    private func teardown() {
+        resultsTask?.cancel()
+        resultsTask = nil
+        inputBuilder?.finish()
+        inputBuilder = nil
+        audioEngine.inputNode.removeTap(onBus: 0)
+        audioEngine.stop()
+        let analyzer = analyzer
+        self.analyzer = nil
+        transcriber = nil
+        Task { await analyzer?.cancelAndFinishNow() }
+        Self.deactivateAudioSession()
+        nextExpectedIndex = nil
+        finalizedTokens = []
+    }
+
+    private nonisolated static func converted(
+        _ buffer: AVAudioPCMBuffer,
+        with converter: AVAudioConverter,
+        to format: AVAudioFormat
+    ) -> AVAudioPCMBuffer? {
+        let ratio = format.sampleRate / buffer.format.sampleRate
+        let capacity = AVAudioFrameCount(Double(buffer.frameLength) * ratio) + 16
+        guard let output = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: capacity) else { return nil }
+        nonisolated(unsafe) var pending: AVAudioPCMBuffer? = buffer
+        var conversionError: NSError?
+        converter.convert(to: output, error: &conversionError) { _, status in
+            guard let next = pending else {
+                status.pointee = .noDataNow
+                return nil
+            }
+            pending = nil
+            status.pointee = .haveData
+            return next
+        }
+        return conversionError == nil ? output : nil
+    }
+
+    private static func ensureModelInstalled(for transcriber: SpeechTranscriber) async throws {
+        if let request = try await AssetInventory.assetInstallationRequest(supporting: [transcriber]) {
+            try await request.downloadAndInstall()
+        }
     }
 
     private static func micPermissionGranted() async -> Bool {

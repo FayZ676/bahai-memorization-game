@@ -14,6 +14,8 @@ struct SessionView: View {
     @State private var showingOptions = false
     @State private var showingMicDenied = false
     @State private var scrubbing = false
+    @State private var recitedWords: Set<Int> = []
+    @State private var missShakes = 0
     let passage: Passage
     let focusCardID: UUID?
 
@@ -54,9 +56,14 @@ struct SessionView: View {
             started = true
             vm = SessionViewModel(passage: passage, store: store)
             vm.start(focusing: focusCardID)
-            voice.onFrontierAdvance = { revealThroughFrontier($0) }
+            voice.onWordsMatched = { registerRecited($0) }
+            voice.onMiss = { registerMiss() }
+            voice.onCompleted = { Feedback.sessionComplete() }
         }
-        .onChange(of: vm.presentationEpoch) { voice.stop() }
+        .onChange(of: vm.presentationEpoch) {
+            voice.stop()
+            recitedWords = []
+        }
         .onDisappear { voice.stop() }
         .alert("Microphone Access Needed", isPresented: $showingMicDenied) {
             Button("Open Settings") {
@@ -66,7 +73,7 @@ struct SessionView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Allow microphone access in Settings to reveal words by reciting them.")
+            Text("Allow microphone access in Settings to practice by reciting.")
         }
         .overlay(alignment: .top) {
             if store.dailyGoalReached {
@@ -86,14 +93,14 @@ struct SessionView: View {
         }
     }
 
-    private func revealThroughFrontier(_ frontier: Int) {
-        guard let card = vm.current else { return }
-        let revealed = card.hiddenWords.filter { $0 <= frontier }.sorted()
-        guard !revealed.isEmpty else { return }
-        withAnimation(.easeInOut(duration: 0.22)) {
-            revealed.forEach { vm.revealWord($0) }
-        }
-        Feedback.wordSpoken()
+    private func registerRecited(_ indices: [Int]) {
+        recitedWords.formUnion(indices)
+        Feedback.wordMatched()
+    }
+
+    private func registerMiss() {
+        withAnimation(.linear(duration: 0.3)) { missShakes += 1 }
+        Feedback.recitationMiss()
     }
 
     // MARK: Progress
@@ -199,8 +206,15 @@ struct SessionView: View {
     private func scripture(for card: Reviewable) -> some View {
         FlowLayout(spacing: 7, lineSpacing: 12) {
             ForEach(Array(card.words.enumerated()), id: \.offset) { idx, word in
-                WordView(token: String(word), hidden: vm.isHidden(idx))
+                let expected = voice.nextExpectedIndex == idx
+                WordView(
+                    token: String(word),
+                    hidden: vm.isHidden(idx),
+                    expected: expected,
+                    recited: recitedWords.contains(idx)
+                )
                     .font(.scripture(24))
+                    .modifier(ShakeEffect(shakes: expected ? CGFloat(missShakes) : 0))
                     .contentShape(Rectangle())
                     .allowsHitTesting(vm.isPracticing)
                     .onTapGesture {
@@ -232,6 +246,7 @@ struct SessionView: View {
                 showingMicDenied = true
             case .idle, .failed:
                 guard let card = vm.current else { return }
+                recitedWords = []
                 Task { await voice.start(reference: card.words.map(String.init)) }
             case .preparingModel:
                 break
@@ -320,9 +335,25 @@ struct SessionView: View {
     }
 }
 
+private struct ShakeEffect: GeometryEffect {
+    var shakes: CGFloat
+
+    var animatableData: CGFloat {
+        get { shakes }
+        set { shakes = newValue }
+    }
+
+    func effectValue(size: CGSize) -> ProjectionTransform {
+        ProjectionTransform(CGAffineTransform(translationX: 4 * sin(shakes * .pi * 3), y: 0))
+    }
+}
+
 private struct WordView: View {
     let token: String
     let hidden: Bool
+    let expected: Bool
+    let recited: Bool
+    @State private var pulsing = false
 
     private var parts: (lead: String, core: String, trail: String) {
         let chars = Array(token)
@@ -346,16 +377,40 @@ private struct WordView: View {
                 Text(p.core)
                     .foregroundStyle(hidden ? .clear : Theme.ink)
                     .overlay(alignment: .bottom) {
-                        if hidden {
-                            RoundedRectangle(cornerRadius: 1)
-                                .fill(Theme.accent.opacity(0.5))
-                                .frame(height: 2)
-                                .offset(y: 2)
+                        if hidden || expected {
+                            underline
                         }
                     }
             }
             if !p.trail.isEmpty { Text(p.trail).foregroundStyle(Theme.ink) }
         }
+        .scaleEffect(pulsing ? 1.12 : 1)
+        .onChange(of: recited) { wasRecited, isRecited in
+            guard isRecited, !wasRecited else { return }
+            withAnimation(.easeOut(duration: 0.1)) { pulsing = true }
+            Task {
+                try? await Task.sleep(for: .milliseconds(110))
+                withAnimation(.spring(response: 0.25, dampingFraction: 0.55)) { pulsing = false }
+            }
+        }
+    }
+
+    private var underline: some View {
+        RoundedRectangle(cornerRadius: 1)
+            .fill(underlineColor)
+            .frame(height: 2)
+            .offset(y: 2)
+            .phaseAnimator([1.0, 0.45]) { bar, phase in
+                bar.opacity(expected ? phase : 1)
+            } animation: { _ in
+                .easeInOut(duration: 0.6)
+            }
+    }
+
+    private var underlineColor: Color {
+        if expected { return Theme.accent }
+        if recited { return Theme.ember.opacity(0.6) }
+        return Theme.accent.opacity(0.5)
     }
 }
 

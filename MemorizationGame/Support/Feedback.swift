@@ -13,8 +13,12 @@ enum Feedback {
         UISelectionFeedbackGenerator().selectionChanged()
     }
 
-    static func wordSpoken() {
+    static func wordMatched() {
         UIImpactFeedbackGenerator(style: .light).impactOccurred(intensity: 0.55)
+    }
+
+    static func recitationMiss() {
+        UIImpactFeedbackGenerator(style: .rigid).impactOccurred(intensity: 0.7)
     }
 
     static func scrub() {
