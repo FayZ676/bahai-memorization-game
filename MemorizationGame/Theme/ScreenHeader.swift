@@ -19,10 +19,6 @@ struct ScreenHeader: View {
         self.init(title: title, onBack: onBack) { Color.clear }
     }
 
-    init(title: String, onBack: @escaping () -> Void, onOptions: @escaping () -> Void) {
-        self.init(title: title, onBack: onBack) { OptionsButton(action: onOptions) }
-    }
-
     var body: some View {
         HStack(spacing: 12) {
             leading
@@ -51,19 +47,6 @@ private struct BackChevron: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: "chevron.left")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(Theme.navIcon)
-        }
-        .buttonStyle(.icon)
-    }
-}
-
-private struct OptionsButton: View {
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Image(systemName: "slider.horizontal.3")
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(Theme.navIcon)
         }
