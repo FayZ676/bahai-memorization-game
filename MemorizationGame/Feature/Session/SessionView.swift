@@ -15,7 +15,9 @@ struct SessionView: View {
     @State private var showingMicDenied = false
     @State private var scrubbing = false
     @State private var recitedWords: Set<Int> = []
+    @State private var missedWords: Set<Int> = []
     @State private var missShakes = 0
+    @State private var missFlashIndex: Int?
     let passage: Passage
     let focusCardID: UUID?
 
@@ -60,12 +62,13 @@ struct SessionView: View {
             vm = SessionViewModel(passage: passage, store: store)
             vm.start(focusing: focusCardID)
             voice.onWordsMatched = { registerRecited($0) }
-            voice.onMiss = { registerMiss() }
+            voice.onMiss = { registerMiss($0, movedOn: $1) }
             voice.onCompleted = { Feedback.sessionComplete() }
         }
         .onChange(of: vm.presentationEpoch) {
             voice.stop()
             recitedWords = []
+            missedWords = []
         }
         .onChange(of: vm.current?.hiddenWords) {
             if voice.isListening { voice.stop() }
@@ -104,9 +107,17 @@ struct SessionView: View {
         Feedback.wordMatched()
     }
 
-    private func registerMiss() {
+    private func registerMiss(_ index: Int, movedOn: Bool) {
         withAnimation(.linear(duration: 0.3)) { missShakes += 1 }
+        if movedOn { missedWords.insert(index) }
+        missFlashIndex = index
         Feedback.recitationMiss()
+        Task {
+            try? await Task.sleep(for: .milliseconds(600))
+            withAnimation(.easeOut(duration: 0.3)) {
+                if missFlashIndex == index { missFlashIndex = nil }
+            }
+        }
     }
 
     // MARK: Progress
@@ -217,10 +228,12 @@ struct SessionView: View {
                     token: String(word),
                     hidden: vm.isHidden(idx),
                     expected: expected,
-                    recited: recitedWords.contains(idx)
+                    recited: recitedWords.contains(idx),
+                    missed: missedWords.contains(idx),
+                    missFlashing: missFlashIndex == idx
                 )
                     .font(.scripture(24))
-                    .modifier(ShakeEffect(shakes: expected ? CGFloat(missShakes) : 0))
+                    .modifier(ShakeEffect(shakes: missFlashIndex == idx ? CGFloat(missShakes) : 0))
                     .contentShape(Rectangle())
                     .allowsHitTesting(vm.isPracticing)
                     .onTapGesture {
@@ -264,6 +277,7 @@ struct SessionView: View {
             case .idle, .failed:
                 guard let card = vm.current else { return }
                 recitedWords = []
+                missedWords = []
                 Task {
                     await voice.start(
                         words: card.words.map(String.init),
@@ -375,6 +389,8 @@ private struct WordView: View {
     let hidden: Bool
     let expected: Bool
     let recited: Bool
+    let missed: Bool
+    let missFlashing: Bool
     @State private var pulsing = false
 
     private var parts: (lead: String, core: String, trail: String) {
@@ -420,18 +436,21 @@ private struct WordView: View {
     private var underline: some View {
         RoundedRectangle(cornerRadius: 1)
             .fill(underlineColor)
-            .frame(height: 2)
+            .frame(height: pulsing ? 3.5 : 2)
             .offset(y: 2)
+            .shadow(color: Theme.emberHot.opacity(pulsing ? 0.9 : 0), radius: 4)
             .phaseAnimator([1.0, 0.45]) { bar, phase in
-                bar.opacity(expected ? phase : 1)
+                bar.opacity(expected && !missFlashing ? phase : 1)
             } animation: { _ in
                 .easeInOut(duration: 0.6)
             }
     }
 
     private var underlineColor: Color {
+        if missFlashing { return Theme.ember }
+        if recited { return Theme.emberHot }
+        if missed { return Theme.ember }
         if expected { return Theme.accent }
-        if recited { return Theme.ember.opacity(0.6) }
         return Theme.accent.opacity(0.5)
     }
 }

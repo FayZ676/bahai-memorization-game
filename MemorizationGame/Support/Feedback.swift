@@ -14,7 +14,7 @@ enum Feedback {
     }
 
     static func wordMatched() {
-        UIImpactFeedbackGenerator(style: .light).impactOccurred(intensity: 0.55)
+        UIImpactFeedbackGenerator(style: .light).impactOccurred(intensity: 0.85)
     }
 
     static func recitationMiss() {

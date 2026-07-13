@@ -17,7 +17,7 @@ final class VoiceRecitationController {
     private(set) var nextExpectedIndex: Int?
     private(set) var heardText = ""
     var onWordsMatched: (([Int]) -> Void)?
-    var onMiss: (() -> Void)?
+    var onMiss: ((Int, Bool) -> Void)?
     var onCompleted: (() -> Void)?
 
     private let audioEngine = AVAudioEngine()
@@ -109,8 +109,8 @@ final class VoiceRecitationController {
             switch event {
             case .matched(let index):
                 onWordsMatched?([index])
-            case .missed:
-                onMiss?()
+            case .missed(let index, let movedOn):
+                onMiss?(index, movedOn)
             }
         }
     }
