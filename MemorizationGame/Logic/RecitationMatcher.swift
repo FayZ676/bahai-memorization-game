@@ -10,6 +10,7 @@ struct RecitationMatcher {
     private let hiddenIndices: [Int]
     private var queuePosition = 0
     private var failedAttempts = 0
+    private var segmentMatchConsumed = 0
 
     init(words: [String], hiddenIndices: [Int]) {
         self.words = words.map(Self.normalize)
@@ -24,16 +25,22 @@ struct RecitationMatcher {
     }
 
     mutating func finalizeSegment(_ segmentTokens: [String]) -> [Event] {
-        scan(segmentTokens, commitMisses: true)
+        let events = scan(segmentTokens, commitMisses: true)
+        segmentMatchConsumed = 0
+        return events
     }
 
     private mutating func scan(_ segmentTokens: [String], commitMisses: Bool) -> [Event] {
+        let tokens = segmentTokens.map(Self.normalize).filter { !$0.isEmpty }
         var events: [Event] = []
-        for token in segmentTokens.map(Self.normalize) where !token.isEmpty {
-            guard let expected = nextExpectedIndex else { break }
+        var position = min(segmentMatchConsumed, tokens.count)
+        while position < tokens.count, let expected = nextExpectedIndex {
+            let token = tokens[position]
+            defer { position += 1 }
             if Self.tokensMatch(token, words[expected]) {
                 events.append(.matched(index: expected))
                 advance()
+                segmentMatchConsumed = position + 1
             } else if isIgnorableContext(token, before: expected) || !commitMisses {
             } else if let nextHidden = upcomingHiddenIndex, Self.tokensMatch(token, words[nextHidden]) {
                 events.append(.missed(index: expected, movedOn: true))
