@@ -15,6 +15,7 @@ final class VoiceRecitationController {
 
     private(set) var state: State = .idle
     private(set) var nextExpectedIndex: Int?
+    private(set) var heardText = ""
     var onWordsMatched: (([Int]) -> Void)?
     var onMiss: (() -> Void)?
     var onCompleted: (() -> Void)?
@@ -24,12 +25,13 @@ final class VoiceRecitationController {
     private var transcriber: SpeechTranscriber?
     private var inputBuilder: AsyncStream<AnalyzerInput>.Continuation?
     private var resultsTask: Task<Void, Never>?
-    private var matcher = RecitationMatcher(reference: [])
+    private var matcher = RecitationMatcher(words: [], hiddenIndices: [])
     private var finalizedTokens: [String] = []
 
     var isListening: Bool { state == .listening }
 
-    func start(reference: [String]) async {
+    func start(words: [String], hiddenIndices: [Int]) async {
+        guard !hiddenIndices.isEmpty else { return }
         guard state == .idle || state == .failed || state == .micDenied else { return }
         guard await Self.micPermissionGranted() else {
             state = .micDenied
@@ -46,8 +48,9 @@ final class VoiceRecitationController {
             try await Self.ensureModelInstalled(for: transcriber)
             let analyzerFormat = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber])
             guard state == .preparingModel else { return }
-            matcher = RecitationMatcher(reference: reference)
+            matcher = RecitationMatcher(words: words, hiddenIndices: hiddenIndices)
             finalizedTokens = []
+            heardText = ""
             nextExpectedIndex = matcher.nextExpectedIndex
             let analyzer = SpeechAnalyzer(modules: [transcriber])
             self.transcriber = transcriber
@@ -104,18 +107,19 @@ final class VoiceRecitationController {
         } else {
             transcript = finalizedTokens + tokens
         }
+        heardText = String(result.text.characters).trimmingCharacters(in: .whitespacesAndNewlines)
         dispatch(matcher.consume(partialTranscript: transcript, isFinal: result.isFinal))
         nextExpectedIndex = matcher.nextExpectedIndex
     }
 
-    private func dispatch(_ event: RecitationMatcher.Event) {
-        switch event {
-        case .matched(let indices):
-            onWordsMatched?(indices)
-        case .missed:
-            onMiss?()
-        case .idle:
-            break
+    private func dispatch(_ events: [RecitationMatcher.Event]) {
+        for event in events {
+            switch event {
+            case .matched(let index):
+                onWordsMatched?([index])
+            case .missed:
+                onMiss?()
+            }
         }
     }
 
@@ -129,6 +133,7 @@ final class VoiceRecitationController {
               let converter = AVAudioConverter(from: tapFormat, to: analyzerFormat) else {
             throw CancellationError()
         }
+        converter.primeMethod = .none
         input.removeTap(onBus: 0)
         input.installTap(onBus: 0, bufferSize: 4096, format: tapFormat) { buffer, _ in
             guard let converted = Self.converted(buffer, with: converter, to: analyzerFormat) else { return }
@@ -152,6 +157,7 @@ final class VoiceRecitationController {
         Self.deactivateAudioSession()
         nextExpectedIndex = nil
         finalizedTokens = []
+        heardText = ""
     }
 
     private nonisolated static func converted(

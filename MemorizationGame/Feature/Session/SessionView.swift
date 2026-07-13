@@ -35,6 +35,9 @@ struct SessionView: View {
                 if vm.current != nil {
                     progressRow
                     readingArea
+                    if voice.isListening {
+                        heardRow
+                    }
                     if vm.isPracticing {
                         bottomBar
                     }
@@ -63,6 +66,9 @@ struct SessionView: View {
         .onChange(of: vm.presentationEpoch) {
             voice.stop()
             recitedWords = []
+        }
+        .onChange(of: vm.current?.hiddenWords) {
+            if voice.isListening { voice.stop() }
         }
         .onDisappear { voice.stop() }
         .alert("Microphone Access Needed", isPresented: $showingMicDenied) {
@@ -226,6 +232,17 @@ struct SessionView: View {
 
     // MARK: Bottom bar
 
+    private var heardRow: some View {
+        Text(voice.heardText.isEmpty ? "Listening…" : voice.heardText)
+            .font(.system(size: 11))
+            .foregroundStyle(Theme.faint)
+            .lineLimit(1)
+            .truncationMode(.head)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 26)
+            .padding(.top, 6)
+    }
+
     private var bottomBar: some View {
         HStack(spacing: 8) {
             optionsButton
@@ -247,7 +264,12 @@ struct SessionView: View {
             case .idle, .failed:
                 guard let card = vm.current else { return }
                 recitedWords = []
-                Task { await voice.start(reference: card.words.map(String.init)) }
+                Task {
+                    await voice.start(
+                        words: card.words.map(String.init),
+                        hiddenIndices: card.hiddenWords.sorted()
+                    )
+                }
             case .preparingModel:
                 break
             }

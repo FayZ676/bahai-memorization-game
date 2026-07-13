@@ -2,56 +2,92 @@ import Foundation
 
 struct RecitationMatcher {
     enum Event: Equatable {
-        case matched(indices: [Int])
-        case missed
-        case idle
+        case matched(index: Int)
+        case missed(index: Int, movedOn: Bool)
     }
 
-    private let reference: [String]
-    private(set) var cursor = 0
+    private let words: [String]
+    private let hiddenIndices: [Int]
+    private var queuePosition = 0
+    private var failedAttempts = 0
     private var consumedTokenCount = 0
 
-    init(reference: [String]) {
-        self.reference = reference.map(Self.normalize)
+    init(words: [String], hiddenIndices: [Int]) {
+        self.words = words.map(Self.normalize)
+        self.hiddenIndices = hiddenIndices.filter { $0 >= 0 && $0 < words.count }.sorted()
     }
 
-    var isComplete: Bool { cursor >= reference.count }
-    var nextExpectedIndex: Int? { isComplete ? nil : cursor }
+    var isComplete: Bool { queuePosition >= hiddenIndices.count }
+    var nextExpectedIndex: Int? { isComplete ? nil : hiddenIndices[queuePosition] }
 
-    mutating func beginNewUtteranceStream() {
-        consumedTokenCount = 0
-    }
-
-    mutating func consume(partialTranscript: [String], isFinal: Bool) -> Event {
+    mutating func consume(partialTranscript: [String], isFinal: Bool) -> [Event] {
         let tokens = partialTranscript.map(Self.normalize).filter { !$0.isEmpty }
         if tokens.count < consumedTokenCount {
             consumedTokenCount = tokens.count
         }
-        var matchedIndices: [Int] = []
-        var committedMiss = false
+        var events: [Event] = []
         var index = consumedTokenCount
-        while index < tokens.count, !isComplete {
+        while index < tokens.count, let expected = nextExpectedIndex {
+            let token = tokens[index]
             let tokenIsStable = index < tokens.count - 1 || isFinal
-            if Self.tokensMatch(tokens[index], reference[cursor]) {
-                matchedIndices.append(cursor)
-                cursor += 1
-            } else if tokenIsStable {
-                committedMiss = true
-            } else {
+            if Self.tokensMatch(token, words[expected]) {
+                events.append(.matched(index: expected))
+                advance()
+            } else if isIgnorableContext(token, before: expected) {
+            } else if !tokenIsStable {
                 break
+            } else if let nextHidden = upcomingHiddenIndex, Self.tokensMatch(token, words[nextHidden]) {
+                events.append(.missed(index: expected, movedOn: true))
+                advance()
+                events.append(.matched(index: nextHidden))
+                advance()
+            } else if matchesSkipWindow(token, after: expected) {
+                events.append(.missed(index: expected, movedOn: true))
+                advance()
+            } else {
+                failedAttempts += 1
+                if failedAttempts >= 2 {
+                    events.append(.missed(index: expected, movedOn: true))
+                    advance()
+                } else {
+                    events.append(.missed(index: expected, movedOn: false))
+                }
             }
             consumedTokenCount = index + 1
             index += 1
         }
-        if !matchedIndices.isEmpty { return .matched(indices: matchedIndices) }
-        if committedMiss { return .missed }
-        return .idle
+        return events
     }
 
+    private mutating func advance() {
+        queuePosition += 1
+        failedAttempts = 0
+    }
+
+    private var upcomingHiddenIndex: Int? {
+        queuePosition + 1 < hiddenIndices.count ? hiddenIndices[queuePosition + 1] : nil
+    }
+
+    private func isIgnorableContext(_ token: String, before expected: Int) -> Bool {
+        let previousHidden = queuePosition > 0 ? hiddenIndices[queuePosition - 1] : 0
+        let start = min(previousHidden, max(0, expected - 6))
+        return words[start..<expected].contains { Self.tokensMatch(token, $0) }
+    }
+
+    private func matchesSkipWindow(_ token: String, after expected: Int) -> Bool {
+        let window = words.indices.filter { $0 > expected && $0 <= expected + 2 }
+        return window.contains { Self.tokensMatch(token, words[$0]) }
+    }
+
+    static let spokenEquivalents: [String: String] = [
+        "oh": "o",
+    ]
+
     static func normalize(_ token: some StringProtocol) -> String {
-        token
+        let folded = token
             .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "en_US"))
             .filter(\.isLetter)
+        return spokenEquivalents[folded] ?? folded
     }
 
     static func tokensMatch(_ spoken: String, _ reference: String) -> Bool {
