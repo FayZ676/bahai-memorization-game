@@ -26,7 +26,6 @@ final class VoiceRecitationController {
     private var inputBuilder: AsyncStream<AnalyzerInput>.Continuation?
     private var resultsTask: Task<Void, Never>?
     private var matcher = RecitationMatcher(words: [], hiddenIndices: [])
-    private var finalizedTokens: [String] = []
 
     var isListening: Bool { state == .listening }
 
@@ -49,7 +48,6 @@ final class VoiceRecitationController {
             let analyzerFormat = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber])
             guard state == .preparingModel else { return }
             matcher = RecitationMatcher(words: words, hiddenIndices: hiddenIndices)
-            finalizedTokens = []
             heardText = ""
             nextExpectedIndex = matcher.nextExpectedIndex
             let analyzer = SpeechAnalyzer(modules: [transcriber])
@@ -97,18 +95,12 @@ final class VoiceRecitationController {
     }
 
     private func ingest(_ result: SpeechTranscriber.Result) {
-        let tokens = String(result.text.characters)
+        let text = String(result.text.characters)
+        let tokens = text
             .split(whereSeparator: \.isWhitespace)
             .map(String.init)
-        let transcript: [String]
-        if result.isFinal {
-            finalizedTokens += tokens
-            transcript = finalizedTokens
-        } else {
-            transcript = finalizedTokens + tokens
-        }
-        heardText = String(result.text.characters).trimmingCharacters(in: .whitespacesAndNewlines)
-        dispatch(matcher.consume(partialTranscript: transcript, isFinal: result.isFinal))
+        heardText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        dispatch(result.isFinal ? matcher.finalizeSegment(tokens) : matcher.updateVolatile(tokens))
         nextExpectedIndex = matcher.nextExpectedIndex
     }
 
@@ -156,7 +148,6 @@ final class VoiceRecitationController {
         Task { await analyzer?.cancelAndFinishNow() }
         Self.deactivateAudioSession()
         nextExpectedIndex = nil
-        finalizedTokens = []
         heardText = ""
     }
 

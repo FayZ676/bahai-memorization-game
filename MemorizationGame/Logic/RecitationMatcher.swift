@@ -10,7 +10,6 @@ struct RecitationMatcher {
     private let hiddenIndices: [Int]
     private var queuePosition = 0
     private var failedAttempts = 0
-    private var consumedTokenCount = 0
 
     init(words: [String], hiddenIndices: [Int]) {
         self.words = words.map(Self.normalize)
@@ -20,22 +19,22 @@ struct RecitationMatcher {
     var isComplete: Bool { queuePosition >= hiddenIndices.count }
     var nextExpectedIndex: Int? { isComplete ? nil : hiddenIndices[queuePosition] }
 
-    mutating func consume(partialTranscript: [String], isFinal: Bool) -> [Event] {
-        let tokens = partialTranscript.map(Self.normalize).filter { !$0.isEmpty }
-        if tokens.count < consumedTokenCount {
-            consumedTokenCount = tokens.count
-        }
+    mutating func updateVolatile(_ segmentTokens: [String]) -> [Event] {
+        scan(segmentTokens, commitMisses: false)
+    }
+
+    mutating func finalizeSegment(_ segmentTokens: [String]) -> [Event] {
+        scan(segmentTokens, commitMisses: true)
+    }
+
+    private mutating func scan(_ segmentTokens: [String], commitMisses: Bool) -> [Event] {
         var events: [Event] = []
-        var index = consumedTokenCount
-        while index < tokens.count, let expected = nextExpectedIndex {
-            let token = tokens[index]
-            let tokenIsStable = index < tokens.count - 1 || isFinal
+        for token in segmentTokens.map(Self.normalize) where !token.isEmpty {
+            guard let expected = nextExpectedIndex else { break }
             if Self.tokensMatch(token, words[expected]) {
                 events.append(.matched(index: expected))
                 advance()
-            } else if isIgnorableContext(token, before: expected) {
-            } else if !tokenIsStable {
-                break
+            } else if isIgnorableContext(token, before: expected) || !commitMisses {
             } else if let nextHidden = upcomingHiddenIndex, Self.tokensMatch(token, words[nextHidden]) {
                 events.append(.missed(index: expected, movedOn: true))
                 advance()
@@ -53,8 +52,6 @@ struct RecitationMatcher {
                     events.append(.missed(index: expected, movedOn: false))
                 }
             }
-            consumedTokenCount = index + 1
-            index += 1
         }
         return events
     }
