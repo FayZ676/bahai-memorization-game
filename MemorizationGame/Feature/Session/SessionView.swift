@@ -435,7 +435,16 @@ private struct WordView: View {
             }
             if !p.trail.isEmpty { Text(p.trail).foregroundStyle(Theme.ink) }
         }
-        .scaleEffect(pulsing ? 1.12 : 1)
+        .background {
+            if let highlight {
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(highlight)
+                    .padding(.horizontal, -5)
+                    .padding(.vertical, -3)
+            }
+        }
+        .scaleEffect(pulsing ? 1.18 : 1)
+        .animation(.easeInOut(duration: 0.18), value: expected)
         .onChange(of: recited) { wasRecited, isRecited in
             guard isRecited, !wasRecited else { return }
             withAnimation(.easeOut(duration: 0.1)) { pulsing = true }
@@ -446,14 +455,21 @@ private struct WordView: View {
         }
     }
 
+    private var highlight: Color? {
+        if pulsing { return Theme.emberHot.opacity(0.3) }
+        if missFlashing { return Theme.ember.opacity(0.26) }
+        if expected { return Theme.accent.opacity(0.13) }
+        return nil
+    }
+
     private var underline: some View {
         RoundedRectangle(cornerRadius: 1)
             .fill(underlineColor)
-            .frame(height: pulsing ? 3.5 : 2)
+            .frame(height: pulsing ? 4 : (expected ? 3 : 2))
             .offset(y: 2)
-            .shadow(color: Theme.emberHot.opacity(pulsing ? 0.9 : 0), radius: 4)
-            .phaseAnimator([1.0, 0.45]) { bar, phase in
-                bar.opacity(expected && !missFlashing ? phase : 1)
+            .shadow(color: Theme.emberHot.opacity(pulsing ? 0.9 : 0), radius: 5)
+            .phaseAnimator([1.0, 0.35]) { bar, phase in
+                bar.opacity(expected && !missFlashing && !pulsing ? phase : 1)
             } animation: { _ in
                 .easeInOut(duration: 0.6)
             }
