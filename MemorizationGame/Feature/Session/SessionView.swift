@@ -246,14 +246,27 @@ struct SessionView: View {
     // MARK: Bottom bar
 
     private var heardRow: some View {
-        Text(voice.heardText.isEmpty ? "Listening…" : voice.heardText)
-            .font(.system(size: 11))
-            .foregroundStyle(Theme.faint)
-            .lineLimit(1)
-            .truncationMode(.head)
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal, 26)
-            .padding(.top, 6)
+        HStack(spacing: 7) {
+            if voice.isSettling {
+                ProgressView()
+                    .controlSize(.mini)
+                    .tint(Theme.muted)
+            }
+            Text(heardLabel)
+                .font(.system(size: 11))
+                .foregroundStyle(Theme.faint)
+                .lineLimit(1)
+                .truncationMode(.head)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 26)
+        .padding(.top, 6)
+        .animation(.easeInOut(duration: 0.15), value: voice.isSettling)
+    }
+
+    private var heardLabel: String {
+        if voice.isSettling { return "Checking…" }
+        return voice.heardText.isEmpty ? "Listening…" : voice.heardText
     }
 
     private var bottomBar: some View {

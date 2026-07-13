@@ -16,6 +16,7 @@ final class VoiceRecitationController {
     private(set) var state: State = .idle
     private(set) var nextExpectedIndex: Int?
     private(set) var heardText = ""
+    private(set) var isSettling = false
     var onWordsMatched: (([Int]) -> Void)?
     var onMiss: ((Int, Bool) -> Void)?
     var onCompleted: (() -> Void)?
@@ -25,6 +26,7 @@ final class VoiceRecitationController {
     private var transcriber: SpeechTranscriber?
     private var inputBuilder: AsyncStream<AnalyzerInput>.Continuation?
     private var resultsTask: Task<Void, Never>?
+    private var finalizeDebounce: Task<Void, Never>?
     private var matcher = RecitationMatcher(words: [], hiddenIndices: [])
 
     var isListening: Bool { state == .listening }
@@ -100,8 +102,25 @@ final class VoiceRecitationController {
             .split(whereSeparator: \.isWhitespace)
             .map(String.init)
         heardText = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        dispatch(result.isFinal ? matcher.finalizeSegment(tokens) : matcher.updateVolatile(tokens))
+        isSettling = false
+        finalizeDebounce?.cancel()
+        if result.isFinal {
+            dispatch(matcher.finalizeSegment(tokens))
+        } else {
+            dispatch(matcher.updateVolatile(tokens))
+            scheduleIdleFinalize()
+        }
         nextExpectedIndex = matcher.nextExpectedIndex
+    }
+
+    private func scheduleIdleFinalize() {
+        finalizeDebounce = Task {
+            try? await Task.sleep(for: .milliseconds(750))
+            guard !Task.isCancelled, state == .listening, let analyzer else { return }
+            isSettling = true
+            try? await analyzer.finalize(through: nil)
+            isSettling = false
+        }
     }
 
     private func dispatch(_ events: [RecitationMatcher.Event]) {
@@ -138,6 +157,9 @@ final class VoiceRecitationController {
     private func teardown() {
         resultsTask?.cancel()
         resultsTask = nil
+        finalizeDebounce?.cancel()
+        finalizeDebounce = nil
+        isSettling = false
         inputBuilder?.finish()
         inputBuilder = nil
         audioEngine.inputNode.removeTap(onBus: 0)

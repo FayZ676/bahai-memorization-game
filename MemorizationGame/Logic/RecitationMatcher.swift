@@ -36,20 +36,23 @@ struct RecitationMatcher {
         var position = min(segmentMatchConsumed, tokens.count)
         while position < tokens.count, let expected = nextExpectedIndex {
             let token = tokens[position]
+            let leftBehind = tokens.count - 1 - position >= 2
             defer { position += 1 }
             if Self.tokensMatch(token, words[expected]) {
                 events.append(.matched(index: expected))
                 advance()
                 segmentMatchConsumed = position + 1
-            } else if isIgnorableContext(token, before: expected) || !commitMisses {
+            } else if isIgnorableContext(token, before: expected) || !(commitMisses || leftBehind) {
             } else if let nextHidden = upcomingHiddenIndex, Self.tokensMatch(token, words[nextHidden]) {
                 events.append(.missed(index: expected, movedOn: true))
                 advance()
                 events.append(.matched(index: nextHidden))
                 advance()
+                segmentMatchConsumed = position + 1
             } else if matchesSkipWindow(token, after: expected) {
                 events.append(.missed(index: expected, movedOn: true))
                 advance()
+                segmentMatchConsumed = position + 1
             } else {
                 failedAttempts += 1
                 if failedAttempts >= 2 {
@@ -58,6 +61,7 @@ struct RecitationMatcher {
                 } else {
                     events.append(.missed(index: expected, movedOn: false))
                 }
+                segmentMatchConsumed = position + 1
             }
         }
         return events
