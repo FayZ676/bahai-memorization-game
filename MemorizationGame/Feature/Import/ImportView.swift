@@ -29,6 +29,7 @@ struct ImportView: View {
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(isValid ? Theme.accent : Theme.disabled)
                 }
+                .buttonStyle(.haptic)
                 .disabled(!isValid)
             }
 

@@ -59,7 +59,7 @@ struct ChunkOptionsView: View {
                 .padding(.horizontal, 16)
                 .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.haptic)
     }
 }
 
@@ -85,6 +85,6 @@ private struct HideAmountStepper: View {
                 .frame(width: 32, height: 30)
                 .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.haptic)
     }
 }

@@ -1,6 +1,10 @@
 import UIKit
 
 enum Feedback {
+    static func tap() {
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+    }
+
     static func hide() {
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
     }

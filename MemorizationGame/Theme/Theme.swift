@@ -44,6 +44,19 @@ extension Font {
     }
 }
 
+struct HapticButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .onChange(of: configuration.isPressed) { _, pressed in
+                if pressed { Feedback.tap() }
+            }
+    }
+}
+
+extension ButtonStyle where Self == HapticButtonStyle {
+    static var haptic: HapticButtonStyle { HapticButtonStyle() }
+}
+
 struct IconButtonStyle: ButtonStyle {
     var size: CGFloat = 38
 
@@ -53,6 +66,9 @@ struct IconButtonStyle: ButtonStyle {
             .background(Theme.surface, in: Circle())
             .overlay(Circle().stroke(Theme.hairline, lineWidth: 1))
             .opacity(configuration.isPressed ? 0.6 : 1)
+            .onChange(of: configuration.isPressed) { _, pressed in
+                if pressed { Feedback.tap() }
+            }
     }
 }
 

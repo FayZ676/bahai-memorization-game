@@ -308,7 +308,7 @@ struct SessionView: View {
                 .overlay(Circle().stroke(micStroke, lineWidth: 1))
                 .contentShape(Circle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.haptic)
         .animation(.easeInOut(duration: 0.18), value: voice.state)
     }
 
@@ -352,7 +352,7 @@ struct SessionView: View {
                 .foregroundStyle(Theme.muted)
                 .iconButtonChrome()
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.haptic)
     }
 
     private var hideButton: some View {

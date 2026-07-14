@@ -41,7 +41,7 @@ struct SettingsView: View {
                             .padding(.horizontal, 16)
                             .contentShape(Rectangle())
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.haptic)
 
                         if remindersExpanded {
                             Rectangle()
@@ -80,7 +80,7 @@ struct SettingsView: View {
                                     .padding(.horizontal, 16)
                                     .contentShape(Rectangle())
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(.haptic)
                             }
                         }
                     }
@@ -113,7 +113,7 @@ struct SettingsView: View {
                         )
                         .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.haptic)
             }
         }
         .padding(3)
@@ -154,7 +154,7 @@ struct SettingsView: View {
                             .padding(.leading, 12)
                             .contentShape(Rectangle())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.haptic)
                 }
             }
             TextField("Reminder message", text: reminderMessage(reminder.id), axis: .vertical)
