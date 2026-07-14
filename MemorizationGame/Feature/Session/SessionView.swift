@@ -64,6 +64,7 @@ struct SessionView: View {
             voice.onWordsMatched = { registerRecited($0) }
             voice.onMiss = { registerMiss($0, movedOn: $1) }
             voice.onCompleted = { Feedback.sessionComplete() }
+            voice.prewarm()
         }
         .onChange(of: vm.presentationEpoch) {
             voice.stop()

@@ -27,9 +27,22 @@ final class VoiceRecitationController {
     private var inputBuilder: AsyncStream<AnalyzerInput>.Continuation?
     private var resultsTask: Task<Void, Never>?
     private var finalizeDebounce: Task<Void, Never>?
+    private var prewarmTask: Task<Void, Never>?
     private var matcher = RecitationMatcher(words: [], hiddenIndices: [])
 
     var isListening: Bool { state == .listening }
+
+    func prewarm() {
+        guard prewarmTask == nil else { return }
+        prewarmTask = Task {
+            let transcriber = Self.makeTranscriber()
+            try? await Self.ensureModelInstalled(for: transcriber)
+            let analyzer = SpeechAnalyzer(modules: [transcriber], options: Self.analyzerOptions)
+            let format = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber])
+            try? await analyzer.prepareToAnalyze(in: format)
+            await analyzer.cancelAndFinishNow()
+        }
+    }
 
     func start(words: [String], hiddenIndices: [Int]) async {
         guard !hiddenIndices.isEmpty else { return }
@@ -40,21 +53,19 @@ final class VoiceRecitationController {
         }
         state = .preparingModel
         do {
-            let transcriber = SpeechTranscriber(
-                locale: Locale(identifier: "en-US"),
-                transcriptionOptions: [],
-                reportingOptions: [.volatileResults],
-                attributeOptions: []
-            )
+            await prewarmTask?.value
+            let transcriber = Self.makeTranscriber()
             try await Self.ensureModelInstalled(for: transcriber)
             let analyzerFormat = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber])
             guard state == .preparingModel else { return }
             matcher = RecitationMatcher(words: words, hiddenIndices: hiddenIndices)
             heardText = ""
             nextExpectedIndex = matcher.nextExpectedIndex
-            let analyzer = SpeechAnalyzer(modules: [transcriber])
+            let analyzer = SpeechAnalyzer(modules: [transcriber], options: Self.analyzerOptions)
             self.transcriber = transcriber
             self.analyzer = analyzer
+            try await analyzer.prepareToAnalyze(in: analyzerFormat)
+            guard state == .preparingModel else { return }
             try Self.activateAudioSession()
             let (inputSequence, inputBuilder) = AsyncStream<AnalyzerInput>.makeStream()
             self.inputBuilder = inputBuilder
@@ -193,6 +204,20 @@ final class VoiceRecitationController {
             return next
         }
         return conversionError == nil ? output : nil
+    }
+
+    private static let analyzerOptions = SpeechAnalyzer.Options(
+        priority: .userInitiated,
+        modelRetention: .processLifetime
+    )
+
+    private static func makeTranscriber() -> SpeechTranscriber {
+        SpeechTranscriber(
+            locale: Locale(identifier: "en-US"),
+            transcriptionOptions: [],
+            reportingOptions: [.volatileResults, .fastResults],
+            attributeOptions: []
+        )
     }
 
     private static func ensureModelInstalled(for transcriber: SpeechTranscriber) async throws {
