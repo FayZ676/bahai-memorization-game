@@ -44,11 +44,14 @@ final class AppStore {
     }
 
     func applyDecay(at now: Date = Date()) {
-        let decayed = reviewables.map { DecayModel.decayed($0, at: now) }
+        let model = decay
+        let decayed = reviewables.map { model.decayed($0, at: now) }
         guard decayed != reviewables else { return }
         reviewables = decayed
         persist()
     }
+
+    var decay: DecayModel { DecayModel(baseHalfLifeDays: settings.decayRate.baseHalfLifeDays) }
 
     var engine: ReviewEngine { ReviewEngine(settings: settings) }
 
@@ -79,9 +82,10 @@ final class AppStore {
     }
 
     func decayingChunks(at now: Date = Date()) -> [(passage: Passage, card: Reviewable)] {
-        reviewables
-            .filter { DecayModel.isDecaying($0, at: now) }
-            .sorted { DecayModel.lostFraction($0, at: now) > DecayModel.lostFraction($1, at: now) }
+        let model = decay
+        return reviewables
+            .filter { model.isDecaying($0, at: now) }
+            .sorted { model.lostFraction($0, at: now) > model.lostFraction($1, at: now) }
             .compactMap { card in
                 passages.first { $0.id == card.passageRef }.map { ($0, card) }
             }
