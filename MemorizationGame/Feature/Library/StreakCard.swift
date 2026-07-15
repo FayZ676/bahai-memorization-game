@@ -65,6 +65,7 @@ struct StreakCard: View {
                     NavigationLink(value: SessionRoute(passage: passage, focusCardID: card.id)) { EmptyView() }
                         .opacity(0)
                 }
+                .simultaneousGesture(TapGesture().onEnded { Feedback.tap() })
                 .padding(.top, 14)
             Text("This passage is fading — review it to lock it back in.")
                 .font(.system(size: 11))
