@@ -129,7 +129,6 @@ struct SettingsView: View {
                 let selected = store.settings.decayRate == rate
                 Button {
                     withAnimation(.easeInOut(duration: 0.2)) { store.settings.decayRate = rate }
-                    store.applyDecay()
                 } label: {
                     Text(rate.label)
                         .font(.system(size: 13, weight: .semibold))

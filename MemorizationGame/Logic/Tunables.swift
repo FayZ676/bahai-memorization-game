@@ -47,11 +47,11 @@ enum DecayRate: String, Codable, CaseIterable {
     var detail: String {
         switch self {
         case .slow:
-            "Gentle. A chunk you just finished takes about 12 days without review to fade halfway back."
+            "Gentle. A chunk you just finished fades halfway back after about 12 nights without review."
         case .medium:
-            "Balanced. A chunk you just finished takes about 6 days without review to fade halfway back."
+            "Balanced. A chunk you just finished fades halfway back after about 6 nights without review."
         case .fast:
-            "Demanding. A chunk you just finished takes about 3 days without review to fade halfway back."
+            "Demanding. A chunk you just finished fades halfway back after about 3 nights without review."
         }
     }
 }
