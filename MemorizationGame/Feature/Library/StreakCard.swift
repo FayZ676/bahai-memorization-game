@@ -8,9 +8,7 @@ struct StreakCard: View {
         VStack(alignment: .leading, spacing: 0) {
             counterRow
             if let target = store.decayingChunks().first {
-                Rectangle()
-                    .fill(Theme.hairline)
-                    .frame(height: 1)
+                HairlineDivider()
                     .padding(.top, 15)
                 chunkPrompt(target.passage, target.card)
                     .padding(.top, 14)

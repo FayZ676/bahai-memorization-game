@@ -6,7 +6,6 @@ struct SessionRoute: Hashable {
 }
 
 struct SessionView: View {
-    @Environment(AppStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     @State private var vm: SessionViewModel
     @State private var voice = VoiceRecitationController()
@@ -20,11 +19,13 @@ struct SessionView: View {
     @State private var missFlashIndex: Int?
     let passage: Passage
     let focusCardID: UUID?
+    private let store: AppStore
 
-    init(passage: Passage, focusCardID: UUID? = nil) {
+    init(passage: Passage, store: AppStore, focusCardID: UUID? = nil) {
         self.passage = passage
+        self.store = store
         self.focusCardID = focusCardID
-        _vm = State(initialValue: SessionViewModel(passage: passage, store: AppStore()))
+        _vm = State(initialValue: SessionViewModel(passage: passage, store: store))
     }
 
     var body: some View {
@@ -56,7 +57,6 @@ struct SessionView: View {
         .task {
             guard !started else { return }
             started = true
-            vm = SessionViewModel(passage: passage, store: store)
             vm.start(focusing: focusCardID)
             voice.onWordsMatched = { registerRecited($0) }
             voice.onMiss = { registerMiss($0, movedOn: $1) }
@@ -208,16 +208,8 @@ struct SessionView: View {
                     }
                 }
         )
-        .overlay(alignment: .top) {
-            LinearGradient(colors: [Theme.bg, Theme.bg.opacity(0)], startPoint: .top, endPoint: .bottom)
-                .frame(height: 16)
-                .allowsHitTesting(false)
-        }
-        .overlay(alignment: .bottom) {
-            LinearGradient(colors: [Theme.bg.opacity(0), Theme.bg], startPoint: .top, endPoint: .bottom)
-                .frame(height: 28)
-                .allowsHitTesting(false)
-            }
+        .fadeEdge(.top, height: 16)
+        .fadeEdge(.bottom, height: 28)
         }
         .frame(maxHeight: .infinity)
     }

@@ -37,10 +37,10 @@ struct LibraryView: View {
             .background(Theme.bg)
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: Passage.self) { passage in
-                SessionView(passage: passage)
+                SessionView(passage: passage, store: store)
             }
             .navigationDestination(for: SessionRoute.self) { route in
-                SessionView(passage: route.passage, focusCardID: route.focusCardID)
+                SessionView(passage: route.passage, store: store, focusCardID: route.focusCardID)
             }
         }
         .confirmationDialog(
@@ -83,14 +83,7 @@ struct LibraryView: View {
                     }
                     .buttonStyle(.plain)
                     .listRowInsets(EdgeInsets())
-                    .listRowBackground(
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(Theme.rowBg)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .stroke(Theme.hairline, lineWidth: 1)
-                            )
-                    )
+                    .listRowBackground(Color.clear.cardSurface())
                     .listRowSeparator(.hidden)
                     .swipeActions(edge: .trailing) {
                         Button(role: .destructive) {

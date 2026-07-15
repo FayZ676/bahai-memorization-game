@@ -35,6 +35,32 @@ extension Font {
     }
 }
 
+struct CardSurface: ViewModifier {
+    var cornerRadius: CGFloat = 16
+
+    func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius)
+        content
+            .background(Theme.rowBg)
+            .clipShape(shape)
+            .overlay(shape.stroke(Theme.hairline, lineWidth: 1))
+    }
+}
+
+extension View {
+    func cardSurface(cornerRadius: CGFloat = 16) -> some View {
+        modifier(CardSurface(cornerRadius: cornerRadius))
+    }
+}
+
+struct HairlineDivider: View {
+    var body: some View {
+        Rectangle()
+            .fill(Theme.hairline)
+            .frame(height: 1)
+    }
+}
+
 struct HapticButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label

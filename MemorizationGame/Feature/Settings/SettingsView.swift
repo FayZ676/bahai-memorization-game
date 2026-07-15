@@ -44,9 +44,7 @@ struct SettingsView: View {
                         .buttonStyle(.haptic)
 
                         if remindersExpanded {
-                            Rectangle()
-                                .fill(Theme.hairline)
-                                .frame(height: 1)
+                            HairlineDivider()
                             Toggle(isOn: reminderEnabled) {
                                 Text("Daily reminders")
                                     .font(.system(size: 15, weight: .medium))
@@ -58,15 +56,11 @@ struct SettingsView: View {
 
                             if store.settings.reminderEnabled {
                                 ForEach(store.settings.reminders) { reminder in
-                                    Rectangle()
-                                        .fill(Theme.hairline)
-                                        .frame(height: 1)
+                                    HairlineDivider()
                                     reminderRow(reminder)
                                 }
 
-                                Rectangle()
-                                    .fill(Theme.hairline)
-                                    .frame(height: 1)
+                                HairlineDivider()
                                 Button(action: addReminder) {
                                     HStack(spacing: 6) {
                                         Image(systemName: "plus")

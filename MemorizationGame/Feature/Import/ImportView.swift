@@ -38,8 +38,7 @@ struct ImportView: View {
                     TextField("Title", text: $title)
                         .textInputAutocapitalization(.words)
                         .padding(12)
-                        .background(Theme.rowBg, in: RoundedRectangle(cornerRadius: 10))
-                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.hairline))
+                        .cardSurface(cornerRadius: 10)
 
                     Text("One verse per line. Remove line breaks that aren't real boundaries — like word-wrap from a pasted PDF — before pasting.")
                         .font(.caption)
@@ -61,9 +60,8 @@ struct ImportView: View {
                             .frame(minHeight: 320)
                     }
                     .padding(4)
-                    .background(Theme.rowBg, in: RoundedRectangle(cornerRadius: 10))
-                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.hairline))
-                    .scriptureFadeEdge(color: Theme.rowBg)
+                    .cardSurface(cornerRadius: 10)
+                    .fadeEdge(color: Theme.rowBg)
                 }
                 .padding(16)
             }

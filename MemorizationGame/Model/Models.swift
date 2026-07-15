@@ -38,6 +38,18 @@ struct Reviewable: Codable, Identifiable, Hashable {
     var words: [Substring] { expectedText.split(separator: " ") }
     var wordCount: Int { words.count }
 
+    mutating func toggleWord(_ index: Int) {
+        if hiddenWords.contains(index) {
+            hiddenWords.remove(index)
+        } else {
+            hiddenWords.insert(index)
+        }
+    }
+
+    mutating func setAllWords(hidden: Bool) {
+        hiddenWords = hidden ? Set(0..<wordCount) : []
+    }
+
     private enum CodingKeys: String, CodingKey {
         case id, passageRef, span, expectedText, hiddenWords, hiddenWordCount
         case lastPracticed, strength, hiddenBaseline

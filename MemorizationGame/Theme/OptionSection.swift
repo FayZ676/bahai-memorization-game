@@ -21,9 +21,7 @@ struct OptionSection<Content: View>: View {
                 content
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Theme.rowBg)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.hairline, lineWidth: 1))
+            .cardSurface(cornerRadius: 12)
 
             if let footer {
                 Text(footer)
