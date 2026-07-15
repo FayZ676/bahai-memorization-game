@@ -1,20 +1,21 @@
 import Foundation
 
 struct DecayModel {
-    static let baseHalfLifeDays: Double = 3
     static let momentumMultiplier: Double = 2
     static let strengthCap: Double = 6
 
-    static func halfLifeDays(strength: Double) -> Double {
-        baseHalfLifeDays * pow(momentumMultiplier, strength)
+    var baseHalfLifeDays: Double = DecayRate.medium.baseHalfLifeDays
+
+    func halfLifeDays(strength: Double) -> Double {
+        baseHalfLifeDays * pow(Self.momentumMultiplier, strength)
     }
 
-    static func retention(elapsedDays: Double, strength: Double) -> Double {
+    func retention(elapsedDays: Double, strength: Double) -> Double {
         guard elapsedDays > 0 else { return 1 }
         return pow(0.5, elapsedDays / halfLifeDays(strength: strength))
     }
 
-    static func targetHidden(for card: Reviewable, at now: Date) -> Int {
+    func targetHidden(for card: Reviewable, at now: Date) -> Int {
         guard let last = card.lastPracticed, card.hiddenBaseline > 0 else {
             return card.hiddenWords.count
         }
@@ -24,11 +25,11 @@ struct DecayModel {
         return min(max(target, 0), card.hiddenWords.count)
     }
 
-    static func decayed(_ card: Reviewable, at now: Date) -> Reviewable {
+    func decayed(_ card: Reviewable, at now: Date) -> Reviewable {
         let target = targetHidden(for: card, at: now)
         guard target < card.hiddenWords.count else { return card }
         var updated = card
-        let ordered = card.hiddenWords.sorted { revealRank(card.id, $0) < revealRank(card.id, $1) }
+        let ordered = card.hiddenWords.sorted { Self.revealRank(card.id, $0) < Self.revealRank(card.id, $1) }
         updated.hiddenWords = Set(ordered.prefix(target))
         return updated
     }
@@ -44,19 +45,19 @@ struct DecayModel {
         return hash
     }
 
-    static func isDecaying(_ card: Reviewable, at now: Date) -> Bool {
+    func isDecaying(_ card: Reviewable, at now: Date) -> Bool {
         card.lastPracticed != nil
             && card.hiddenBaseline > 0
             && targetHidden(for: card, at: now) < card.hiddenBaseline
     }
 
-    static func lostFraction(_ card: Reviewable, at now: Date) -> Double {
+    func lostFraction(_ card: Reviewable, at now: Date) -> Double {
         guard card.hiddenBaseline > 0 else { return 0 }
         let remaining = Double(targetHidden(for: card, at: now)) / Double(card.hiddenBaseline)
         return 1 - remaining
     }
 
-    static func wordsLost(_ card: Reviewable, at now: Date) -> Int {
+    func wordsLost(_ card: Reviewable, at now: Date) -> Int {
         max(card.hiddenBaseline - targetHidden(for: card, at: now), 0)
     }
 

@@ -74,8 +74,8 @@ struct StreakCard: View {
     }
 
     private func decayIndicator(_ card: Reviewable, at now: Date) -> some View {
-        let lost = DecayModel.wordsLost(card, at: now)
-        let fraction = DecayModel.lostFraction(card, at: now)
+        let lost = store.decay.wordsLost(card, at: now)
+        let fraction = store.decay.lostFraction(card, at: now)
         let next = DecayModel.nextDecay(for: card, after: now)
         return VStack(alignment: .leading, spacing: 7) {
             GeometryReader { geo in

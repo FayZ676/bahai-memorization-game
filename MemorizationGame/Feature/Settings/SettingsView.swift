@@ -16,6 +16,10 @@ struct SettingsView: View {
                         appearancePicker
                     }
 
+                    OptionSection(label: "Decay speed", footer: store.settings.decayRate.detail) {
+                        decayPicker
+                    }
+
                     OptionSection(
                         footer: permissionDenied
                             ? "Notifications are turned off for this app. Enable them in the Settings app to get reminders."
@@ -103,6 +107,31 @@ struct SettingsView: View {
                     store.settings.appearanceMode = mode
                 } label: {
                     Text(mode.label)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(selected ? Theme.ink : Theme.muted)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(
+                            selected ? Color.white.opacity(0.08) : .clear,
+                            in: RoundedRectangle(cornerRadius: 8)
+                        )
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.haptic)
+            }
+        }
+        .padding(3)
+    }
+
+    private var decayPicker: some View {
+        HStack(spacing: 3) {
+            ForEach(DecayRate.allCases, id: \.self) { rate in
+                let selected = store.settings.decayRate == rate
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) { store.settings.decayRate = rate }
+                    store.applyDecay()
+                } label: {
+                    Text(rate.label)
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(selected ? Theme.ink : Theme.muted)
                         .frame(maxWidth: .infinity)
