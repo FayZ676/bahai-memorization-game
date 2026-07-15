@@ -115,13 +115,6 @@ final class AppStore {
         persist()
     }
 
-    func hideMore(_ card: Reviewable) {
-        let p = passage(of: card)
-        var cards = engine.hideMore(cards(for: p), cardID: card.id)
-        recordPractice(from: card, in: &cards, passage: p)
-        replaceCards(for: p, with: cards)
-    }
-
     func setAllWords(_ card: Reviewable, hidden: Bool) {
         let p = passage(of: card)
         var cards = engine.setAllHidden(cards(for: p), cardID: card.id, hidden: hidden)

@@ -55,14 +55,6 @@ final class SessionViewModel {
     var progressTotal: Int { max(store.cards(for: passage).count, 1) }
     var chunkHeats: [Double] { store.chunkHeats(for: passage) }
 
-    var canHide: Bool { hideCount > 0 }
-
-    var hideCount: Int {
-        guard mode == .practice, let card = current else { return 0 }
-        let visible = card.wordCount - card.hiddenWords.count
-        return min(store.settings.hideAmount, visible)
-    }
-
     func start(focusing cardID: UUID? = nil) {
         let q = store.queue(for: passage)
         step = cardID.flatMap { id in q.firstIndex { $0.id == id } }
@@ -103,13 +95,6 @@ final class SessionViewModel {
         guard let card = current else { return }
         store.setAllWords(card, hidden: hidden)
         if hidden { Feedback.hide() } else { Feedback.reveal() }
-        focus(on: card.id)
-    }
-
-    func hide() {
-        guard let card = current, mode == .practice else { return }
-        store.hideMore(card)
-        Feedback.hide()
         focus(on: card.id)
     }
 }

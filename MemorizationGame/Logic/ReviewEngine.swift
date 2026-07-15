@@ -11,16 +11,6 @@ struct ReviewEngine {
         card.hiddenWords.count >= card.wordCount
     }
 
-    func hideMore(_ cards: [Reviewable], cardID: UUID) -> [Reviewable] {
-        cards.map { c in
-            guard c.id == cardID else { return c }
-            var updated = c
-            let visible = (0..<c.wordCount).filter { !c.hiddenWords.contains($0) }
-            updated.hiddenWords.formUnion(visible.prefix(settings.hideAmount))
-            return updated
-        }
-    }
-
     func setAllHidden(_ cards: [Reviewable], cardID: UUID, hidden: Bool) -> [Reviewable] {
         cards.map { c in
             guard c.id == cardID else { return c }

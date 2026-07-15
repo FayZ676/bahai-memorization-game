@@ -11,7 +11,7 @@ struct SessionView: View {
     @State private var vm: SessionViewModel
     @State private var voice = VoiceRecitationController()
     @State private var started = false
-    @State private var showingOptions = false
+    @State private var showingAllOptions = false
     @State private var showingMicDenied = false
     @State private var scrubbing = false
     @State private var recitedWords: Set<Int> = []
@@ -40,9 +40,6 @@ struct SessionView: View {
                     if voice.isListening {
                         heardRow
                     }
-                    if vm.isPracticing {
-                        bottomBar
-                    }
                 } else {
                     Spacer()
                     emptyQueue
@@ -52,9 +49,9 @@ struct SessionView: View {
         }
         .toolbar(.hidden, for: .navigationBar)
         .navigationBarBackButtonHidden(true)
-        .sheet(isPresented: $showingOptions) {
-            ChunkOptionsView(vm: vm)
-                .environment(store)
+        .confirmationDialog("Words", isPresented: $showingAllOptions, titleVisibility: .hidden) {
+            Button("Hide All Words") { vm.setAllWords(hidden: true) }
+            Button("Show All Words") { vm.setAllWords(hidden: false) }
         }
         .task {
             guard !started else { return }
@@ -180,7 +177,7 @@ struct SessionView: View {
                     if let card = vm.current {
                         scripture(for: card)
                     }
-                    Text(vm.isPracticing ? "Tap a word to show or hide it" : "Tap to recite · swipe to change passage")
+                    Text(vm.isPracticing ? "Tap a word to show or hide it · hold for all" : "Tap to recite · swipe to change passage")
                         .font(.system(size: 11))
                         .foregroundStyle(Theme.faint)
                         .padding(.top, 20)
@@ -193,6 +190,10 @@ struct SessionView: View {
                 .contentShape(Rectangle())
                 .onTapGesture {
                     withAnimation(.easeInOut(duration: 0.32)) { vm.toggleMode() }
+                }
+                .onLongPressGesture(minimumDuration: 0.4) {
+                    Feedback.flip()
+                    showingAllOptions = true
                 }
             }
             .scrollIndicators(.hidden)
@@ -270,17 +271,6 @@ struct SessionView: View {
         return voice.heardText.isEmpty ? "Listening…" : voice.heardText
     }
 
-    private var bottomBar: some View {
-        HStack(spacing: 8) {
-            optionsButton
-            hideButton
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, 20)
-        .padding(.top, 14)
-        .padding(.bottom, 8)
-    }
-
     private var micButton: some View {
         Button {
             switch voice.state {
@@ -341,40 +331,6 @@ struct SessionView: View {
 
     private var micStroke: Color {
         voice.state == .listening ? Theme.emberHot.opacity(0.7) : Theme.hairline
-    }
-
-    private var optionsButton: some View {
-        Button {
-            showingOptions = true
-        } label: {
-            Image(systemName: "slider.horizontal.3")
-                .font(.system(size: 15, weight: .medium))
-                .foregroundStyle(Theme.muted)
-                .iconButtonChrome()
-        }
-        .buttonStyle(.haptic)
-    }
-
-    private var hideButton: some View {
-        Button {
-            withAnimation(.easeInOut(duration: 0.28)) { vm.hide() }
-        } label: {
-            Text("Hide \(vm.hideCount)")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(Theme.accentPale)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-                .frame(maxWidth: .infinity)
-                .frame(height: 48)
-                .background(Theme.accent.opacity(0.22), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 13, style: .continuous)
-                        .stroke(Theme.accent.opacity(0.42), lineWidth: 1)
-                )
-                .opacity(vm.canHide ? 1 : 0.32)
-        }
-        .buttonStyle(.plain)
-        .disabled(!vm.canHide)
     }
 
     private var emptyQueue: some View {
@@ -482,19 +438,6 @@ private struct WordView: View {
         if missed { return Theme.ember }
         if expected { return Theme.accent }
         return Theme.accent.opacity(0.5)
-    }
-}
-
-private extension View {
-    func iconButtonChrome() -> some View {
-        self
-            .frame(width: 48, height: 48)
-            .background(Theme.muted.opacity(0.06), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 13, style: .continuous)
-                    .stroke(Theme.muted.opacity(0.22), lineWidth: 1)
-            )
-            .contentShape(Rectangle())
     }
 }
 

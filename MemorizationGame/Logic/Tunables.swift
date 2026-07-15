@@ -32,7 +32,6 @@ struct Reminder: Codable, Equatable, Identifiable {
 struct AppSettings: Codable, Equatable {
     static let defaultReminderMessage = "A few minutes with your passages keeps them fresh."
 
-    var hideAmount: Int = 3
     var appearanceMode: AppearanceMode = .system
     var reminderEnabled: Bool = false
     var reminders: [Reminder] = [Reminder()]
@@ -40,7 +39,7 @@ struct AppSettings: Codable, Equatable {
     static let `default` = AppSettings()
 
     private enum CodingKeys: String, CodingKey {
-        case hideAmount, appearanceMode, reminderEnabled, reminders
+        case appearanceMode, reminderEnabled, reminders
         case reminderMinuteOfDay, reminderMessage
     }
 
@@ -49,7 +48,6 @@ struct AppSettings: Codable, Equatable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let d = AppSettings.default
-        hideAmount = try container.decodeIfPresent(Int.self, forKey: .hideAmount) ?? d.hideAmount
         appearanceMode = try container.decodeIfPresent(AppearanceMode.self, forKey: .appearanceMode) ?? d.appearanceMode
         reminderEnabled = try container.decodeIfPresent(Bool.self, forKey: .reminderEnabled) ?? d.reminderEnabled
         if let stored = try container.decodeIfPresent([Reminder].self, forKey: .reminders) {
@@ -63,7 +61,6 @@ struct AppSettings: Codable, Equatable {
 
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(hideAmount, forKey: .hideAmount)
         try container.encode(appearanceMode, forKey: .appearanceMode)
         try container.encode(reminderEnabled, forKey: .reminderEnabled)
         try container.encode(reminders, forKey: .reminders)
