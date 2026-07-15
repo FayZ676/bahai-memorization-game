@@ -39,6 +39,15 @@ final class AppStore {
             self.recentPassageRefs = []
             self.settings = .default
         }
+
+        applyDecay()
+    }
+
+    func applyDecay(at now: Date = Date()) {
+        let decayed = reviewables.map { DecayModel.decayed($0, at: now) }
+        guard decayed != reviewables else { return }
+        reviewables = decayed
+        persist()
     }
 
     var engine: ReviewEngine { ReviewEngine(settings: settings) }
@@ -69,12 +78,13 @@ final class AppStore {
         practiceLog.streak()
     }
 
-    var streakTarget: (passage: Passage, card: Reviewable)? {
-        StreakTargetPicker(engine: engine).target(
-            passages: passagesSorted,
-            reviewables: reviewables,
-            recentPassageRefs: recentPassageRefs
-        )
+    func decayingChunks(at now: Date = Date()) -> [(passage: Passage, card: Reviewable)] {
+        reviewables
+            .filter { DecayModel.isDecaying($0, at: now) }
+            .sorted { DecayModel.lostFraction($0, at: now) > DecayModel.lostFraction($1, at: now) }
+            .compactMap { card in
+                passages.first { $0.id == card.passageRef }.map { ($0, card) }
+            }
     }
 
     func progress(for passage: Passage) -> (memorized: Int, total: Int) {
@@ -107,29 +117,32 @@ final class AppStore {
 
     func hideMore(_ card: Reviewable) {
         let p = passage(of: card)
-        let cards = engine.hideMore(cards(for: p), cardID: card.id)
-        recordPractice(from: card, in: cards, passage: p)
+        var cards = engine.hideMore(cards(for: p), cardID: card.id)
+        recordPractice(from: card, in: &cards, passage: p)
         replaceCards(for: p, with: cards)
     }
 
     func setAllWords(_ card: Reviewable, hidden: Bool) {
         let p = passage(of: card)
-        let cards = engine.setAllHidden(cards(for: p), cardID: card.id, hidden: hidden)
-        recordPractice(from: card, in: cards, passage: p)
+        var cards = engine.setAllHidden(cards(for: p), cardID: card.id, hidden: hidden)
+        recordPractice(from: card, in: &cards, passage: p)
         replaceCards(for: p, with: cards)
     }
 
     func toggleWord(_ card: Reviewable, index: Int) {
         let p = passage(of: card)
-        let cards = engine.toggleWord(cards(for: p), cardID: card.id, index: index)
-        recordPractice(from: card, in: cards, passage: p)
+        var cards = engine.toggleWord(cards(for: p), cardID: card.id, index: index)
+        recordPractice(from: card, in: &cards, passage: p)
         replaceCards(for: p, with: cards)
     }
 
-    private func recordPractice(from old: Reviewable, in updated: [Reviewable], passage: Passage) {
-        guard let new = updated.first(where: { $0.id == old.id }) else { return }
-        let newlyHidden = new.hiddenWords.subtracting(old.hiddenWords).count
+    private func recordPractice(from old: Reviewable, in updated: inout [Reviewable], passage: Passage, now: Date = Date()) {
+        guard let index = updated.firstIndex(where: { $0.id == old.id }) else { return }
+        let newlyHidden = updated[index].hiddenWords.subtracting(old.hiddenWords).count
         guard newlyHidden > 0 else { return }
+        updated[index].lastPracticed = now
+        updated[index].strength = min(updated[index].strength + 1, DecayModel.strengthCap)
+        updated[index].hiddenBaseline = updated[index].hiddenWords.count
         let reachedGoalBefore = practiceLog.reachedGoal()
         practiceLog.record(words: newlyHidden)
         if !reachedGoalBefore && practiceLog.reachedGoal() {

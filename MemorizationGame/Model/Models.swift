@@ -11,13 +11,28 @@ struct Reviewable: Codable, Identifiable, Hashable {
     var span: Span
     var expectedText: String
     var hiddenWords: Set<Int>
+    var lastPracticed: Date?
+    var strength: Double
+    var hiddenBaseline: Int
 
-    init(id: UUID = UUID(), passageRef: UUID, span: Span, expectedText: String, hiddenWords: Set<Int>) {
+    init(
+        id: UUID = UUID(),
+        passageRef: UUID,
+        span: Span,
+        expectedText: String,
+        hiddenWords: Set<Int>,
+        lastPracticed: Date? = nil,
+        strength: Double = 0,
+        hiddenBaseline: Int = 0
+    ) {
         self.id = id
         self.passageRef = passageRef
         self.span = span
         self.expectedText = expectedText
         self.hiddenWords = hiddenWords
+        self.lastPracticed = lastPracticed
+        self.strength = strength
+        self.hiddenBaseline = hiddenBaseline
     }
 
     var words: [Substring] { expectedText.split(separator: " ") }
@@ -25,6 +40,7 @@ struct Reviewable: Codable, Identifiable, Hashable {
 
     private enum CodingKeys: String, CodingKey {
         case id, passageRef, span, expectedText, hiddenWords, hiddenWordCount
+        case lastPracticed, strength, hiddenBaseline
     }
 
     init(from decoder: Decoder) throws {
@@ -39,6 +55,13 @@ struct Reviewable: Codable, Identifiable, Hashable {
             let legacyPrefix = try container.decodeIfPresent(Int.self, forKey: .hiddenWordCount) ?? 0
             hiddenWords = Set(0..<legacyPrefix)
         }
+        strength = try container.decodeIfPresent(Double.self, forKey: .strength) ?? 0
+        hiddenBaseline = try container.decodeIfPresent(Int.self, forKey: .hiddenBaseline) ?? hiddenWords.count
+        if let stored = try container.decodeIfPresent(Date.self, forKey: .lastPracticed) {
+            lastPracticed = stored
+        } else {
+            lastPracticed = hiddenWords.isEmpty ? nil : Date()
+        }
     }
 
     func encode(to encoder: Encoder) throws {
@@ -48,6 +71,9 @@ struct Reviewable: Codable, Identifiable, Hashable {
         try container.encode(span, forKey: .span)
         try container.encode(expectedText, forKey: .expectedText)
         try container.encode(hiddenWords, forKey: .hiddenWords)
+        try container.encodeIfPresent(lastPracticed, forKey: .lastPracticed)
+        try container.encode(strength, forKey: .strength)
+        try container.encode(hiddenBaseline, forKey: .hiddenBaseline)
     }
 }
 

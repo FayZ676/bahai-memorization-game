@@ -6,7 +6,7 @@ struct StreakCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             counterRow
-            if !store.practicedToday, let target = store.streakTarget {
+            if let target = store.decayingChunks().first {
                 Rectangle()
                     .fill(Theme.hairline)
                     .frame(height: 1)
@@ -66,7 +66,7 @@ struct StreakCard: View {
                         .opacity(0)
                 }
                 .padding(.top, 14)
-            Text("Practice today to keep the streak alive.")
+            Text("This passage is fading — review it to lock it back in.")
                 .font(.system(size: 11))
                 .foregroundStyle(Theme.faint)
                 .frame(maxWidth: .infinity)
