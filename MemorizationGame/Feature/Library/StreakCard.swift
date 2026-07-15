@@ -46,7 +46,8 @@ struct StreakCard: View {
     }
 
     private func chunkPrompt(_ passage: Passage, _ card: Reviewable) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
+        let now = Date()
+        return VStack(alignment: .leading, spacing: 0) {
             Text("\(passage.title) · Chunk \(card.span.start)")
                 .font(.system(size: 11.5, weight: .semibold))
                 .foregroundStyle(Theme.accent)
@@ -55,6 +56,8 @@ struct StreakCard: View {
                 .foregroundStyle(Theme.ink)
                 .lineLimit(3)
                 .padding(.top, 5)
+            decayIndicator(card, at: now)
+                .padding(.top, 12)
             Text("Practice this chunk")
                 .font(.system(size: 14, weight: .bold))
                 .foregroundStyle(Theme.bg)
@@ -67,11 +70,38 @@ struct StreakCard: View {
                 }
                 .simultaneousGesture(TapGesture().onEnded { Feedback.tap() })
                 .padding(.top, 14)
-            Text("This passage is fading — review it to lock it back in.")
-                .font(.system(size: 11))
-                .foregroundStyle(Theme.faint)
-                .frame(maxWidth: .infinity)
-                .padding(.top, 12)
+        }
+    }
+
+    private func decayIndicator(_ card: Reviewable, at now: Date) -> some View {
+        let lost = DecayModel.wordsLost(card, at: now)
+        let fraction = DecayModel.lostFraction(card, at: now)
+        let next = DecayModel.nextDecay(for: card, after: now)
+        return VStack(alignment: .leading, spacing: 7) {
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Theme.surface)
+                    Capsule()
+                        .fill(Theme.ember)
+                        .frame(width: max(geo.size.width * fraction, fraction > 0 ? 3 : 0))
+                }
+            }
+            .frame(height: 3)
+            HStack(spacing: 0) {
+                Text("\(lost) word\(lost == 1 ? "" : "s") faded")
+                    .foregroundStyle(Theme.ember)
+                Spacer()
+                if let next {
+                    HStack(spacing: 4) {
+                        Text("Next fade in")
+                            .foregroundStyle(Theme.faint)
+                        Text(timerInterval: min(now, next)...next, countsDown: true)
+                            .monospacedDigit()
+                            .foregroundStyle(Theme.muted)
+                    }
+                }
+            }
+            .font(.system(size: 11, weight: .medium))
         }
     }
 }

@@ -55,4 +55,14 @@ struct DecayModel {
         let remaining = Double(targetHidden(for: card, at: now)) / Double(card.hiddenBaseline)
         return 1 - remaining
     }
+
+    static func wordsLost(_ card: Reviewable, at now: Date) -> Int {
+        max(card.hiddenBaseline - targetHidden(for: card, at: now), 0)
+    }
+
+    static func nextDecay(for card: Reviewable, after now: Date) -> Date? {
+        guard let last = card.lastPracticed, card.hiddenBaseline > 0 else { return nil }
+        let elapsedDays = (now.timeIntervalSince(last) / 86_400).rounded(.down)
+        return last.addingTimeInterval((elapsedDays + 1) * 86_400)
+    }
 }
