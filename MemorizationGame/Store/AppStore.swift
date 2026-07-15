@@ -53,7 +53,7 @@ final class AppStore {
 
     var decay: DecayModel { DecayModel(baseHalfLifeDays: settings.decayRate.baseHalfLifeDays) }
 
-    var engine: ReviewEngine { ReviewEngine(settings: settings) }
+    var engine: ReviewEngine { ReviewEngine() }
 
     func cards(for passage: Passage) -> [Reviewable] {
         reviewables.filter { $0.passageRef == passage.id }
@@ -89,12 +89,6 @@ final class AppStore {
             .compactMap { card in
                 passages.first { $0.id == card.passageRef }.map { ($0, card) }
             }
-    }
-
-    func progress(for passage: Passage) -> (memorized: Int, total: Int) {
-        let cards = cards(for: passage)
-        let memorized = cards.filter { $0.wordCount > 0 && engine.isFullyHidden($0) }.count
-        return (memorized, cards.count)
     }
 
     func createPassage(title: String, units: [String]) {

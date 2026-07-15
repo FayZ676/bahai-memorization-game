@@ -11,17 +11,12 @@ enum Theme {
     static let navIcon = Color(hex: 0xC9C4BA)
 
     static let accent = Color(hex: 0xD9A15A)
-    static let accentBright = Color(hex: 0xE7B878)
-    static let accentPale = Color(hex: 0xF0D6A8)
-    static let accentDeep = Color(hex: 0xC78F45)
-    static let accentMuted = Color(hex: 0x3A423F)
 
     static let ember = Color(hex: 0xC2431B)
     static let emberHot = Color(hex: 0xF5A03C)
 
     static let hairline = Color.white.opacity(0.06)
     static let surface = Color.white.opacity(0.05)
-    static let surfaceFaint = Color.white.opacity(0.03)
     static let rowBg = Color(hex: 0x1B1916)
 }
 
@@ -37,10 +32,6 @@ extension Color {
 extension Font {
     static func scripture(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
         .system(size: size, weight: weight, design: .serif)
-    }
-
-    static func eyebrow(_ size: CGFloat) -> Font {
-        .system(size: size, weight: .semibold)
     }
 }
 

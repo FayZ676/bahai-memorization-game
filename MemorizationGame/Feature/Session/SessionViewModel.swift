@@ -46,11 +46,6 @@ final class SessionViewModel {
         focus(on: card.id)
     }
 
-    func revealWord(_ idx: Int) {
-        guard let card = current, mode == .practice, card.hiddenWords.contains(idx) else { return }
-        store.toggleWord(card, index: idx)
-    }
-
     var progressNumber: Int { current?.span.start ?? 0 }
     var progressTotal: Int { max(store.cards(for: passage).count, 1) }
     var chunkHeats: [Double] { store.chunkHeats(for: passage) }

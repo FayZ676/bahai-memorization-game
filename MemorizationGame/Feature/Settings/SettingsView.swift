@@ -12,10 +12,6 @@ struct SettingsView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
-                    OptionSection(label: "Appearance") {
-                        appearancePicker
-                    }
-
                     OptionSection(label: "Decay speed", footer: store.settings.decayRate.detail) {
                         decayPicker
                     }
@@ -97,30 +93,6 @@ struct SettingsView: View {
         .background(Theme.bg)
         .toolbar(.hidden, for: .navigationBar)
         .navigationBarBackButtonHidden(true)
-    }
-
-    private var appearancePicker: some View {
-        HStack(spacing: 3) {
-            ForEach(AppearanceMode.allCases, id: \.self) { mode in
-                let selected = store.settings.appearanceMode == mode
-                Button {
-                    store.settings.appearanceMode = mode
-                } label: {
-                    Text(mode.label)
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(selected ? Theme.ink : Theme.muted)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                        .background(
-                            selected ? Color.white.opacity(0.08) : .clear,
-                            in: RoundedRectangle(cornerRadius: 8)
-                        )
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.haptic)
-            }
-        }
-        .padding(3)
     }
 
     private var decayPicker: some View {

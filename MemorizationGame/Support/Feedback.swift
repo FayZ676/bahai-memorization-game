@@ -34,10 +34,6 @@ enum Feedback {
         UIImpactFeedbackGenerator(style: style).impactOccurred(intensity: forward ? 0.8 : 0.6)
     }
 
-    static func edge() {
-        UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
-    }
-
     static func sessionComplete() {
         UINotificationFeedbackGenerator().notificationOccurred(.success)
     }

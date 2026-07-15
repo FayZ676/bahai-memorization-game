@@ -1,14 +1,8 @@
 import Foundation
 
 struct ReviewEngine {
-    let settings: AppSettings
-
     func queue(_ cards: [Reviewable]) -> [Reviewable] {
         cards.sorted { $0.span.start < $1.span.start }
-    }
-
-    func isFullyHidden(_ card: Reviewable) -> Bool {
-        card.hiddenWords.count >= card.wordCount
     }
 
     func setAllHidden(_ cards: [Reviewable], cardID: UUID, hidden: Bool) -> [Reviewable] {
