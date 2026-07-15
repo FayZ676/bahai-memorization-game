@@ -76,9 +76,13 @@ struct LibraryView: View {
                         path.append(passage)
                     } label: {
                         PassageRow(passage: passage)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 12)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .contentShape(Rectangle())
+                    .listRowInsets(EdgeInsets())
                     .listRowBackground(
                         RoundedRectangle(cornerRadius: 16)
                             .fill(Theme.rowBg)
