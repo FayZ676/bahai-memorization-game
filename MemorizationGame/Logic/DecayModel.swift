@@ -1,8 +1,8 @@
 import Foundation
 
 struct DecayModel {
-    static let baseHalfLifeDays: Double = 1
-    static let momentumMultiplier: Double = 1.8
+    static let baseHalfLifeDays: Double = 3
+    static let momentumMultiplier: Double = 2
     static let strengthCap: Double = 6
 
     static func halfLifeDays(strength: Double) -> Double {
@@ -18,7 +18,7 @@ struct DecayModel {
         guard let last = card.lastPracticed, card.hiddenBaseline > 0 else {
             return card.hiddenWords.count
         }
-        let elapsedDays = now.timeIntervalSince(last) / 86_400
+        let elapsedDays = (now.timeIntervalSince(last) / 86_400).rounded(.down)
         let retained = retention(elapsedDays: elapsedDays, strength: card.strength)
         let target = Int((retained * Double(card.hiddenBaseline)).rounded())
         return min(max(target, 0), card.hiddenWords.count)
@@ -28,9 +28,20 @@ struct DecayModel {
         let target = targetHidden(for: card, at: now)
         guard target < card.hiddenWords.count else { return card }
         var updated = card
-        let ordered = card.hiddenWords.sorted(by: >)
-        updated.hiddenWords = Set(ordered.suffix(target))
+        let ordered = card.hiddenWords.sorted { revealRank(card.id, $0) < revealRank(card.id, $1) }
+        updated.hiddenWords = Set(ordered.prefix(target))
         return updated
+    }
+
+    static func revealRank(_ id: UUID, _ index: Int) -> UInt64 {
+        var hash = UInt64(bitPattern: Int64(index)) &+ 0x9E37_79B9_7F4A_7C15
+        withUnsafeBytes(of: id.uuid) { bytes in
+            for byte in bytes { hash = (hash ^ UInt64(byte)) &* 0x0000_0100_0000_01B3 }
+        }
+        hash ^= hash >> 33
+        hash = hash &* 0xFF51_AFD7_ED55_8CCD
+        hash ^= hash >> 33
+        return hash
     }
 
     static func isDecaying(_ card: Reviewable, at now: Date) -> Bool {
