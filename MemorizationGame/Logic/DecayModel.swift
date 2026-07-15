@@ -19,10 +19,16 @@ struct DecayModel {
         guard let last = card.lastPracticed, card.hiddenBaseline > 0 else {
             return card.hiddenWords.count
         }
-        let elapsedDays = (now.timeIntervalSince(last) / 86_400).rounded(.down)
-        let retained = retention(elapsedDays: elapsedDays, strength: card.strength)
+        let retained = retention(elapsedDays: Double(Self.nightsElapsed(from: last, to: now)), strength: card.strength)
         let target = Int((retained * Double(card.hiddenBaseline)).rounded())
         return min(max(target, 0), card.hiddenWords.count)
+    }
+
+    static func nightsElapsed(from last: Date, to now: Date) -> Int {
+        let calendar = Calendar.current
+        let start = calendar.startOfDay(for: last)
+        let end = calendar.startOfDay(for: now)
+        return max(calendar.dateComponents([.day], from: start, to: end).day ?? 0, 0)
     }
 
     func decayed(_ card: Reviewable, at now: Date) -> Reviewable {
@@ -62,8 +68,8 @@ struct DecayModel {
     }
 
     static func nextDecay(for card: Reviewable, after now: Date) -> Date? {
-        guard let last = card.lastPracticed, card.hiddenBaseline > 0 else { return nil }
-        let elapsedDays = (now.timeIntervalSince(last) / 86_400).rounded(.down)
-        return last.addingTimeInterval((elapsedDays + 1) * 86_400)
+        guard card.lastPracticed != nil, card.hiddenBaseline > 0 else { return nil }
+        let calendar = Calendar.current
+        return calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now))
     }
 }
