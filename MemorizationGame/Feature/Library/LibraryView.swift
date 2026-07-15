@@ -3,9 +3,10 @@ import SwiftUI
 struct LibraryView: View {
     @Environment(AppStore.self) private var store
     @State private var pendingDelete: Passage?
+    @State private var path = NavigationPath()
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             VStack(spacing: 0) {
                 ScreenHeader(title: "Library", leading: {
                     NavigationLink {
@@ -70,12 +71,14 @@ struct LibraryView: View {
 
             Section {
                 ForEach(store.passagesSorted) { passage in
-                    NavigationLink(value: passage) {
+                    Button {
+                        Feedback.tap()
+                        path.append(passage)
+                    } label: {
                         PassageRow(passage: passage)
                     }
                     .buttonStyle(.plain)
                     .contentShape(Rectangle())
-                    .simultaneousGesture(TapGesture().onEnded { Feedback.tap() })
                     .listRowBackground(
                         RoundedRectangle(cornerRadius: 16)
                             .fill(Theme.rowBg)
