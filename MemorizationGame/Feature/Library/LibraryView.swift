@@ -62,7 +62,7 @@ struct LibraryView: View {
     private var list: some View {
         List {
             Section {
-                StreakCard()
+                StreakCard(practice: { path.append($0) })
                     .listRowBackground(streakBackground)
                     .listRowSeparator(.hidden)
             } header: {

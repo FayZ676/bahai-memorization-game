@@ -2,6 +2,7 @@ import SwiftUI
 
 struct StreakCard: View {
     @Environment(AppStore.self) private var store
+    let practice: (SessionRoute) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -55,18 +56,20 @@ struct StreakCard: View {
                 .foregroundStyle(Theme.ink)
                 .lineLimit(3)
                 .padding(.top, 5)
-            Text("Practice this chunk")
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(Theme.bg)
-                .frame(maxWidth: .infinity)
-                .frame(height: 44)
-                .background(Theme.accent, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-                .overlay {
-                    NavigationLink(value: SessionRoute(passage: passage, focusCardID: card.id)) { EmptyView() }
-                        .opacity(0)
-                }
-                .simultaneousGesture(TapGesture().onEnded { Feedback.tap() })
-                .padding(.top, 14)
+            Button {
+                Feedback.tap()
+                practice(SessionRoute(passage: passage, focusCardID: card.id))
+            } label: {
+                Text("Practice this chunk")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(Theme.bg)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .background(Theme.accent, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 14)
             Text("This passage is fading — review it to lock it back in.")
                 .font(.system(size: 11))
                 .foregroundStyle(Theme.faint)
