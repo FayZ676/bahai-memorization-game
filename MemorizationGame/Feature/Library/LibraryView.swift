@@ -75,6 +75,7 @@ struct LibraryView: View {
                             NavigationLink(value: passage) { EmptyView() }
                                 .opacity(0)
                         }
+                        .simultaneousGesture(TapGesture().onEnded { Feedback.tap() })
                     .listRowBackground(
                         RoundedRectangle(cornerRadius: 16)
                             .fill(Theme.rowBg)
