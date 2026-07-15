@@ -70,12 +70,12 @@ struct LibraryView: View {
 
             Section {
                 ForEach(store.passagesSorted) { passage in
-                    PassageRow(passage: passage)
-                        .overlay {
-                            NavigationLink(value: passage) { EmptyView() }
-                                .opacity(0)
-                        }
-                        .simultaneousGesture(TapGesture().onEnded { Feedback.tap() })
+                    NavigationLink(value: passage) {
+                        PassageRow(passage: passage)
+                    }
+                    .buttonStyle(.plain)
+                    .contentShape(Rectangle())
+                    .simultaneousGesture(TapGesture().onEnded { Feedback.tap() })
                     .listRowBackground(
                         RoundedRectangle(cornerRadius: 16)
                             .fill(Theme.rowBg)
