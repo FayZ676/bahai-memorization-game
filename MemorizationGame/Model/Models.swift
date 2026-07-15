@@ -80,4 +80,22 @@ struct Reviewable: Codable, Identifiable, Hashable {
 struct Passage: Codable, Identifiable, Hashable {
     var id: UUID = UUID()
     var title: String
+    var dateAdded: Date
+
+    init(id: UUID = UUID(), title: String, dateAdded: Date = Date()) {
+        self.id = id
+        self.title = title
+        self.dateAdded = dateAdded
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, title, dateAdded
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        title = try container.decode(String.self, forKey: .title)
+        dateAdded = try container.decodeIfPresent(Date.self, forKey: .dateAdded) ?? Date()
+    }
 }

@@ -153,9 +153,15 @@ private struct PassageRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(passage.title)
-                .font(.scripture(19, weight: .medium))
-                .foregroundStyle(Theme.ink)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(passage.title)
+                    .font(.scripture(19, weight: .medium))
+                    .foregroundStyle(Theme.ink)
+
+                Text("Added \(passage.dateAdded.formatted(.dateTime.month(.abbreviated).day().year()))")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(Theme.faint)
+            }
 
             HeatStrip(heats: store.chunkHeats(for: passage))
                 .frame(height: 6)

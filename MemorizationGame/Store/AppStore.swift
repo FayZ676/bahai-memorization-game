@@ -94,7 +94,10 @@ final class AppStore {
     }
 
     func createPassage(title: String, units: [String]) {
-        let passage = Passage(title: title.trimmingCharacters(in: .whitespacesAndNewlines))
+        let passage = Passage(
+            title: title.trimmingCharacters(in: .whitespacesAndNewlines),
+            dateAdded: Date()
+        )
         passages.append(passage)
         let cards = units.enumerated().map { (i, text) in
             Reviewable(
