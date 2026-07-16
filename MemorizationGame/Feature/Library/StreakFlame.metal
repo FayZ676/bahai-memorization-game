@@ -93,12 +93,19 @@ static float3 rampColor(float d, float h, float az) {
 
         float yy = uv.y / Hm;
         float dx = (uv.x - cx) * columns / (0.36 + 0.38 * I);
-        yy += (n - 0.5) * (0.20 + 0.65 * yy) * (0.5 + 0.9 * live) * egy;
-        dx += (n - 0.5) * 0.5 * yy * live * egy;
 
-        float vert = clamp(1.0 - yy, 0.0, 1.0);
-        float envW = max(0.05, 1.0 - yy * 0.72);
+        float sway = fbm(float2(fi * 5.3 + t * 0.5, uv.y * 2.1 - t * 0.9)) - 0.5;
+        dx += sway * (0.30 + 1.1 * yy) * live * egy;
+
+        yy += (n - 0.5) * (0.30 + 0.55 * yy) * (0.5 + 0.9 * live) * egy;
+        dx += (n - 0.5) * (0.22 + 0.55 * yy) * live * egy;
+
+        float body = clamp(1.0 - yy, 0.0, 1.0);
+        float profile = pow(body, 0.55) * (0.62 + 0.38 * body);
+        float edgeN = fbm(float2(dx * 2.1 + fi * 9.1, uv.y * 3.0 - t * 1.2));
+        float envW = max(0.05, profile * (0.66 + 0.62 * edgeN));
         float env = smoothstep(1.0, 0.0, abs(dx) / envW);
+        float vert = pow(body, 1.2);
         float d = vert * env * (0.62 + 0.65 * n);
 
         float tipness = smoothstep(0.30, 0.85, yy) * (0.55 + 0.45 * I);
@@ -126,7 +133,8 @@ static float3 rampColor(float d, float h, float az) {
             yb += (n - 0.5) * 0.40 * yb;
             dxb += (n - 0.5) * 0.35 * yb;
             float vb = clamp(1.0 - yb, 0.0, 1.0);
-            float eb = smoothstep(1.0, 0.0, abs(dxb) / max(0.05, 1.0 - yb * 0.6));
+            float wb = pow(vb, 0.6) * (0.78 + 0.44 * edgeN);
+            float eb = smoothstep(1.0, 0.0, abs(dxb) / max(0.05, wb));
             float db = vb * eb * (0.70 + 0.50 * n) * B;
             coneD = max(coneD, db);
         }
