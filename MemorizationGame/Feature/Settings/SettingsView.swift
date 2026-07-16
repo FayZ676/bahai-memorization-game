@@ -26,11 +26,11 @@ struct SettingsView: View {
                         } label: {
                             HStack(spacing: 8) {
                                 Text("Reminders")
-                                    .font(.system(size: 15, weight: .medium))
+                                    .font(Typography.body)
                                     .foregroundStyle(Theme.ink)
                                 Spacer()
                                 Text(remindersSummary)
-                                    .font(.system(size: 15))
+                                    .font(Typography.body)
                                     .foregroundStyle(Theme.muted)
                                 Image(systemName: "chevron.down")
                                     .font(.system(size: 13, weight: .semibold))
@@ -47,7 +47,7 @@ struct SettingsView: View {
                             HairlineDivider()
                             Toggle(isOn: reminderEnabled) {
                                 Text("Daily reminders")
-                                    .font(.system(size: 15, weight: .medium))
+                                    .font(Typography.body)
                                     .foregroundStyle(Theme.ink)
                             }
                             .tint(Theme.accent)
@@ -66,7 +66,7 @@ struct SettingsView: View {
                                         Image(systemName: "plus")
                                             .font(.system(size: 13, weight: .semibold))
                                         Text("Add reminder")
-                                            .font(.system(size: 15, weight: .medium))
+                                            .font(Typography.body)
                                     }
                                     .foregroundStyle(Theme.accent)
                                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -97,7 +97,7 @@ struct SettingsView: View {
                     withAnimation(.easeInOut(duration: 0.2)) { store.settings.decayRate = rate }
                 } label: {
                     Text(rate.label)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(Typography.label)
                         .foregroundStyle(selected ? Theme.ink : Theme.muted)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
@@ -135,7 +135,7 @@ struct SettingsView: View {
             HStack {
                 DatePicker(selection: reminderTime(reminder.id), displayedComponents: .hourAndMinute) {
                     Text("Time")
-                        .font(.system(size: 15, weight: .medium))
+                        .font(Typography.body)
                         .foregroundStyle(Theme.ink)
                 }
                 if store.settings.reminders.count > 1 {
@@ -152,7 +152,7 @@ struct SettingsView: View {
                 }
             }
             TextField("Reminder message", text: reminderMessage(reminder.id), axis: .vertical)
-                .font(.system(size: 15))
+                .font(Typography.body)
                 .foregroundStyle(Theme.muted)
                 .lineLimit(1...4)
                 .tint(Theme.accent)

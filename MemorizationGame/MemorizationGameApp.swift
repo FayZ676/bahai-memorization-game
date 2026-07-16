@@ -5,6 +5,10 @@ struct MemorizationGameApp: App {
     @State private var store = AppStore()
     @Environment(\.scenePhase) private var scenePhase
 
+    init() {
+        AppFont.register()
+    }
+
     var body: some Scene {
         WindowGroup {
             LibraryView()

@@ -9,7 +9,7 @@ struct OptionSection<Content: View>: View {
         VStack(alignment: .leading, spacing: 0) {
             if let label {
                 Text(label)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(Typography.footnote)
                     .tracking(0.5)
                     .textCase(.uppercase)
                     .foregroundStyle(Theme.faint)
@@ -25,7 +25,7 @@ struct OptionSection<Content: View>: View {
 
             if let footer {
                 Text(footer)
-                    .font(.system(size: 12))
+                    .font(Typography.caption)
                     .foregroundStyle(Theme.faint)
                     .lineSpacing(2)
                     .padding(.horizontal, 6)

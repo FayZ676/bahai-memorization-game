@@ -26,7 +26,7 @@ struct ImportView: View {
                     dismiss()
                 } label: {
                     Text("Add")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(Typography.body)
                         .foregroundStyle(isValid ? Theme.accent : Theme.disabled)
                 }
                 .buttonStyle(.haptic)
@@ -41,20 +41,20 @@ struct ImportView: View {
                         .cardSurface(cornerRadius: 10)
 
                     Text("One verse per line. Remove line breaks that aren't real boundaries — like word-wrap from a pasted PDF — before pasting.")
-                        .font(.caption)
+                        .font(Typography.caption)
                         .foregroundStyle(Theme.muted)
 
                     ZStack(alignment: .topLeading) {
                         if content.isEmpty {
                             Text(Self.placeholder)
-                                .font(.scripture(19))
+                                .font(Typography.verse)
                                 .foregroundStyle(Theme.muted.opacity(0.6))
                                 .padding(.horizontal, 5)
                                 .padding(.vertical, 8)
                                 .allowsHitTesting(false)
                         }
                         TextEditor(text: $content)
-                            .font(.scripture(19))
+                            .font(Typography.verse)
                             .foregroundStyle(Theme.ink)
                             .scrollContentBackground(.hidden)
                             .frame(minHeight: 320)

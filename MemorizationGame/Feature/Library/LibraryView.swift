@@ -105,7 +105,7 @@ struct LibraryView: View {
 
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
-            .font(.system(size: 10, weight: .semibold))
+            .font(Typography.footnote)
             .tracking(1.6)
             .textCase(.uppercase)
             .foregroundStyle(Theme.faint)
@@ -139,7 +139,7 @@ struct LibraryView: View {
         VStack {
             Spacer()
             Text("No passages yet.\nImport one to get started.")
-                .font(.body)
+                .font(Typography.subtitle)
                 .foregroundStyle(Theme.muted)
                 .multilineTextAlignment(.center)
             Spacer()
@@ -156,11 +156,11 @@ private struct PassageRow: View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 3) {
                 Text(passage.title)
-                    .font(.scripture(19, weight: .medium))
+                    .font(Typography.title)
                     .foregroundStyle(Theme.ink)
 
                 Text("Added \(passage.dateAdded.formatted(.dateTime.month(.abbreviated).day().year()))")
-                    .font(.system(size: 11, weight: .medium))
+                    .font(Typography.footnote)
                     .foregroundStyle(Theme.faint)
             }
 

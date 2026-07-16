@@ -128,12 +128,12 @@ struct SessionView: View {
         VStack(spacing: 9) {
             HStack {
                 Text("PASSAGE \(vm.progressNumber)")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(Typography.micro)
                     .tracking(1.8)
                     .foregroundStyle(Theme.muted)
                 Spacer()
                 Text("\(vm.progressNumber) / \(vm.progressTotal)")
-                    .font(.system(size: 10, weight: .medium))
+                    .font(Typography.micro)
                     .tracking(0.5)
                     .foregroundStyle(Theme.faint)
                     .monospacedDigit()
@@ -182,7 +182,7 @@ struct SessionView: View {
                         scripture(for: card)
                     }
                     Text("Tap or glide over words to show or hide · hold empty space for more")
-                        .font(.system(size: 11))
+                        .font(Typography.micro)
                         .foregroundStyle(Theme.faint)
                         .padding(.top, 20)
                     Spacer(minLength: 0)
@@ -229,7 +229,7 @@ struct SessionView: View {
                     missed: missedWords.contains(idx),
                     missFlashing: missFlashIndex == idx
                 )
-                    .font(.scripture(24))
+                    .font(Typography.recite)
                     .modifier(ShakeEffect(shakes: missFlashIndex == idx ? CGFloat(missShakes) : 0))
                     .contentShape(Rectangle())
                     .allowsHitTesting(!vm.wordsRevealed)
@@ -294,7 +294,7 @@ struct SessionView: View {
                     .tint(Theme.muted)
             }
             Text(heardLabel)
-                .font(.system(size: 11))
+                .font(Typography.micro)
                 .foregroundStyle(Theme.faint)
                 .lineLimit(1)
                 .truncationMode(.head)
@@ -375,7 +375,7 @@ struct SessionView: View {
 
     private var emptyQueue: some View {
         Text("Nothing to review yet.")
-            .font(.body)
+            .font(Typography.subtitle)
             .foregroundStyle(Theme.muted)
             .multilineTextAlignment(.center)
     }
@@ -520,10 +520,10 @@ private struct DailyGoalToast: View {
                 .foregroundStyle(Theme.emberHot)
             VStack(alignment: .leading, spacing: 2) {
                 Text("Daily goal complete")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(Typography.label)
                     .foregroundStyle(Theme.ink)
                 Text("Today's heat is full — streak secured.")
-                    .font(.system(size: 11))
+                    .font(Typography.micro)
                     .foregroundStyle(Theme.muted)
             }
         }

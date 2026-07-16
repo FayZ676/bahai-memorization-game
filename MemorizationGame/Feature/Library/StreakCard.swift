@@ -8,22 +8,24 @@ struct StreakCard: View {
         let now = Date()
         let target = store.decayingChunks().first
         return VStack(alignment: .leading, spacing: 0) {
-            counterColumn(fade: headerFade(for: target, at: now), at: now)
+            heroRow(fade: headerFade(for: target, at: now), at: now)
+            activityMeter
+                .padding(.top, 16)
             if let target {
                 HairlineDivider()
-                    .padding(.top, 15)
-                chunkPrompt(target.passage, target.card)
-                    .padding(.top, 14)
+                    .padding(.top, 18)
+                prayerSection(target.passage, target.card, at: now)
+                    .padding(.top, 18)
             } else if store.hasDecayableChunks {
                 HairlineDivider()
-                    .padding(.top, 15)
+                    .padding(.top, 18)
                 Text("All chunks fresh")
-                    .font(.system(size: 11, weight: .medium))
+                    .font(Typography.caption)
                     .foregroundStyle(Theme.muted)
-                    .padding(.top, 12)
+                    .padding(.top, 14)
             }
         }
-        .padding(.vertical, 6)
+        .padding(.vertical, 4)
         .animation(.easeInOut(duration: 0.25), value: store.practicedToday)
     }
 
@@ -33,31 +35,41 @@ struct StreakCard: View {
         return nil
     }
 
-    private func counterColumn(fade: Date?, at now: Date) -> some View {
-        let days = flameDays
-        return VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .bottom, spacing: 10) {
-                BurningNumberView(
-                    value: store.streakCount,
-                    today: days.last ?? FlameDay(words: 0, heat: 0),
-                    fontSize: 38
-                )
-                Text("Day streak")
-                    .font(.system(size: 10, weight: .semibold))
-                    .tracking(1.4)
-                    .textCase(.uppercase)
-                    .foregroundStyle(Theme.faint)
-                    .padding(.bottom, 8)
-                Spacer(minLength: 8)
-                if let fade {
-                    fadeCountdown(to: fade, at: now)
-                        .padding(.bottom, 8)
+    private func heroRow(fade: Date?, at now: Date) -> some View {
+        HStack(alignment: .center, spacing: 12) {
+            BurningNumberView(
+                value: store.streakCount,
+                today: flameDays.last ?? FlameDay(words: 0, heat: 0),
+                fontSize: 60
+            )
+            Spacer(minLength: 8)
+            if let fade {
+                VStack(spacing: 5) {
+                    Image(systemName: "hourglass")
+                        .font(.system(size: 15, weight: .regular))
+                        .foregroundStyle(Theme.muted)
+                    Text(timerInterval: min(now, fade)...fade, countsDown: true)
+                        .font(Typography.body)
+                        .monospacedDigit()
+                        .foregroundStyle(Theme.navIcon)
                 }
             }
-            WeekFireView(days: days)
-                .frame(maxWidth: .infinity)
-                .frame(height: 150)
         }
+    }
+
+    private var activityMeter: some View {
+        WeekFireView(days: flameDays)
+            .frame(maxWidth: .infinity)
+            .frame(height: 120)
+            .background(
+                RadialGradient(
+                    colors: [Color(hex: 0xF05A14, alpha: 0.12), .clear],
+                    center: UnitPoint(x: 0.5, y: 1.05),
+                    startRadius: 0,
+                    endRadius: 220
+                ),
+                in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+            )
     }
 
     private var flameDays: [FlameDay] {
@@ -66,62 +78,47 @@ struct StreakCard: View {
         }
     }
 
-    private func chunkPrompt(_ passage: Passage, _ card: Reviewable) -> some View {
-        let now = Date()
+    private func prayerSection(_ passage: Passage, _ card: Reviewable, at now: Date) -> some View {
+        let lost = store.decay.wordsLost(card, at: now)
         return VStack(alignment: .leading, spacing: 0) {
-            Text("\(passage.title) · Chunk \(card.span.start)")
-                .font(.system(size: 11.5, weight: .semibold))
-                .foregroundStyle(Theme.accent)
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Text("\(passage.title) · \(card.span.start)")
+                    .font(Typography.subtitle)
+                    .foregroundStyle(Theme.accent)
+                    .lineLimit(1)
+                Spacer(minLength: 8)
+                Text("\(lost) Word\(lost == 1 ? "" : "s") Lost")
+                    .font(Typography.callout)
+                    .foregroundStyle(Color(hex: 0xA05A2C))
+                    .fixedSize()
+            }
             Text(card.expectedText)
-                .font(.scripture(16))
-                .foregroundStyle(Theme.ink)
+                .font(Typography.prayer)
+                .foregroundStyle(Theme.inkBright)
+                .lineSpacing(3)
                 .lineLimit(3)
-                .padding(.top, 5)
-            decayIndicator(card, at: now)
-                .padding(.top, 12)
+                .padding(.top, 10)
             Button {
                 Feedback.tap()
                 practice(SessionRoute(passage: passage, focusCardID: card.id))
             } label: {
-                Text("Practice this chunk")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(Theme.bg)
+                Text("Practice This Chunk")
+                    .font(Typography.button)
+                    .foregroundStyle(Color(hex: 0x1A1206))
                     .frame(maxWidth: .infinity)
-                    .frame(height: 44)
-                    .background(Theme.accent, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                    .frame(height: 52)
+                    .background(
+                        LinearGradient(
+                            colors: [Color(hex: 0xE7B063), Color(hex: 0xD9994C)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        in: RoundedRectangle(cornerRadius: 15, style: .continuous)
+                    )
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .padding(.top, 14)
-        }
-    }
-
-    private func decayIndicator(_ card: Reviewable, at now: Date) -> some View {
-        let lost = store.decay.wordsLost(card, at: now)
-        let fraction = store.decay.lostFraction(card, at: now)
-        return VStack(alignment: .leading, spacing: 7) {
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(Theme.surface)
-                    Capsule()
-                        .fill(Theme.ember)
-                        .frame(width: max(geo.size.width * fraction, fraction > 0 ? 3 : 0))
-                }
-            }
-            .frame(height: 3)
-            Text("\(lost) word\(lost == 1 ? "" : "s") faded")
-                .foregroundStyle(Theme.ember)
-                .font(.system(size: 11, weight: .medium))
-        }
-    }
-
-    private func fadeCountdown(to next: Date, at now: Date) -> some View {
-        HStack(spacing: 4) {
-            Text("Next fade in")
-                .foregroundStyle(Theme.faint)
-            Text(timerInterval: min(now, next)...next, countsDown: true)
-                .monospacedDigit()
-                .foregroundStyle(Theme.muted)
+            .padding(.top, 16)
         }
     }
 }

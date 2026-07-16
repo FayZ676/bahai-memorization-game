@@ -65,7 +65,7 @@ struct BurningNumberView: View {
             let heat = Float(max(today.heat, 0.3))
             let blue = Float(FlameScale.blue(words: today.words))
             Text("\(value)")
-                .font(.system(size: fontSize, weight: .bold, design: .serif))
+                .font(.display(fontSize))
                 .lineLimit(1)
                 .minimumScaleFactor(0.4)
                 .foregroundStyle(.white)

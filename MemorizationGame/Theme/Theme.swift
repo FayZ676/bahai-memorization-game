@@ -29,12 +29,6 @@ extension Color {
     }
 }
 
-extension Font {
-    static func scripture(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
-        .system(size: size, weight: weight, design: .serif)
-    }
-}
-
 struct CardSurface: ViewModifier {
     var cornerRadius: CGFloat = 16
 
