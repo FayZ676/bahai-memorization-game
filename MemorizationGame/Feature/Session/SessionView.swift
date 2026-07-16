@@ -218,6 +218,7 @@ struct SessionView: View {
                 let expected = voice.nextExpectedIndex == idx
                 WordView(
                     token: String(word),
+                    driftSeed: idx,
                     hidden: vm.isHidden(idx),
                     expected: expected,
                     recited: recitedWords.contains(idx),
@@ -347,6 +348,7 @@ private struct ShakeEffect: GeometryEffect {
 
 private struct WordView: View {
     let token: String
+    let driftSeed: Int
     let hidden: Bool
     let expected: Bool
     let recited: Bool
@@ -421,6 +423,7 @@ private struct WordView: View {
             } animation: { _ in
                 .easeInOut(duration: 0.6)
             }
+            .modifier(FloatDrift(seed: driftSeed))
     }
 
     private var underlineColor: Color {
@@ -429,6 +432,35 @@ private struct WordView: View {
         if missed { return Theme.ember }
         if expected { return Theme.accent }
         return Theme.accent.opacity(0.5)
+    }
+}
+
+private struct FloatDrift: ViewModifier {
+    let seed: Int
+    @State private var bobbing = false
+    @State private var tilting = false
+
+    private func unitRandom(_ salt: Int) -> Double {
+        let raw = sin(Double(seed &* 37 &+ salt &* 101) * 12.9898) * 43758.5453
+        return raw - floor(raw)
+    }
+
+    func body(content: Content) -> some View {
+        let bobAmplitude = 0.9 + unitRandom(1) * 0.8
+        let tiltAmplitude = 0.45 + unitRandom(2) * 0.65
+        let bobDuration = 2.0 + unitRandom(3) * 1.5
+        let tiltDuration = 2.6 + unitRandom(4) * 1.7
+        content
+            .offset(y: bobbing ? -bobAmplitude : bobAmplitude)
+            .rotationEffect(.degrees(tilting ? tiltAmplitude : -tiltAmplitude))
+            .onAppear {
+                withAnimation(.easeInOut(duration: bobDuration).repeatForever(autoreverses: true).delay(unitRandom(5) * bobDuration)) {
+                    bobbing = true
+                }
+                withAnimation(.easeInOut(duration: tiltDuration).repeatForever(autoreverses: true).delay(unitRandom(6) * tiltDuration)) {
+                    tilting = true
+                }
+            }
     }
 }
 
