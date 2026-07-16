@@ -12,6 +12,11 @@ struct StreakCard: View {
                     .padding(.top, 15)
                 chunkPrompt(target.passage, target.card)
                     .padding(.top, 14)
+            } else if store.hasDecayableChunks, let next = DecayModel.nextDecay(after: Date()) {
+                HairlineDivider()
+                    .padding(.top, 15)
+                restingCountdown(to: next, at: Date())
+                    .padding(.top, 12)
             }
         }
         .padding(.vertical, 6)
@@ -93,16 +98,30 @@ struct StreakCard: View {
                     .foregroundStyle(Theme.ember)
                 Spacer()
                 if let next {
-                    HStack(spacing: 4) {
-                        Text("Next fade in")
-                            .foregroundStyle(Theme.faint)
-                        Text(timerInterval: min(now, next)...next, countsDown: true)
-                            .monospacedDigit()
-                            .foregroundStyle(Theme.muted)
-                    }
+                    fadeCountdown(to: next, at: now)
                 }
             }
             .font(.system(size: 11, weight: .medium))
+        }
+    }
+
+    private func restingCountdown(to next: Date, at now: Date) -> some View {
+        HStack(spacing: 0) {
+            Text("All chunks fresh")
+                .foregroundStyle(Theme.muted)
+            Spacer()
+            fadeCountdown(to: next, at: now)
+        }
+        .font(.system(size: 11, weight: .medium))
+    }
+
+    private func fadeCountdown(to next: Date, at now: Date) -> some View {
+        HStack(spacing: 4) {
+            Text("Next fade in")
+                .foregroundStyle(Theme.faint)
+            Text(timerInterval: min(now, next)...next, countsDown: true)
+                .monospacedDigit()
+                .foregroundStyle(Theme.muted)
         }
     }
 }

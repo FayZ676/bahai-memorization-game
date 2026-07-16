@@ -69,6 +69,10 @@ struct DecayModel {
 
     static func nextDecay(for card: Reviewable, after now: Date) -> Date? {
         guard card.lastPracticed != nil, card.hiddenBaseline > 0 else { return nil }
+        return nextDecay(after: now)
+    }
+
+    static func nextDecay(after now: Date) -> Date? {
         let calendar = Calendar.current
         return calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now))
     }
