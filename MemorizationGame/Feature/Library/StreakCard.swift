@@ -5,17 +5,21 @@ struct StreakCard: View {
     let practice: (SessionRoute) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            counterRow
-            if let target = store.decayingChunks().first {
+        let now = Date()
+        let target = store.decayingChunks().first
+        return VStack(alignment: .leading, spacing: 0) {
+            counterColumn(fade: headerFade(for: target, at: now), at: now)
+            if let target {
                 HairlineDivider()
                     .padding(.top, 15)
                 chunkPrompt(target.passage, target.card)
                     .padding(.top, 14)
-            } else if store.hasDecayableChunks, let next = store.nextFade() {
+            } else if store.hasDecayableChunks {
                 HairlineDivider()
                     .padding(.top, 15)
-                restingCountdown(to: next, at: Date())
+                Text("All chunks fresh")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(Theme.muted)
                     .padding(.top, 12)
             }
         }
@@ -23,20 +27,36 @@ struct StreakCard: View {
         .animation(.easeInOut(duration: 0.25), value: store.practicedToday)
     }
 
-    private var counterRow: some View {
+    private func headerFade(for target: (passage: Passage, card: Reviewable)?, at now: Date) -> Date? {
+        if let target { return store.decay.nextDecay(for: target.card, after: now) }
+        if store.hasDecayableChunks { return store.nextFade(at: now) }
+        return nil
+    }
+
+    private func counterColumn(fade: Date?, at now: Date) -> some View {
         let days = flameDays
-        return HStack(alignment: .bottom, spacing: 14) {
-            VStack(alignment: .leading, spacing: 2) {
-                BurningNumberView(value: store.streakCount, today: days.last ?? FlameDay(words: 0, heat: 0))
-                Text("Day\nstreak")
-                    .font(.system(size: 9, weight: .semibold))
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .bottom, spacing: 10) {
+                BurningNumberView(
+                    value: store.streakCount,
+                    today: days.last ?? FlameDay(words: 0, heat: 0),
+                    fontSize: 38
+                )
+                Text("Day streak")
+                    .font(.system(size: 10, weight: .semibold))
                     .tracking(1.4)
                     .textCase(.uppercase)
                     .foregroundStyle(Theme.faint)
+                    .padding(.bottom, 8)
+                Spacer(minLength: 8)
+                if let fade {
+                    fadeCountdown(to: fade, at: now)
+                        .padding(.bottom, 8)
+                }
             }
             WeekFireView(days: days)
                 .frame(maxWidth: .infinity)
-                .frame(height: 140)
+                .frame(height: 150)
         }
     }
 
@@ -79,7 +99,6 @@ struct StreakCard: View {
     private func decayIndicator(_ card: Reviewable, at now: Date) -> some View {
         let lost = store.decay.wordsLost(card, at: now)
         let fraction = store.decay.lostFraction(card, at: now)
-        let next = store.decay.nextDecay(for: card, after: now)
         return VStack(alignment: .leading, spacing: 7) {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
@@ -90,26 +109,10 @@ struct StreakCard: View {
                 }
             }
             .frame(height: 3)
-            HStack(spacing: 0) {
-                Text("\(lost) word\(lost == 1 ? "" : "s") faded")
-                    .foregroundStyle(Theme.ember)
-                Spacer()
-                if let next {
-                    fadeCountdown(to: next, at: now)
-                }
-            }
-            .font(.system(size: 11, weight: .medium))
+            Text("\(lost) word\(lost == 1 ? "" : "s") faded")
+                .foregroundStyle(Theme.ember)
+                .font(.system(size: 11, weight: .medium))
         }
-    }
-
-    private func restingCountdown(to next: Date, at now: Date) -> some View {
-        HStack(spacing: 0) {
-            Text("All chunks fresh")
-                .foregroundStyle(Theme.muted)
-            Spacer()
-            fadeCountdown(to: next, at: now)
-        }
-        .font(.system(size: 11, weight: .medium))
     }
 
     private func fadeCountdown(to next: Date, at now: Date) -> some View {

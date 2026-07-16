@@ -52,9 +52,11 @@ struct WeekFireView: View {
 struct BurningNumberView: View {
     let value: Int
     let today: FlameDay
+    var fontSize: CGFloat = 54
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private nonisolated static let flameReach = CGSize(width: 16, height: 40)
+    private var frameSize: CGSize { CGSize(width: fontSize * 1.4, height: fontSize * 1.5) }
+    private var flameReach: CGSize { CGSize(width: fontSize * 0.3, height: fontSize * 0.74) }
 
     var body: some View {
         TimelineView(.animation(paused: reduceMotion)) { context in
@@ -63,12 +65,12 @@ struct BurningNumberView: View {
             let heat = Float(max(today.heat, 0.3))
             let blue = Float(FlameScale.blue(words: today.words))
             Text("\(value)")
-                .font(.system(size: 54, weight: .bold, design: .serif))
+                .font(.system(size: fontSize, weight: .bold, design: .serif))
                 .lineLimit(1)
                 .minimumScaleFactor(0.4)
                 .foregroundStyle(.white)
-                .frame(width: 88, height: 104, alignment: .bottom)
-                .visualEffect { content, proxy in
+                .frame(width: frameSize.width, height: frameSize.height, alignment: .bottom)
+                .visualEffect { [flameReach] content, proxy in
                     content.layerEffect(
                         ShaderLibrary.burningNumber(
                             .float2(proxy.size),
@@ -77,7 +79,7 @@ struct BurningNumberView: View {
                             .float(heat),
                             .float(blue)
                         ),
-                        maxSampleOffset: Self.flameReach
+                        maxSampleOffset: flameReach
                     )
                 }
         }
