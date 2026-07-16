@@ -24,29 +24,26 @@ struct StreakCard: View {
     }
 
     private var counterRow: some View {
-        HStack(alignment: .center, spacing: 14) {
-            HStack(alignment: .center, spacing: 8) {
-                Text("\(store.streakCount)")
-                    .font(.system(size: 30, weight: .semibold))
-                    .monospacedDigit()
-                    .foregroundStyle(store.practicedToday ? Theme.accent : Theme.muted)
-                    .contentTransition(.numericText())
+        let days = flameDays
+        return HStack(alignment: .bottom, spacing: 14) {
+            VStack(alignment: .leading, spacing: 2) {
+                BurningNumberView(value: store.streakCount, today: days.last ?? FlameDay(words: 0, heat: 0))
                 Text("Day\nstreak")
                     .font(.system(size: 9, weight: .semibold))
                     .tracking(1.4)
                     .textCase(.uppercase)
                     .foregroundStyle(Theme.faint)
             }
-            Spacer()
-            dotStrip
+            WeekFireView(days: days)
+                .frame(maxWidth: .infinity)
+                .frame(height: 140)
         }
     }
 
-    private var dotStrip: some View {
-        let days = store.practiceLog.recentDays(7)
-        let heats = days.map { store.practiceLog.heat(on: $0) }
-        return HeatStrip(heats: heats, highlight: days.count - 1)
-            .frame(width: 112, height: 10)
+    private var flameDays: [FlameDay] {
+        store.practiceLog.recentDays(7).map {
+            FlameDay(words: store.practiceLog.words(on: $0), heat: store.practiceLog.heat(on: $0))
+        }
     }
 
     private func chunkPrompt(_ passage: Passage, _ card: Reviewable) -> some View {
