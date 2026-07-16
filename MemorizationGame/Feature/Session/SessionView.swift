@@ -51,6 +51,7 @@ struct SessionView: View {
         .toolbar(.hidden, for: .navigationBar)
         .navigationBarBackButtonHidden(true)
         .confirmationDialog("Words", isPresented: $showingAllOptions, titleVisibility: .hidden) {
+            Button(vm.isPeeking ? "Unpeek" : "Peek") { vm.togglePeek() }
             Button("Hide All Words") { vm.setAllWords(hidden: true) }
             Button("Show All Words") { vm.setAllWords(hidden: false) }
         }
@@ -177,7 +178,7 @@ struct SessionView: View {
                     if let card = vm.current {
                         scripture(for: card)
                     }
-                    Text(vm.isPracticing ? "Tap a word to show or hide it · hold for all" : "Tap to recite · swipe to change passage")
+                    Text("Tap a word to show or hide it · hold for more")
                         .font(.system(size: 11))
                         .foregroundStyle(Theme.faint)
                         .padding(.top, 20)
@@ -188,9 +189,6 @@ struct SessionView: View {
                 .padding(.top, 8)
                 .padding(.bottom, 36)
                 .contentShape(Rectangle())
-                .onTapGesture {
-                    withAnimation(.easeInOut(duration: 0.32)) { vm.toggleMode() }
-                }
                 .onLongPressGesture(minimumDuration: 0.4) {
                     Feedback.flip()
                     showingAllOptions = true
@@ -229,7 +227,7 @@ struct SessionView: View {
                     .font(.scripture(24))
                     .modifier(ShakeEffect(shakes: missFlashIndex == idx ? CGFloat(missShakes) : 0))
                     .contentShape(Rectangle())
-                    .allowsHitTesting(vm.isPracticing)
+                    .allowsHitTesting(!vm.wordsRevealed)
                     .onTapGesture {
                         withAnimation(.easeInOut(duration: 0.22)) { vm.toggleWord(idx) }
                     }
@@ -272,6 +270,7 @@ struct SessionView: View {
                 showingMicDenied = true
             case .idle, .failed:
                 guard let card = vm.current else { return }
+                vm.endPeek()
                 recitedWords = []
                 missedWords = []
                 Task {

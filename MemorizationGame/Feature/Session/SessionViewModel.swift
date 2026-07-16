@@ -4,17 +4,14 @@ import Observation
 @MainActor
 @Observable
 final class SessionViewModel {
-    enum Mode {
-        case reading
-        case practice
-    }
-
     let passage: Passage
     private let store: AppStore
 
-    var mode: Mode = .reading
     var step = 0
     var presentationEpoch = 0
+    private(set) var isPeeking = false
+    private(set) var grounding = false
+    private var groundingTask: Task<Void, Never>?
 
     init(passage: Passage, store: AppStore) {
         self.passage = passage
@@ -32,15 +29,15 @@ final class SessionViewModel {
     var canGoForward: Bool { step < queueLength - 1 }
     var canGoBack: Bool { step > 0 }
 
-    var isPracticing: Bool { mode == .practice }
+    var wordsRevealed: Bool { isPeeking || grounding }
 
     func isHidden(_ idx: Int) -> Bool {
-        guard mode == .practice, let card = current else { return false }
+        guard !wordsRevealed, let card = current else { return false }
         return card.hiddenWords.contains(idx)
     }
 
     func toggleWord(_ idx: Int) {
-        guard let card = current, mode == .practice else { return }
+        guard let card = current, !wordsRevealed else { return }
         store.toggleWord(card, index: idx)
         Feedback.reveal()
         focus(on: card.id)
@@ -55,7 +52,7 @@ final class SessionViewModel {
         step = cardID.flatMap { id in q.firstIndex { $0.id == id } }
             ?? q.lastIndex { !$0.hiddenWords.isEmpty }
             ?? 0
-        mode = .reading
+        beginGrounding()
         presentationEpoch += 1
     }
 
@@ -68,7 +65,7 @@ final class SessionViewModel {
         let target = max(0, min(index, queueLength - 1))
         guard target != step else { return }
         step = target
-        mode = .reading
+        beginGrounding()
         presentationEpoch += 1
         Feedback.scrub()
     }
@@ -76,14 +73,32 @@ final class SessionViewModel {
     func skip(forward: Bool) {
         guard forward ? canGoForward : canGoBack else { return }
         step += forward ? 1 : -1
-        mode = .reading
+        beginGrounding()
         presentationEpoch += 1
         Feedback.navigate(forward: forward)
     }
 
-    func toggleMode() {
-        mode = mode == .practice ? .reading : .practice
+    func togglePeek() {
+        groundingTask?.cancel()
+        grounding = false
+        withAnimation(.easeInOut(duration: 0.32)) { isPeeking.toggle() }
         Feedback.flip()
+    }
+
+    func endPeek() {
+        guard isPeeking else { return }
+        withAnimation(.easeInOut(duration: 0.32)) { isPeeking = false }
+    }
+
+    private func beginGrounding() {
+        groundingTask?.cancel()
+        isPeeking = false
+        grounding = true
+        groundingTask = Task {
+            try? await Task.sleep(for: .seconds(1.4))
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeInOut(duration: 0.6)) { grounding = false }
+        }
     }
 
     func setAllWords(hidden: Bool) {
