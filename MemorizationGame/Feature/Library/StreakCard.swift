@@ -10,22 +10,21 @@ struct StreakCard: View {
         return VStack(alignment: .leading, spacing: 0) {
             heroRow(fade: headerFade(for: target, at: now), at: now)
             activityMeter
-                .padding(.top, 16)
+                .padding(.top, 6)
             if let target {
                 HairlineDivider()
-                    .padding(.top, 18)
+                    .padding(.top, 12)
                 prayerSection(target.passage, target.card, at: now)
-                    .padding(.top, 18)
+                    .padding(.top, 12)
             } else if store.hasDecayableChunks {
                 HairlineDivider()
-                    .padding(.top, 18)
+                    .padding(.top, 12)
                 Text("All chunks fresh")
                     .font(Typography.caption)
                     .foregroundStyle(Theme.muted)
-                    .padding(.top, 14)
+                    .padding(.top, 10)
             }
         }
-        .padding(.vertical, 4)
         .animation(.easeInOut(duration: 0.25), value: store.practicedToday)
     }
 
@@ -40,13 +39,13 @@ struct StreakCard: View {
             BurningNumberView(
                 value: store.streakCount,
                 today: flameDays.last ?? FlameDay(words: 0, heat: 0),
-                fontSize: 60
+                fontSize: 44
             )
             Spacer(minLength: 8)
             if let fade {
-                VStack(spacing: 5) {
+                HStack(spacing: 6) {
                     Image(systemName: "hourglass")
-                        .font(.system(size: 15, weight: .regular))
+                        .font(.system(size: 13, weight: .regular))
                         .foregroundStyle(Theme.muted)
                     Text(timerInterval: min(now, fade)...fade, countsDown: true)
                         .font(Typography.body)
@@ -60,16 +59,7 @@ struct StreakCard: View {
     private var activityMeter: some View {
         WeekFireView(days: flameDays)
             .frame(maxWidth: .infinity)
-            .frame(height: 120)
-            .background(
-                RadialGradient(
-                    colors: [Color(hex: 0xF05A14, alpha: 0.12), .clear],
-                    center: UnitPoint(x: 0.5, y: 1.05),
-                    startRadius: 0,
-                    endRadius: 220
-                ),
-                in: RoundedRectangle(cornerRadius: 14, style: .continuous)
-            )
+            .frame(height: 76)
     }
 
     private var flameDays: [FlameDay] {
@@ -97,7 +87,7 @@ struct StreakCard: View {
                 .foregroundStyle(Theme.inkBright)
                 .lineSpacing(3)
                 .lineLimit(3)
-                .padding(.top, 10)
+                .padding(.top, 8)
             Button {
                 Feedback.tap()
                 practice(SessionRoute(passage: passage, focusCardID: card.id))
@@ -106,7 +96,7 @@ struct StreakCard: View {
                     .font(Typography.button)
                     .foregroundStyle(Color(hex: 0x1A1206))
                     .frame(maxWidth: .infinity)
-                    .frame(height: 52)
+                    .frame(height: 48)
                     .background(
                         LinearGradient(
                             colors: [Color(hex: 0xE7B063), Color(hex: 0xD9994C)],
@@ -118,7 +108,7 @@ struct StreakCard: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .padding(.top, 16)
+            .padding(.top, 12)
         }
     }
 }

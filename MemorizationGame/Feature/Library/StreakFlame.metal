@@ -92,9 +92,9 @@ static float3 rampColor(float d, float h, float az) {
         float n = fbm(pb + float2(w * 1.4, w * 1.1));
 
         float yy = uv.y / Hm;
-        float dx = (uv.x - cx) * columns / (0.55 + 0.65 * I);
+        float dx = (uv.x - cx) * columns / (0.36 + 0.38 * I);
         yy += (n - 0.5) * (0.20 + 0.65 * yy) * (0.5 + 0.9 * live) * egy;
-        dx += (n - 0.5) * 0.7 * yy * live * egy;
+        dx += (n - 0.5) * 0.5 * yy * live * egy;
 
         float vert = clamp(1.0 - yy, 0.0, 1.0);
         float envW = max(0.05, 1.0 - yy * 0.72);
@@ -122,9 +122,9 @@ static float3 rampColor(float d, float h, float az) {
         if (B > 0.001) {
             float Hb = Hm * (0.20 + 0.34 * B);
             float yb = uv.y / Hb;
-            float dxb = (uv.x - cx) * columns / (0.30 + 0.28 * I);
+            float dxb = (uv.x - cx) * columns / (0.20 + 0.18 * I);
             yb += (n - 0.5) * 0.40 * yb;
-            dxb += (n - 0.5) * 0.45 * yb;
+            dxb += (n - 0.5) * 0.35 * yb;
             float vb = clamp(1.0 - yb, 0.0, 1.0);
             float eb = smoothstep(1.0, 0.0, abs(dxb) / max(0.05, 1.0 - yb * 0.6));
             float db = vb * eb * (0.70 + 0.50 * n) * B;
