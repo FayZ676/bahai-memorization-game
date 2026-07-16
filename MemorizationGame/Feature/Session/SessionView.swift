@@ -17,6 +17,9 @@ struct SessionView: View {
     @State private var missedWords: Set<Int> = []
     @State private var missShakes = 0
     @State private var missFlashIndex: Int?
+    @State private var wordFrames: [Int: CGRect] = [:]
+    @State private var paintTargetHidden: Bool?
+    @State private var painting = false
     let passage: Passage
     let focusCardID: UUID?
     private let store: AppStore
@@ -178,7 +181,7 @@ struct SessionView: View {
                     if let card = vm.current {
                         scripture(for: card)
                     }
-                    Text("Tap a word to show or hide it · hold for more")
+                    Text("Tap or glide over words to show or hide · hold empty space for more")
                         .font(.system(size: 11))
                         .foregroundStyle(Theme.faint)
                         .padding(.top, 20)
@@ -198,6 +201,7 @@ struct SessionView: View {
         .simultaneousGesture(
             DragGesture(minimumDistance: 24)
                 .onEnded { value in
+                    guard !painting else { return }
                     guard abs(value.translation.width) > abs(value.translation.height) else { return }
                     if value.translation.width < 0, vm.canGoForward {
                         withAnimation(.easeInOut(duration: 0.28)) { vm.skip(forward: true) }
@@ -232,8 +236,52 @@ struct SessionView: View {
                     .onTapGesture {
                         withAnimation(.easeInOut(duration: 0.22)) { vm.toggleWord(idx) }
                     }
+                    .onGeometryChange(for: CGRect.self) { proxy in
+                        proxy.frame(in: .named("scripture"))
+                    } action: { frame in
+                        wordFrames[idx] = frame
+                    }
             }
         }
+        .coordinateSpace(name: "scripture")
+        .gesture(paintGesture, including: vm.wordsRevealed ? .subviews : .all)
+    }
+
+    private var paintGesture: some Gesture {
+        LongPressGesture(minimumDuration: 0.3)
+            .sequenced(before: DragGesture(minimumDistance: 0, coordinateSpace: .named("scripture")))
+            .onChanged { value in
+                guard case .second(true, let drag) = value else { return }
+                if !painting {
+                    painting = true
+                    Feedback.flip()
+                }
+                guard let drag else { return }
+                paint(at: drag.startLocation)
+                paint(at: drag.location)
+            }
+            .onEnded { _ in
+                paintTargetHidden = nil
+                Task {
+                    try? await Task.sleep(for: .milliseconds(80))
+                    painting = false
+                }
+            }
+    }
+
+    private func paint(at location: CGPoint) {
+        guard let idx = wordIndex(at: location) else { return }
+        let target = paintTargetHidden ?? !vm.isHidden(idx)
+        paintTargetHidden = target
+        guard vm.isHidden(idx) != target else { return }
+        withAnimation(.easeInOut(duration: 0.22)) { vm.toggleWord(idx) }
+    }
+
+    private func wordIndex(at location: CGPoint) -> Int? {
+        let count = vm.current?.words.count ?? 0
+        return wordFrames.first { idx, frame in
+            idx < count && frame.insetBy(dx: -3.5, dy: -6).contains(location)
+        }?.key
     }
 
     // MARK: Bottom bar
