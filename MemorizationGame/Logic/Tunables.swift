@@ -13,22 +13,22 @@ enum DecayRate: String, Codable, CaseIterable {
         }
     }
 
-    var baseHalfLifeDays: Double {
+    var intervalScale: Double {
         switch self {
-        case .slow: 6
-        case .medium: 3
-        case .fast: 1.5
+        case .slow: 1.6
+        case .medium: 1.0
+        case .fast: 0.6
         }
     }
 
     var detail: String {
         switch self {
         case .slow:
-            "Gentle. A chunk you just finished fades halfway back after about 12 nights without review."
+            "Gentle. A newly learned chunk rests about five nights before a word slips, and well-drilled ones can rest a month."
         case .medium:
-            "Balanced. A chunk you just finished fades halfway back after about 6 nights without review."
+            "Balanced. A newly learned chunk rests a few nights, and well-drilled ones a few weeks."
         case .fast:
-            "Demanding. A chunk you just finished fades halfway back after about 3 nights without review."
+            "Demanding. A newly learned chunk rests a night or two, and even well-drilled ones return within a couple of weeks."
         }
     }
 }

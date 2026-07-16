@@ -6,6 +6,7 @@ final class AppStore {
     private(set) var passages: [Passage]
     private(set) var reviewables: [Reviewable]
     private(set) var practiceLog: PracticeLog
+    private var lastSoftFloor: Date?
     var dailyGoalReached = false
     var settings: AppSettings {
         didSet {
@@ -27,6 +28,7 @@ final class AppStore {
             self.passages = snapshot.passages
             self.reviewables = snapshot.reviewables
             self.practiceLog = snapshot.practiceLog ?? PracticeLog()
+            self.lastSoftFloor = snapshot.lastSoftFloor
             self.settings = snapshot.settings
         } else {
             self.passages = []
@@ -40,13 +42,33 @@ final class AppStore {
 
     func applyDecay(at now: Date = Date()) {
         let model = decay
-        let decayed = reviewables.map { model.decayed($0, at: now) }
-        guard decayed != reviewables else { return }
-        reviewables = decayed
+        var updated = reviewables.map { model.decayed($0, at: now) }
+        if !updated.contains(where: { model.isDecaying($0, at: now) }),
+           !Calendar.current.isDate(lastSoftFloor ?? .distantPast, inSameDayAs: now),
+           let index = softFloorIndex(in: updated, model: model, at: now) {
+            updated[index] = model.revealingFirst(updated[index])
+            lastSoftFloor = now
+        }
+        guard updated != reviewables else { return }
+        reviewables = updated
         persist()
     }
 
-    var decay: DecayModel { DecayModel(baseHalfLifeDays: settings.decayRate.baseHalfLifeDays) }
+    private func softFloorIndex(in cards: [Reviewable], model: DecayModel, at now: Date) -> Int? {
+        cards.indices
+            .filter {
+                cards[$0].lastPracticed != nil
+                    && cards[$0].hiddenBaseline > 0
+                    && cards[$0].hiddenWords.count == cards[$0].hiddenBaseline
+            }
+            .max { model.overdueRatio(cards[$0], at: now) < model.overdueRatio(cards[$1], at: now) }
+    }
+
+    func nextFade(at now: Date = Date()) -> Date? {
+        reviewables.compactMap { decay.nextDecay(for: $0, after: now) }.min()
+    }
+
+    var decay: DecayModel { DecayModel(rate: settings.decayRate) }
 
     func cards(for passage: Passage) -> [Reviewable] {
         reviewables.filter { $0.passageRef == passage.id }
@@ -148,6 +170,7 @@ final class AppStore {
         var reviewables: [Reviewable]
         var practiceLog: PracticeLog?
         var settings: AppSettings
+        var lastSoftFloor: Date?
     }
 
     private func persist() {
@@ -155,7 +178,8 @@ final class AppStore {
             passages: passages,
             reviewables: reviewables,
             practiceLog: practiceLog,
-            settings: settings
+            settings: settings,
+            lastSoftFloor: lastSoftFloor
         )
         guard let data = try? JSONEncoder().encode(snapshot) else { return }
         try? data.write(to: storeURL, options: .atomic)

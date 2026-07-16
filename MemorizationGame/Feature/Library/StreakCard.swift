@@ -12,7 +12,7 @@ struct StreakCard: View {
                     .padding(.top, 15)
                 chunkPrompt(target.passage, target.card)
                     .padding(.top, 14)
-            } else if store.hasDecayableChunks, let next = DecayModel.nextDecay(after: Date()) {
+            } else if store.hasDecayableChunks, let next = store.nextFade() {
                 HairlineDivider()
                     .padding(.top, 15)
                 restingCountdown(to: next, at: Date())
@@ -82,7 +82,7 @@ struct StreakCard: View {
     private func decayIndicator(_ card: Reviewable, at now: Date) -> some View {
         let lost = store.decay.wordsLost(card, at: now)
         let fraction = store.decay.lostFraction(card, at: now)
-        let next = DecayModel.nextDecay(for: card, after: now)
+        let next = store.decay.nextDecay(for: card, after: now)
         return VStack(alignment: .leading, spacing: 7) {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {

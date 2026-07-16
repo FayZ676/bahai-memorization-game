@@ -1,27 +1,33 @@
 import Foundation
 
 struct DecayModel {
-    static let momentumMultiplier: Double = 2
-    static let strengthCap: Double = 6
+    static let strengthCap: Double = 5
+    static let intervalLadder = [2, 3, 5, 8, 13, 21]
+    static let overdueCap = 3
 
-    var baseHalfLifeDays: Double = DecayRate.medium.baseHalfLifeDays
+    var rate: DecayRate = .medium
 
-    func halfLifeDays(strength: Double) -> Double {
-        baseHalfLifeDays * pow(Self.momentumMultiplier, strength)
-    }
-
-    func retention(elapsedDays: Double, strength: Double) -> Double {
-        guard elapsedDays > 0 else { return 1 }
-        return pow(0.5, elapsedDays / halfLifeDays(strength: strength))
+    func intervalNights(strength: Double) -> Int {
+        let step = max(min(Int(strength), Self.intervalLadder.count - 1), 0)
+        return max(Int((Double(Self.intervalLadder[step]) * rate.intervalScale).rounded()), 1)
     }
 
     func targetHidden(for card: Reviewable, at now: Date) -> Int {
         guard let last = card.lastPracticed, card.hiddenBaseline > 0 else {
             return card.hiddenWords.count
         }
-        let retained = retention(elapsedDays: Double(Self.nightsElapsed(from: last, to: now)), strength: card.strength)
-        let target = Int((retained * Double(card.hiddenBaseline)).rounded())
+        let overdue = Self.nightsElapsed(from: last, to: now) - intervalNights(strength: card.strength)
+        guard overdue > 0 else { return card.hiddenBaseline }
+        let target = card.hiddenBaseline - Self.overdueReveal(overdueNights: overdue)
         return min(max(target, 0), card.hiddenWords.count)
+    }
+
+    static func overdueReveal(overdueNights nights: Int) -> Int {
+        guard nights > 0 else { return 0 }
+        let ramp = min(nights, overdueCap)
+        let duringRamp = ramp * (ramp + 1) / 2
+        let afterRamp = max(nights - overdueCap, 0) * overdueCap
+        return duringRamp + afterRamp
     }
 
     static func nightsElapsed(from last: Date, to now: Date) -> Int {
@@ -40,6 +46,14 @@ struct DecayModel {
         return updated
     }
 
+    func revealingFirst(_ card: Reviewable) -> Reviewable {
+        guard !card.hiddenWords.isEmpty else { return card }
+        var updated = card
+        let ordered = card.hiddenWords.sorted { Self.revealRank(card.id, $0) < Self.revealRank(card.id, $1) }
+        updated.hiddenWords = Set(ordered.dropLast())
+        return updated
+    }
+
     static func revealRank(_ id: UUID, _ index: Int) -> UInt64 {
         var hash = UInt64(bitPattern: Int64(index)) &+ 0x9E37_79B9_7F4A_7C15
         withUnsafeBytes(of: id.uuid) { bytes in
@@ -52,28 +66,32 @@ struct DecayModel {
     }
 
     func isDecaying(_ card: Reviewable, at now: Date) -> Bool {
-        card.lastPracticed != nil
-            && card.hiddenBaseline > 0
-            && targetHidden(for: card, at: now) < card.hiddenBaseline
+        card.hiddenBaseline > 0 && card.hiddenWords.count < card.hiddenBaseline
     }
 
     func lostFraction(_ card: Reviewable, at now: Date) -> Double {
         guard card.hiddenBaseline > 0 else { return 0 }
-        let remaining = Double(targetHidden(for: card, at: now)) / Double(card.hiddenBaseline)
-        return 1 - remaining
+        return Double(wordsLost(card, at: now)) / Double(card.hiddenBaseline)
     }
 
     func wordsLost(_ card: Reviewable, at now: Date) -> Int {
-        max(card.hiddenBaseline - targetHidden(for: card, at: now), 0)
+        max(card.hiddenBaseline - card.hiddenWords.count, 0)
     }
 
-    static func nextDecay(for card: Reviewable, after now: Date) -> Date? {
-        guard card.lastPracticed != nil, card.hiddenBaseline > 0 else { return nil }
-        return nextDecay(after: now)
+    func overdueRatio(_ card: Reviewable, at now: Date) -> Double {
+        guard let last = card.lastPracticed, card.hiddenBaseline > 0 else { return -1 }
+        return Double(Self.nightsElapsed(from: last, to: now)) / Double(intervalNights(strength: card.strength))
     }
 
-    static func nextDecay(after now: Date) -> Date? {
+    func nextDecay(for card: Reviewable, after now: Date) -> Date? {
+        guard let last = card.lastPracticed, card.hiddenBaseline > 0 else { return nil }
         let calendar = Calendar.current
+        let due = calendar.date(
+            byAdding: .day,
+            value: intervalNights(strength: card.strength),
+            to: calendar.startOfDay(for: last)
+        ) ?? now
+        if now < due { return due }
         return calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now))
     }
 }
