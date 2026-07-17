@@ -33,7 +33,6 @@ struct BurningNumberView: View {
     var fontSize: CGFloat = 54
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private var frameSize: CGSize { CGSize(width: fontSize * 1.4, height: fontSize * 1.5) }
     private var flameReach: CGSize { CGSize(width: fontSize * 0.3, height: fontSize * 0.74) }
 
     var body: some View {
@@ -45,9 +44,9 @@ struct BurningNumberView: View {
             Text("\(value)")
                 .font(.display(fontSize))
                 .lineLimit(1)
-                .minimumScaleFactor(0.4)
                 .foregroundStyle(.white)
-                .frame(width: frameSize.width, height: frameSize.height, alignment: .bottom)
+                .padding(.horizontal, flameReach.width)
+                .padding(.top, flameReach.height)
                 .visualEffect { [flameReach] content, proxy in
                     content.layerEffect(
                         ShaderLibrary.burningNumber(
@@ -60,6 +59,7 @@ struct BurningNumberView: View {
                         maxSampleOffset: flameReach
                     )
                 }
+                .padding(.horizontal, -flameReach.width)
         }
     }
 }

@@ -98,8 +98,6 @@ struct LibraryView: View {
                         }
                     }
                 }
-            } header: {
-                sectionHeader("Passages")
             }
         }
         .listRowSpacing(12)
@@ -110,7 +108,7 @@ struct LibraryView: View {
 
     private var streakHeader: some View {
         let today = Date()
-        return HStack(alignment: .bottom, spacing: 12) {
+        return HStack(alignment: .bottom, spacing: 8) {
             BurningNumberView(
                 value: store.streakCount,
                 today: FlameDay(
@@ -127,15 +125,6 @@ struct LibraryView: View {
                 .padding(.bottom, 14)
             Spacer()
         }
-        .padding(.horizontal, 20)
-    }
-
-    private func sectionHeader(_ title: String) -> some View {
-        Text(title)
-            .font(Typography.footnote)
-            .tracking(1.6)
-            .textCase(.uppercase)
-            .foregroundStyle(Theme.faint)
     }
 
     private var streakBackground: some View {
