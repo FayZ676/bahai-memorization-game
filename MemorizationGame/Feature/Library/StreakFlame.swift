@@ -27,28 +27,6 @@ enum FlameScale {
     }
 }
 
-struct WeekFireView: View {
-    let days: [FlameDay]
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    var body: some View {
-        TimelineView(.animation(paused: reduceMotion)) { context in
-            let time = Float(FlameScale.time(at: context.date, reduceMotion: reduceMotion))
-            Rectangle()
-                .visualEffect { [days] content, proxy in
-                    content.colorEffect(ShaderLibrary.weekFire(
-                        .float2(proxy.size),
-                        .float(time),
-                        .floatArray(days.map { Float(FlameScale.intensity(words: $0.words)) }),
-                        .floatArray(days.map { Float($0.heat) }),
-                        .floatArray(days.map { Float(FlameScale.blue(words: $0.words)) }),
-                        .floatArray(days.map { $0.words > 0 ? 0 : 1 })
-                    ))
-                }
-        }
-    }
-}
-
 struct BurningNumberView: View {
     let value: Int
     let today: FlameDay

@@ -36,12 +36,6 @@ struct PracticeLog: Codable, Equatable {
         return count
     }
 
-    func recentDays(_ count: Int, endingOn today: Date = Date()) -> [Date] {
-        (0..<count).reversed().compactMap {
-            Calendar.current.date(byAdding: .day, value: -$0, to: today)
-        }
-    }
-
     private func previousDay(of date: Date) -> Date {
         Calendar.current.date(byAdding: .day, value: -1, to: date) ?? date
     }

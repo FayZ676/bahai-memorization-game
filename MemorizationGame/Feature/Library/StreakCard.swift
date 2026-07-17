@@ -5,36 +5,8 @@ struct StreakCard: View {
     let practice: (SessionRoute) -> Void
 
     var body: some View {
-        let now = Date()
-        let target = store.decayingChunks().first
-        return VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .bottom, spacing: 12) {
-                BurningNumberView(
-                    value: store.streakCount,
-                    today: flameDays.last ?? FlameDay(words: 0, heat: 0),
-                    fontSize: 44
-                )
-                activityMeter
-            }
-            if let target {
-                HairlineDivider()
-                    .padding(.top, 12)
-                prayerSection(target.passage, target.card, at: now)
-                    .padding(.top, 12)
-            }
-        }
-        .animation(.easeInOut(duration: 0.25), value: store.practicedToday)
-    }
-
-    private var activityMeter: some View {
-        WeekFireView(days: flameDays)
-            .frame(maxWidth: .infinity)
-            .frame(height: 76)
-    }
-
-    private var flameDays: [FlameDay] {
-        store.practiceLog.recentDays(7).map {
-            FlameDay(words: store.practiceLog.words(on: $0), heat: store.practiceLog.heat(on: $0))
+        if let target = store.decayingChunks().first {
+            prayerSection(target.passage, target.card, at: Date())
         }
     }
 

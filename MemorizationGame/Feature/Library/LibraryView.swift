@@ -62,11 +62,16 @@ struct LibraryView: View {
     private var list: some View {
         List {
             Section {
+                streakHeader
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets())
+            }
+
+            Section {
                 StreakCard(practice: { path.append($0) })
                     .listRowBackground(streakBackground)
                     .listRowSeparator(.hidden)
-            } header: {
-                sectionHeader("Practice Streak")
             }
 
             Section {
@@ -101,6 +106,28 @@ struct LibraryView: View {
         .contentMargins(.top, 4, for: .scrollContent)
         .scrollContentBackground(.hidden)
         .background(Theme.bg)
+    }
+
+    private var streakHeader: some View {
+        let today = Date()
+        return HStack(alignment: .bottom, spacing: 12) {
+            BurningNumberView(
+                value: store.streakCount,
+                today: FlameDay(
+                    words: store.practiceLog.words(on: today),
+                    heat: store.practiceLog.heat(on: today)
+                ),
+                fontSize: 44
+            )
+            Text("Day Streak")
+                .font(Typography.footnote)
+                .tracking(1.6)
+                .textCase(.uppercase)
+                .foregroundStyle(Theme.faint)
+                .padding(.bottom, 14)
+            Spacer()
+        }
+        .padding(.horizontal, 20)
     }
 
     private func sectionHeader(_ title: String) -> some View {
