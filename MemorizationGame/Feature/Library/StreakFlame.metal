@@ -64,7 +64,6 @@ static float3 rampColor(float d, float h, float az) {
     float bestHeat = 0.0;
     float bestInt = 0.0;
     float bestBlue = 0.0;
-    float coneD = 0.0;
     float smoke = 0.0;
 
     for (int i = 0; i < dayCount; i++) {
@@ -85,47 +84,37 @@ static float3 rampColor(float d, float h, float az) {
         float live = mix(0.45, 1.0, fi / max(columns - 1.0, 1.0));
         float egy = 0.45 + 0.75 * I;
         float t = time * mix(0.55, 1.25, live) * (0.7 + 0.5 * I);
-        float Hm = 0.14 + 0.84 * I;
 
-        float rv = Hm * 0.30;
-        float rx = 0.26 + 0.24 * I;
-        float cy = rv * 0.9 + 0.02;
+        float rx = 0.22 + 0.20 * I;
+        float rb = 0.14 + 0.14 * I;
+        float cy = rb + 0.04;
 
-        float2 pb = float2(uv.x * 7.5 + fi * 13.7, uv.y * 3.4 - t * 1.5);
-        float w = fbm(pb * 1.6 + float2(0.0, -t * 0.6));
-        float n = fbm(pb + float2(w * 1.4, w * 1.1));
+        float2 p = float2((uv.x - cx) * columns / rx, (uv.y - cy) / rb);
+        p.y /= mix(1.0, 1.3, smoothstep(-0.2, 0.4, p.y));
 
-        float bx = (uv.x - cx) * columns / rx;
-        float by = (uv.y - cy) / rv;
-        float churn = fbm(float2(bx * 1.6 + fi * 9.7 + t * 0.45, by * 1.6 - t * 1.1));
-        float r = length(float2(bx, by)) * (1.0 + (churn - 0.5) * 0.55);
-        float ball = smoothstep(1.1, 0.2, r);
+        float2 wp = float2(p.x * 1.4 + fi * 9.7, p.y * 1.4 - t * 1.1);
+        float w1 = fbm(wp);
+        float w2 = fbm(wp + float2(5.2, 1.3));
+        float2 q = p + (float2(w1, w2) - 0.5) * (0.30 + 0.35 * egy);
 
-        float yy = (uv.y - cy) / max(Hm - cy, 0.05);
-        float dx = (uv.x - cx) * columns / (rx * 0.95);
+        float rad = max(length(q), 1e-4);
+        float upness = q.y / rad;
+        float upBias = smoothstep(-0.6, 0.7, upness);
+        float ang = atan2(q.x, q.y);
 
-        float rise = clamp(yy, 0.0, 1.0);
-        float sway = fbm(float2(fi * 5.3 + t * 0.5, uv.y * 2.1 - t * 0.9)) - 0.5;
-        dx += sway * (0.25 + 1.1 * rise) * live * egy;
+        float lick = fbm(float2(ang * 1.6 + fi * 7.0, t * 1.4 + fi));
+        float reach = 1.0 + (lick - 0.25) * 2.1 * upBias * egy;
+        reach = clamp(reach, 0.75, 1.8);
 
-        yy += (n - 0.5) * (0.25 + 0.55 * rise) * (0.5 + 0.9 * live) * egy;
-        dx += (n - 0.5) * (0.20 + 0.55 * rise) * live * egy;
-        rise = clamp(yy, 0.0, 1.0);
+        float dd = rad / reach;
+        float shape = smoothstep(1.0, 0.2, dd);
 
-        float body = 1.0 - rise;
-        float profile = pow(body, 0.7) * (0.62 + 0.38 * body);
-        float edgeN = fbm(float2(dx * 2.1 + fi * 9.1, uv.y * 3.0 - t * 1.2));
-        float envW = max(0.05, profile * (0.60 + 0.55 * edgeN));
-        float env = smoothstep(1.0, 0.0, abs(dx) / envW);
-        float tongue = pow(body, 1.2) * env * (0.62 + 0.65 * n);
-        tongue *= smoothstep(-0.20, 0.05, yy);
+        float tear = fbm(float2(q.x * 4.0 + fi * 7.1, q.y * 3.0 - t * 2.4));
+        float tipness = smoothstep(0.55, 1.0, dd) * upBias;
+        shape *= mix(1.0, smoothstep(0.25, 0.55, tear) * 1.4, tipness);
 
-        float tipness = smoothstep(0.35, 0.85, rise) * (0.55 + 0.45 * I);
-        float2 pt = float2(uv.x * 15.0 + fi * 7.1, uv.y * 6.5 - t * (2.2 + 2.2 * I));
-        float tear = fbm(pt + float2(w * 1.2, w * 0.8));
-        tongue *= mix(1.0, smoothstep(0.28, 0.60, tear) * 1.45, tipness);
-
-        float d = max(ball * (0.72 + 0.55 * churn), tongue);
+        float roil = fbm(float2(q.x * 2.6 + fi * 3.3, q.y * 2.2 - t * 1.8) + float2(w2, w1) * 1.2);
+        float d = shape * (0.55 + 0.75 * roil);
 
         float sputter = mix(
             smoothstep(0.35, 0.75, valueNoise(float2(t * 0.9 + fi * 3.1, fi * 2.7))),
@@ -139,39 +128,12 @@ static float3 rampColor(float d, float h, float az) {
             bestInt = I;
             bestBlue = B;
         }
-
-        if (B > 0.001) {
-            float Hb = max(Hm - cy, 0.05) * (0.24 + 0.36 * B);
-            float yb = (uv.y - cy) / Hb;
-            float dxb = (uv.x - cx) * columns / (rx * 0.55);
-            float rise_b = max(yb, 0.0);
-            yb += (n - 0.5) * 0.40 * rise_b;
-            dxb += (n - 0.5) * 0.35 * rise_b;
-            float vb = clamp(1.0 - max(yb, 0.0), 0.0, 1.0);
-            float wb = pow(vb, 0.6) * (0.78 + 0.44 * edgeN);
-            float eb = smoothstep(1.0, 0.0, abs(dxb) / max(0.05, wb));
-            float db = vb * eb * (0.70 + 0.50 * n) * B;
-            db *= smoothstep(-0.7, -0.1, yb);
-            coneD = max(coneD, db);
-        }
     }
 
-    float az = smoothstep(0.68, 1.0, bestBlue);
+    float az = smoothstep(0.5, 1.0, bestBlue) * smoothstep(0.30, 0.75, best);
     float3 col = rampColor(best, bestHeat, az);
     float alpha = smoothstep(0.08, 0.22, best);
     alpha += 0.05 * best;
-
-    if (coneD > 0.001) {
-        float3 b1 = float3(0.04, 0.10, 0.42);
-        float3 b2 = float3(0.12, 0.32, 0.95);
-        float3 b3 = float3(0.60, 0.78, 1.00);
-        float3 bcol = b1;
-        bcol = mix(bcol, b2, smoothstep(0.42 - bandSoft, 0.42 + bandSoft, coneD));
-        bcol = mix(bcol, b3, smoothstep(0.74 - bandSoft, 0.74 + bandSoft, coneD));
-        float coneMask = smoothstep(0.24, 0.40, coneD);
-        col = mix(col, bcol, coneMask);
-        alpha = max(alpha, coneMask * 0.95);
-    }
 
     float sparkAmt = smoothstep(0.85, 1.0, bestInt);
     if (sparkAmt > 0.0) {
