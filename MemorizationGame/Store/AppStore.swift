@@ -64,10 +64,6 @@ final class AppStore {
             .max { model.overdueRatio(cards[$0], at: now) < model.overdueRatio(cards[$1], at: now) }
     }
 
-    func nextFade(at now: Date = Date()) -> Date? {
-        reviewables.compactMap { decay.nextDecay(for: $0, after: now) }.min()
-    }
-
     var decay: DecayModel { DecayModel(rate: settings.decayRate) }
 
     func cards(for passage: Passage) -> [Reviewable] {

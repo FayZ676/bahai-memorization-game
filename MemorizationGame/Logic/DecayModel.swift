@@ -82,16 +82,4 @@ struct DecayModel {
         guard let last = card.lastPracticed, card.hiddenBaseline > 0 else { return -1 }
         return Double(Self.nightsElapsed(from: last, to: now)) / Double(intervalNights(strength: card.strength))
     }
-
-    func nextDecay(for card: Reviewable, after now: Date) -> Date? {
-        guard let last = card.lastPracticed, card.hiddenBaseline > 0 else { return nil }
-        let calendar = Calendar.current
-        let due = calendar.date(
-            byAdding: .day,
-            value: intervalNights(strength: card.strength),
-            to: calendar.startOfDay(for: last)
-        ) ?? now
-        if now < due { return due }
-        return calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now))
-    }
 }

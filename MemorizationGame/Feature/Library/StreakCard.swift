@@ -8,9 +8,14 @@ struct StreakCard: View {
         let now = Date()
         let target = store.decayingChunks().first
         return VStack(alignment: .leading, spacing: 0) {
-            heroRow(fade: headerFade(for: target, at: now), at: now)
-            activityMeter
-                .padding(.top, 6)
+            HStack(alignment: .bottom, spacing: 12) {
+                BurningNumberView(
+                    value: store.streakCount,
+                    today: flameDays.last ?? FlameDay(words: 0, heat: 0),
+                    fontSize: 44
+                )
+                activityMeter
+            }
             if let target {
                 HairlineDivider()
                     .padding(.top, 12)
@@ -26,34 +31,6 @@ struct StreakCard: View {
             }
         }
         .animation(.easeInOut(duration: 0.25), value: store.practicedToday)
-    }
-
-    private func headerFade(for target: (passage: Passage, card: Reviewable)?, at now: Date) -> Date? {
-        if let target { return store.decay.nextDecay(for: target.card, after: now) }
-        if store.hasDecayableChunks { return store.nextFade(at: now) }
-        return nil
-    }
-
-    private func heroRow(fade: Date?, at now: Date) -> some View {
-        HStack(alignment: .center, spacing: 12) {
-            BurningNumberView(
-                value: store.streakCount,
-                today: flameDays.last ?? FlameDay(words: 0, heat: 0),
-                fontSize: 44
-            )
-            Spacer(minLength: 8)
-            if let fade {
-                HStack(spacing: 6) {
-                    Image(systemName: "hourglass")
-                        .font(.system(size: 13, weight: .regular))
-                        .foregroundStyle(Theme.muted)
-                    Text(timerInterval: min(now, fade)...fade, countsDown: true)
-                        .font(Typography.body)
-                        .monospacedDigit()
-                        .foregroundStyle(Theme.navIcon)
-                }
-            }
-        }
     }
 
     private var activityMeter: some View {
