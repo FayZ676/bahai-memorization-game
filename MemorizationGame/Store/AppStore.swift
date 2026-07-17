@@ -92,10 +92,6 @@ final class AppStore {
         practiceLog.streak()
     }
 
-    var hasDecayableChunks: Bool {
-        reviewables.contains { $0.lastPracticed != nil && $0.hiddenBaseline > 0 }
-    }
-
     func decayingChunks(at now: Date = Date()) -> [(passage: Passage, card: Reviewable)] {
         let model = decay
         return reviewables

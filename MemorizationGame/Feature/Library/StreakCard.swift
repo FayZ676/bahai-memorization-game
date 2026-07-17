@@ -21,13 +21,6 @@ struct StreakCard: View {
                     .padding(.top, 12)
                 prayerSection(target.passage, target.card, at: now)
                     .padding(.top, 12)
-            } else if store.hasDecayableChunks {
-                HairlineDivider()
-                    .padding(.top, 12)
-                Text("All chunks fresh")
-                    .font(Typography.caption)
-                    .foregroundStyle(Theme.muted)
-                    .padding(.top, 10)
             }
         }
         .animation(.easeInOut(duration: 0.25), value: store.practicedToday)
