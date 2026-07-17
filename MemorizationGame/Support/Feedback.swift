@@ -18,11 +18,11 @@ enum Feedback {
     }
 
     static func wordMatched() {
-        UIImpactFeedbackGenerator(style: .light).impactOccurred(intensity: 0.85)
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred(intensity: 1.0)
     }
 
     static func recitationMiss() {
-        UIImpactFeedbackGenerator(style: .rigid).impactOccurred(intensity: 0.7)
+        UINotificationFeedbackGenerator().notificationOccurred(.error)
     }
 
     static func scrub() {
