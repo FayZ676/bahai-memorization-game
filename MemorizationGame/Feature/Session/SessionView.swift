@@ -320,12 +320,17 @@ struct SessionView: View {
             case .idle, .failed:
                 guard let card = vm.current else { return }
                 vm.endPeek()
-                recitedWords = []
-                missedWords = []
+                let hidden = card.hiddenWords.sorted()
+                var remaining = hidden.filter { !recitedWords.contains($0) && !missedWords.contains($0) }
+                if remaining.isEmpty {
+                    recitedWords = []
+                    missedWords = []
+                    remaining = hidden
+                }
                 Task {
                     await voice.start(
                         words: card.words.map(String.init),
-                        hiddenIndices: card.hiddenWords.sorted()
+                        hiddenIndices: remaining
                     )
                 }
             case .preparingModel:
