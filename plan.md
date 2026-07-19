@@ -16,7 +16,7 @@ The ladder works like this:
 2. **Merge** — once two *adjacent* cards are both fully hidden, they combine into one new, larger card spanning both. The merged card starts over completely: fully visible text, `hiddenWordCount` reset to 1, back through the introduction gate. Reciting the combined span is treated as a distinct skill from reciting its two parts — it has to prove itself independently, scaffolding included.
 3. **Repeat** — the merged card is hidden again, and merges again with its neighbor once it too is fully hidden. This repeats indefinitely.
 
-The effect: chunk size isn't decided up front by a curator's guess — it emerges naturally from actual performance. A passage isn't "done" via a separate flag or status field; it's done when the ladder has collapsed it down to a single card spanning the whole passage. No card, atomic or merged, is ever retired — the queue just keeps cycling, the same way real retention never truly locks at 100%. Reaching that single-card state gets no special UI treatment — the card just keeps getting reviewed like any other.
+The effect: section size isn't decided up front by a curator's guess — it emerges naturally from actual performance. A passage isn't "done" via a separate flag or status field; it's done when the ladder has collapsed it down to a single card spanning the whole passage. No card, atomic or merged, is ever retired — the queue just keeps cycling, the same way real retention never truly locks at 100%. Reaching that single-card state gets no special UI treatment — the card just keeps getting reviewed like any other.
 
 ## Data model
 
