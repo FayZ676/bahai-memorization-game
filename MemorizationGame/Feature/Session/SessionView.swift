@@ -185,6 +185,7 @@ struct SessionView: View {
                 .padding(.bottom, 36)
             }
             .scrollIndicators(.hidden)
+        .scrollDisabled(painting)
         .simultaneousGesture(
             DragGesture(minimumDistance: 24)
                 .onEnded { value in
@@ -231,7 +232,7 @@ struct SessionView: View {
             }
         }
         .coordinateSpace(name: "scripture")
-        .gesture(paintGesture, including: vm.wordsRevealed ? .subviews : .all)
+        .simultaneousGesture(paintGesture, including: vm.wordsRevealed ? .subviews : .all)
     }
 
     private var paintGesture: some Gesture {
