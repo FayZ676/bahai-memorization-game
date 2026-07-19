@@ -14,6 +14,9 @@ struct SessionView: View {
     @State private var wordFrames: [Int: CGRect] = [:]
     @State private var paintTargetHidden: Bool?
     @State private var painting = false
+    @State private var scrollPosition = ScrollPosition()
+    @State private var scrollOffset: CGFloat = 0
+    @State private var scrollableHeight: CGFloat = 0
     let passage: Passage
     private let store: AppStore
 
@@ -186,6 +189,16 @@ struct SessionView: View {
             }
             .scrollIndicators(.hidden)
         .scrollDisabled(painting)
+        .scrollPosition($scrollPosition)
+        .onScrollGeometryChange(for: ScrollGeometry.self) { $0 } action: { _, geometry in
+            scrollOffset = geometry.contentOffset.y + geometry.contentInsets.top
+            scrollableHeight = geometry.contentSize.height - geometry.containerSize.height
+        }
+        .overlay(alignment: .trailing) {
+            if scrollableHeight > 1 {
+                scrollRail(viewportHeight: geo.size.height)
+            }
+        }
         .simultaneousGesture(
             DragGesture(minimumDistance: 24)
                 .onEnded { value in
@@ -237,6 +250,33 @@ struct SessionView: View {
                 }
         )
         .simultaneousGesture(paintGesture)
+    }
+
+    private func scrollRail(viewportHeight: CGFloat) -> some View {
+        let railHeight = max(viewportHeight - 44, 60)
+        let thumbHeight = max(44, railHeight * railHeight / (railHeight + scrollableHeight))
+        let travel = railHeight - thumbHeight
+        let fraction = min(max(scrollOffset / scrollableHeight, 0), 1)
+        return ZStack(alignment: .top) {
+            Capsule()
+                .fill(Theme.hairline)
+                .frame(width: 3)
+            Capsule()
+                .fill(Theme.muted)
+                .frame(width: 3, height: thumbHeight)
+                .offset(y: travel * fraction)
+        }
+        .frame(width: 3, height: railHeight)
+        .frame(width: 28, height: railHeight)
+        .contentShape(Rectangle())
+        .gesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { value in
+                    guard travel > 0 else { return }
+                    let target = min(max((value.location.y - thumbHeight / 2) / travel, 0), 1)
+                    scrollPosition.scrollTo(y: target * scrollableHeight)
+                }
+        )
     }
 
     private var paintGesture: some Gesture {
