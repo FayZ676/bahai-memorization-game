@@ -219,11 +219,6 @@ struct SessionView: View {
                 )
                     .font(Typography.recite)
                     .modifier(ShakeEffect(shakes: missFlashIndex == idx ? CGFloat(missShakes) : 0))
-                    .contentShape(Rectangle())
-                    .allowsHitTesting(!vm.wordsRevealed)
-                    .onTapGesture {
-                        withAnimation(.easeInOut(duration: 0.22)) { vm.toggleWord(idx) }
-                    }
                     .onGeometryChange(for: CGRect.self) { proxy in
                         proxy.frame(in: .named("scripture"))
                     } action: { frame in
@@ -232,7 +227,16 @@ struct SessionView: View {
             }
         }
         .coordinateSpace(name: "scripture")
-        .simultaneousGesture(paintGesture, including: vm.wordsRevealed ? .subviews : .all)
+        .contentShape(Rectangle())
+        .allowsHitTesting(!vm.wordsRevealed)
+        .simultaneousGesture(
+            SpatialTapGesture(coordinateSpace: .named("scripture"))
+                .onEnded { value in
+                    guard !painting, let idx = wordIndex(at: value.location) else { return }
+                    withAnimation(.easeInOut(duration: 0.22)) { vm.toggleWord(idx) }
+                }
+        )
+        .simultaneousGesture(paintGesture)
     }
 
     private var paintGesture: some Gesture {
