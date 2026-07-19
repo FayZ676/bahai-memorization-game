@@ -24,11 +24,11 @@ enum DecayRate: String, Codable, CaseIterable {
     var detail: String {
         switch self {
         case .slow:
-            "Gentle. A newly learned chunk rests about five nights before a word slips, and well-drilled ones can rest a month."
+            "Gentle. A newly learned section rests about five nights before a word slips, and well-drilled ones can rest a month."
         case .medium:
-            "Balanced. A newly learned chunk rests a few nights, and well-drilled ones a few weeks."
+            "Balanced. A newly learned section rests a few nights, and well-drilled ones a few weeks."
         case .fast:
-            "Demanding. A newly learned chunk rests a night or two, and even well-drilled ones return within a couple of weeks."
+            "Demanding. A newly learned section rests a night or two, and even well-drilled ones return within a couple of weeks."
         }
     }
 }

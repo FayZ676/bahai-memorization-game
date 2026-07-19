@@ -78,7 +78,7 @@ final class AppStore {
         passages.sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
     }
 
-    func chunkHeats(for passage: Passage) -> [Double] {
+    func sectionHeats(for passage: Passage) -> [Double] {
         queue(for: passage).map { card in
             card.wordCount > 0 ? Double(card.hiddenWords.count) / Double(card.wordCount) : 0
         }
@@ -92,7 +92,7 @@ final class AppStore {
         practiceLog.streak()
     }
 
-    func chunkFading(for passage: Passage, at now: Date = Date()) -> [Bool] {
+    func sectionFading(for passage: Passage, at now: Date = Date()) -> [Bool] {
         let model = decay
         return queue(for: passage).map { model.isDecaying($0, at: now) }
     }
