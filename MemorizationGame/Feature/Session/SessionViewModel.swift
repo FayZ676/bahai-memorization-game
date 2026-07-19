@@ -46,6 +46,7 @@ final class SessionViewModel {
     var progressNumber: Int { current?.span.start ?? 0 }
     var progressTotal: Int { max(store.cards(for: passage).count, 1) }
     var sectionHeats: [Double] { store.sectionHeats(for: passage) }
+    var sectionFading: [Bool] { store.sectionFading(for: passage) }
 
     func start() {
         let q = store.queue(for: passage)

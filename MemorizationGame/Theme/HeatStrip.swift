@@ -54,10 +54,11 @@ struct HeatStrip: View {
         let hot = Heat.intensity(heat)
         let fill = fading ? Self.ash : Heat.color(complete ? 1 : hot * 0.85)
         let shape = RoundedRectangle(cornerRadius: 1.5)
+        let fillOpacity = fading ? 0.9 : complete ? 1 : heat > 0 ? 0.35 + 0.65 * hot : 0
         let base = shape
             .fill(Color.white.opacity(selected ? 0.3 : 0.07))
-            .overlay(shape.fill(complete ? fill : fill.opacity(heat > 0 ? 0.35 + 0.65 * hot : 0)))
-            .shadow(color: fill.opacity(complete ? 0 : 0.8 * hot * hot), radius: 1 + 3 * hot)
+            .overlay(shape.fill(fill.opacity(fillOpacity)))
+            .shadow(color: fill.opacity(complete || fading ? 0 : 0.8 * hot * hot), radius: 1 + 3 * hot)
             .scaleEffect(selected ? CGSize(width: 1, height: 2.1) : CGSize(width: 1, height: 1))
         if complete {
             let glowing = base
