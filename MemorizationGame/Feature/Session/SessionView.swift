@@ -138,7 +138,7 @@ struct SessionView: View {
 
     private var heatBar: some View {
         GeometryReader { geo in
-            let heats = vm.chunkHeats
+            let heats = vm.sectionHeats
             let count = max(heats.count, 1)
             let unit = geo.size.width / CGFloat(count)
             HeatStrip(heats: heats, animated: false, highlight: vm.step)

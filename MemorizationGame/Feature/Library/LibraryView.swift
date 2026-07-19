@@ -136,7 +136,7 @@ private struct PassageRow: View {
     let passage: Passage
 
     var body: some View {
-        let fading = store.chunkFading(for: passage)
+        let fading = store.sectionFading(for: passage)
         let fadingCount = fading.count(where: { $0 })
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -152,14 +152,14 @@ private struct PassageRow: View {
 
                 if fadingCount > 0 {
                     Spacer(minLength: 8)
-                    Text("\(fadingCount) Chunk\(fadingCount == 1 ? "" : "s") Fading")
+                    Text("\(fadingCount) Section\(fadingCount == 1 ? "" : "s") Fading")
                         .font(Typography.footnote)
                         .foregroundStyle(Color(hex: 0xA05A2C))
                         .fixedSize()
                 }
             }
 
-            HeatStrip(heats: store.chunkHeats(for: passage), fading: fading)
+            HeatStrip(heats: store.sectionHeats(for: passage), fading: fading)
                 .frame(height: 6)
         }
         .padding(.vertical, 6)
