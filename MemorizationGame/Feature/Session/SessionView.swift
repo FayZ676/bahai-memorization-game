@@ -73,7 +73,8 @@ struct SessionView: View {
             missedWords = []
         }
         .onChange(of: vm.current?.hiddenWords) {
-            if voice.isListening { voice.stop() }
+            guard let card = vm.current else { return }
+            voice.updateHiddenIndices(remainingHiddenIndices(of: card))
         }
         .onDisappear { voice.stop() }
         .alert("Microphone Access Needed", isPresented: $showingMicDenied) {
@@ -102,6 +103,12 @@ struct SessionView: View {
                 store.dailyGoalReached = false
             }
         }
+    }
+
+    private func remainingHiddenIndices(of card: Reviewable) -> [Int] {
+        card.hiddenWords
+            .filter { !recitedWords.contains($0) && !missedWords.contains($0) }
+            .sorted()
     }
 
     private func registerRecited(_ indices: [Int]) {
@@ -320,12 +327,11 @@ struct SessionView: View {
             case .idle, .failed:
                 guard let card = vm.current else { return }
                 vm.endPeek()
-                let hidden = card.hiddenWords.sorted()
-                var remaining = hidden.filter { !recitedWords.contains($0) && !missedWords.contains($0) }
+                var remaining = remainingHiddenIndices(of: card)
                 if remaining.isEmpty {
                     recitedWords = []
                     missedWords = []
-                    remaining = hidden
+                    remaining = card.hiddenWords.sorted()
                 }
                 Task {
                     await voice.start(

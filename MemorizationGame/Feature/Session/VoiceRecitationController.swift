@@ -79,6 +79,13 @@ final class VoiceRecitationController {
         }
     }
 
+    func updateHiddenIndices(_ hiddenIndices: [Int]) {
+        guard state == .listening else { return }
+        matcher.replaceHidden(with: hiddenIndices)
+        nextExpectedIndex = matcher.nextExpectedIndex
+        if matcher.isComplete { stop() }
+    }
+
     func stop() {
         guard state != .idle else { return }
         if state != .micDenied {

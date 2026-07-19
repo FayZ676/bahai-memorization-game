@@ -7,7 +7,7 @@ struct RecitationMatcher {
     }
 
     private let words: [String]
-    private let hiddenIndices: [Int]
+    private var hiddenIndices: [Int]
     private var queuePosition = 0
     private var failedAttempts = 0
     private var segmentMatchConsumed = 0
@@ -19,6 +19,13 @@ struct RecitationMatcher {
 
     var isComplete: Bool { queuePosition >= hiddenIndices.count }
     var nextExpectedIndex: Int? { isComplete ? nil : hiddenIndices[queuePosition] }
+
+    mutating func replaceHidden(with indices: [Int]) {
+        let frontier = nextExpectedIndex ?? words.count
+        hiddenIndices = indices.filter { $0 >= 0 && $0 < words.count }.sorted()
+        queuePosition = hiddenIndices.firstIndex { $0 >= frontier } ?? hiddenIndices.count
+        failedAttempts = 0
+    }
 
     mutating func updateVolatile(_ segmentTokens: [String]) -> [Event] {
         scan(segmentTokens, commitMisses: false)
