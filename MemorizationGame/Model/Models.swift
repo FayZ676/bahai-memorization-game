@@ -35,7 +35,27 @@ struct Reviewable: Codable, Identifiable, Hashable {
         self.hiddenBaseline = hiddenBaseline
     }
 
-    var words: [Substring] { expectedText.split(separator: " ") }
+    var words: [Substring] {
+        expectedText
+            .split(separator: " ")
+            .flatMap(Self.splitInternalHyphens)
+    }
+
+    private static func splitInternalHyphens(_ word: Substring) -> [Substring] {
+        var pieces: [Substring] = []
+        var pieceStart = word.startIndex
+        var searchStart = word.startIndex
+        while let hyphenIndex = word[searchStart...].firstIndex(of: "-") {
+            let afterHyphen = word.index(after: hyphenIndex)
+            if hyphenIndex > pieceStart, afterHyphen < word.endIndex {
+                pieces.append(word[pieceStart..<hyphenIndex])
+                pieceStart = hyphenIndex
+            }
+            searchStart = afterHyphen
+        }
+        pieces.append(word[pieceStart...])
+        return pieces
+    }
     var wordCount: Int { words.count }
 
     mutating func toggleWord(_ index: Int) {
