@@ -182,7 +182,7 @@ struct SessionView: View {
                         .padding(.top, 20)
                     Spacer(minLength: 0)
                 }
-                .frame(maxWidth: .infinity, minHeight: geo.size.height, alignment: .topLeading)
+                .frame(maxWidth: .infinity, minHeight: geo.size.height - 44, alignment: .topLeading)
                 .padding(.horizontal, 30)
                 .padding(.top, 8)
                 .padding(.bottom, 36)
@@ -257,16 +257,11 @@ struct SessionView: View {
         let thumbHeight = max(44, railHeight * railHeight / (railHeight + scrollableHeight))
         let travel = railHeight - thumbHeight
         let fraction = min(max(scrollOffset / scrollableHeight, 0), 1)
-        return ZStack(alignment: .top) {
-            Capsule()
-                .fill(Theme.hairline)
-                .frame(width: 3)
-            Capsule()
-                .fill(Theme.muted)
-                .frame(width: 3, height: thumbHeight)
-                .offset(y: travel * fraction)
-        }
-        .frame(width: 3, height: railHeight)
+        return Capsule()
+            .fill(Theme.faint.opacity(0.45))
+            .frame(width: 2, height: thumbHeight)
+            .offset(y: travel * fraction)
+            .frame(width: 2, height: railHeight, alignment: .top)
         .frame(width: 28, height: railHeight)
         .contentShape(Rectangle())
         .gesture(
