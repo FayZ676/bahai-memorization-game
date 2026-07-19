@@ -39,9 +39,6 @@ struct LibraryView: View {
             .navigationDestination(for: Passage.self) { passage in
                 SessionView(passage: passage, store: store)
             }
-            .navigationDestination(for: SessionRoute.self) { route in
-                SessionView(passage: route.passage, store: store, focusCardID: route.focusCardID)
-            }
         }
         .confirmationDialog(
             "Delete this passage?",
@@ -66,12 +63,6 @@ struct LibraryView: View {
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
                     .listRowInsets(EdgeInsets())
-            }
-
-            Section {
-                StreakCard(practice: { path.append($0) })
-                    .listRowBackground(streakBackground)
-                    .listRowSeparator(.hidden)
             }
 
             Section {
@@ -127,30 +118,6 @@ struct LibraryView: View {
         }
     }
 
-    private var streakBackground: some View {
-        let shape = RoundedRectangle(cornerRadius: 16)
-        return shape
-            .fill(Theme.rowBg)
-            .overlay {
-                if store.practicedToday {
-                    shape.fill(
-                        RadialGradient(
-                            colors: [Theme.accent.opacity(0.10), .clear],
-                            center: UnitPoint(x: 0.18, y: 0),
-                            startRadius: 0,
-                            endRadius: 240
-                        )
-                    )
-                }
-            }
-            .overlay(
-                shape.stroke(
-                    store.practicedToday ? Theme.accent.opacity(0.3) : Theme.hairline,
-                    lineWidth: 1
-                )
-            )
-    }
-
     private var emptyState: some View {
         VStack {
             Spacer()
@@ -169,18 +136,30 @@ private struct PassageRow: View {
     let passage: Passage
 
     var body: some View {
+        let fading = store.chunkFading(for: passage)
+        let fadingCount = fading.count(where: { $0 })
         VStack(alignment: .leading, spacing: 14) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text(passage.title)
-                    .font(Typography.title)
-                    .foregroundStyle(Theme.ink)
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(passage.title)
+                        .font(Typography.title)
+                        .foregroundStyle(Theme.ink)
 
-                Text("Added \(passage.dateAdded.formatted(.dateTime.month(.abbreviated).day().year()))")
-                    .font(Typography.footnote)
-                    .foregroundStyle(Theme.faint)
+                    Text("Added \(passage.dateAdded.formatted(.dateTime.month(.abbreviated).day().year()))")
+                        .font(Typography.footnote)
+                        .foregroundStyle(Theme.faint)
+                }
+
+                if fadingCount > 0 {
+                    Spacer(minLength: 8)
+                    Text("\(fadingCount) Chunk\(fadingCount == 1 ? "" : "s") Fading")
+                        .font(Typography.footnote)
+                        .foregroundStyle(Color(hex: 0xA05A2C))
+                        .fixedSize()
+                }
             }
 
-            HeatStrip(heats: store.chunkHeats(for: passage))
+            HeatStrip(heats: store.chunkHeats(for: passage), fading: fading)
                 .frame(height: 6)
         }
         .padding(.vertical, 6)

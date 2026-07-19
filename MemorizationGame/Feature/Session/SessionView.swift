@@ -1,10 +1,5 @@
 import SwiftUI
 
-struct SessionRoute: Hashable {
-    let passage: Passage
-    let focusCardID: UUID
-}
-
 struct SessionView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var vm: SessionViewModel
@@ -20,13 +15,11 @@ struct SessionView: View {
     @State private var paintTargetHidden: Bool?
     @State private var painting = false
     let passage: Passage
-    let focusCardID: UUID?
     private let store: AppStore
 
-    init(passage: Passage, store: AppStore, focusCardID: UUID? = nil) {
+    init(passage: Passage, store: AppStore) {
         self.passage = passage
         self.store = store
-        self.focusCardID = focusCardID
         _vm = State(initialValue: SessionViewModel(passage: passage, store: store))
     }
 
@@ -53,7 +46,7 @@ struct SessionView: View {
         .task {
             guard !started else { return }
             started = true
-            vm.start(focusing: focusCardID)
+            vm.start()
             voice.onWordsMatched = { registerRecited($0) }
             voice.onMiss = { registerMiss($0, movedOn: $1) }
             voice.onCompleted = { Feedback.sessionComplete() }

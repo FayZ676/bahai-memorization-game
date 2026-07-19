@@ -2,8 +2,11 @@ import SwiftUI
 
 struct HeatStrip: View {
     let heats: [Double]
+    var fading: [Bool] = []
     var animated = true
     var highlight: Int? = nil
+
+    private static let ash = Color(hex: 0x8C7259)
 
     private static let waveSpeed = 13.0
     private static let waveMargin = 4.0
@@ -23,7 +26,12 @@ struct HeatStrip: View {
     private func row(crest: Double?) -> some View {
         HStack(spacing: 2) {
             ForEach(heats.indices, id: \.self) { i in
-                segment(heat: heats[i], glow: crest.map { glowIntensity(index: i, crest: $0) } ?? 0, selected: i == highlight)
+                segment(
+                    heat: heats[i],
+                    glow: crest.map { glowIntensity(index: i, crest: $0) } ?? 0,
+                    selected: i == highlight,
+                    fading: fading.indices.contains(i) && fading[i]
+                )
             }
         }
     }
@@ -41,10 +49,10 @@ struct HeatStrip: View {
     }
 
     @ViewBuilder
-    private func segment(heat: Double, glow: Double, selected: Bool) -> some View {
-        let complete = heat >= 1
+    private func segment(heat: Double, glow: Double, selected: Bool, fading: Bool) -> some View {
+        let complete = heat >= 1 && !fading
         let hot = Heat.intensity(heat)
-        let fill = Heat.color(complete ? 1 : hot * 0.85)
+        let fill = fading ? Self.ash : Heat.color(complete ? 1 : hot * 0.85)
         let shape = RoundedRectangle(cornerRadius: 1.5)
         let base = shape
             .fill(Color.white.opacity(selected ? 0.3 : 0.07))

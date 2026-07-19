@@ -92,14 +92,9 @@ final class AppStore {
         practiceLog.streak()
     }
 
-    func decayingChunks(at now: Date = Date()) -> [(passage: Passage, card: Reviewable)] {
+    func chunkFading(for passage: Passage, at now: Date = Date()) -> [Bool] {
         let model = decay
-        return reviewables
-            .filter { model.isDecaying($0, at: now) }
-            .sorted { model.lostFraction($0, at: now) > model.lostFraction($1, at: now) }
-            .compactMap { card in
-                passages.first { $0.id == card.passageRef }.map { ($0, card) }
-            }
+        return queue(for: passage).map { model.isDecaying($0, at: now) }
     }
 
     func createPassage(title: String, units: [String]) {

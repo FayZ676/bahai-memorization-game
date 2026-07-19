@@ -47,11 +47,9 @@ final class SessionViewModel {
     var progressTotal: Int { max(store.cards(for: passage).count, 1) }
     var chunkHeats: [Double] { store.chunkHeats(for: passage) }
 
-    func start(focusing cardID: UUID? = nil) {
+    func start() {
         let q = store.queue(for: passage)
-        step = cardID.flatMap { id in q.firstIndex { $0.id == id } }
-            ?? q.lastIndex { !$0.hiddenWords.isEmpty }
-            ?? 0
+        step = q.lastIndex { !$0.hiddenWords.isEmpty } ?? 0
         beginGrounding()
         presentationEpoch += 1
     }
