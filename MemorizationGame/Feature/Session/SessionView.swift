@@ -10,7 +10,6 @@ struct SessionView: View {
     @State private var vm: SessionViewModel
     @State private var voice = VoiceRecitationController()
     @State private var started = false
-    @State private var showingAllOptions = false
     @State private var showingMicDenied = false
     @State private var scrubbing = false
     @State private var recitedWords: Set<Int> = []
@@ -36,14 +35,12 @@ struct SessionView: View {
             Theme.bg.ignoresSafeArea()
             VStack(spacing: 0) {
                 ScreenHeader(title: passage.title, onBack: { dismiss() }) {
-                    if vm.current != nil { micButton }
+                    if vm.current != nil { optionsMenu }
                 }
                 if vm.current != nil {
                     progressRow
                     readingArea
-                    if voice.isListening {
-                        heardRow
-                    }
+                    bottomBar
                 } else {
                     Spacer()
                     emptyQueue
@@ -53,11 +50,6 @@ struct SessionView: View {
         }
         .toolbar(.hidden, for: .navigationBar)
         .navigationBarBackButtonHidden(true)
-        .confirmationDialog("Words", isPresented: $showingAllOptions, titleVisibility: .hidden) {
-            Button(vm.isPeeking ? "Unpeek" : "Peek") { vm.togglePeek() }
-            Button("Hide All Words") { vm.setAllWords(hidden: true) }
-            Button("Show All Words") { vm.setAllWords(hidden: false) }
-        }
         .task {
             guard !started else { return }
             started = true
@@ -188,7 +180,7 @@ struct SessionView: View {
                     if let card = vm.current {
                         scripture(for: card)
                     }
-                    Text("Tap or glide over words to show or hide · hold empty space for more")
+                    Text("Tap or glide over words to show or hide")
                         .font(Typography.micro)
                         .foregroundStyle(Theme.faint)
                         .padding(.top, 20)
@@ -198,11 +190,6 @@ struct SessionView: View {
                 .padding(.horizontal, 30)
                 .padding(.top, 8)
                 .padding(.bottom, 36)
-                .contentShape(Rectangle())
-                .onLongPressGesture(minimumDuration: 0.4) {
-                    Feedback.flip()
-                    showingAllOptions = true
-                }
             }
             .scrollIndicators(.hidden)
         .simultaneousGesture(
@@ -293,6 +280,26 @@ struct SessionView: View {
 
     // MARK: Bottom bar
 
+    private var bottomBar: some View {
+        VStack(spacing: 0) {
+            if voice.isListening {
+                heardRow
+            }
+            if micVisible {
+                micButton
+                    .padding(.top, 12)
+                    .transition(.opacity.combined(with: .scale(scale: 0.85)))
+            }
+        }
+        .padding(.bottom, 12)
+        .animation(.easeInOut(duration: 0.2), value: micVisible)
+        .animation(.easeInOut(duration: 0.2), value: voice.isListening)
+    }
+
+    private var micVisible: Bool {
+        voice.isListening || !(vm.current?.hiddenWords.isEmpty ?? true)
+    }
+
     private var heardRow: some View {
         HStack(spacing: 7) {
             if voice.isSettling {
@@ -344,13 +351,26 @@ struct SessionView: View {
             }
         } label: {
             micIcon
-                .frame(width: 38, height: 38)
+                .frame(width: 56, height: 56)
                 .background(micFill, in: Circle())
                 .overlay(Circle().stroke(micStroke, lineWidth: 1))
                 .contentShape(Circle())
         }
         .buttonStyle(.haptic)
         .animation(.easeInOut(duration: 0.18), value: voice.state)
+    }
+
+    private var optionsMenu: some View {
+        Menu {
+            Button(vm.isPeeking ? "Unpeek" : "Peek") { vm.togglePeek() }
+            Button("Hide All Words") { vm.setAllWords(hidden: true) }
+            Button("Show All Words") { vm.setAllWords(hidden: false) }
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Theme.navIcon)
+        }
+        .buttonStyle(.icon)
     }
 
     @ViewBuilder
@@ -362,16 +382,16 @@ struct SessionView: View {
                 .tint(Theme.muted)
         case .listening:
             Image(systemName: "mic.fill")
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(size: 21, weight: .semibold))
                 .foregroundStyle(Theme.emberHot)
                 .symbolEffect(.pulse, options: .repeating)
         case .micDenied:
             Image(systemName: "mic.slash")
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(size: 21, weight: .semibold))
                 .foregroundStyle(Theme.muted.opacity(0.5))
         case .idle, .failed:
             Image(systemName: "mic")
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(size: 21, weight: .semibold))
                 .foregroundStyle(Theme.navIcon)
         }
     }
