@@ -119,7 +119,7 @@ struct SessionView: View {
     private var progressRow: some View {
         VStack(spacing: 9) {
             HStack {
-                Text("PASSAGE \(vm.progressNumber)")
+                Text("SECTION \(vm.progressNumber)")
                     .font(Typography.micro)
                     .tracking(1.8)
                     .foregroundStyle(Theme.muted)
