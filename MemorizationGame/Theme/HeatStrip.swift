@@ -99,6 +99,7 @@ struct HeatStrip: View {
                             .blur(radius: 3)
                             .opacity(0.9 * pow(glow, 2.2))
                     }
+                    .clipShape(shape.scale(x: 1, y: 3))
                 )
             glowing
         } else {
