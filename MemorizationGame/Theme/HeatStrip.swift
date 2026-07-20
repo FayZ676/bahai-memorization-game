@@ -71,7 +71,7 @@ struct HeatStrip: View {
         let complete = heat >= 1 && !fading
         let hot = fading ? max(Heat.intensity(heat), Self.fadingFloor) : Heat.intensity(heat)
         let fill = Heat.color(complete ? 1 : hot * 0.85)
-        let shape = RoundedRectangle(cornerRadius: 1.5)
+        let shape = Rectangle()
         let fillOpacity = fading ? 0.4 + 0.6 * pulse : complete ? 1 : heat > 0 ? 0.35 + 0.65 * hot : 0
         let base = shape
             .fill(Color.white.opacity(selected ? 0.3 : 0.07))
