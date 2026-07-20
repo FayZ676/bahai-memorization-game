@@ -43,10 +43,14 @@ struct HeatStrip: View {
     }
 
     private func gap(mergeable: Bool, pulse: Double) -> some View {
-        Rectangle()
-            .fill(mergeable ? Theme.emberHot.opacity(0.9 * pulse) : .clear)
+        let shape = Rectangle()
+        return shape
+            .fill(Color.white.opacity(0.07))
+            .overlay(shape.fill(Heat.color(1)))
+            .shadow(color: Theme.ember.opacity(0.4), radius: 2)
+            .background(shape.fill(Theme.ember).blur(radius: 4).opacity(0.15))
+            .opacity(mergeable ? pulse : 0)
             .frame(width: 2)
-            .shadow(color: Theme.emberHot.opacity(mergeable ? 0.7 * pulse : 0), radius: 2)
     }
 
     private func crestPosition(at date: Date) -> Double {
