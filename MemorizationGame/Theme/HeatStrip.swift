@@ -5,7 +5,6 @@ struct HeatStrip: View {
     var fading: [Bool] = []
     var animated = true
     var highlight: Int? = nil
-    var mergeableGaps: [Bool] = []
 
     private static let waveSpeed = 13.0
     private static let waveMargin = 4.0
@@ -16,8 +15,7 @@ struct HeatStrip: View {
     var body: some View {
         let hasComplete = animated && heats.contains { $0 >= 1 }
         let hasFading = fading.contains(true)
-        let hasMergeable = mergeableGaps.contains(true)
-        TimelineView(.animation(paused: !hasComplete && !hasFading && !hasMergeable)) { context in
+        TimelineView(.animation(paused: !hasComplete && !hasFading)) { context in
             row(
                 crest: hasComplete ? crestPosition(at: context.date) : nil,
                 pulse: pulseLevel(at: context.date)
@@ -26,11 +24,8 @@ struct HeatStrip: View {
     }
 
     private func row(crest: Double?, pulse: Double) -> some View {
-        HStack(spacing: 0) {
+        HStack(spacing: 2) {
             ForEach(heats.indices, id: \.self) { i in
-                if i > 0 {
-                    gap(mergeable: mergeableGaps.indices.contains(i - 1) && mergeableGaps[i - 1], pulse: pulse)
-                }
                 segment(
                     heat: heats[i],
                     glow: crest.map { glowIntensity(index: i, crest: $0) } ?? 0,
@@ -40,17 +35,6 @@ struct HeatStrip: View {
                 )
             }
         }
-    }
-
-    private func gap(mergeable: Bool, pulse: Double) -> some View {
-        let shape = Rectangle()
-        return shape
-            .fill(Color.white.opacity(0.07))
-            .overlay(shape.fill(Heat.color(1)))
-            .shadow(color: Theme.ember.opacity(0.4), radius: 2)
-            .background(shape.fill(Theme.ember).blur(radius: 4).opacity(0.15))
-            .opacity(mergeable ? pulse : 0)
-            .frame(width: 2)
     }
 
     private func crestPosition(at date: Date) -> Double {
@@ -75,7 +59,7 @@ struct HeatStrip: View {
         let complete = heat >= 1 && !fading
         let hot = fading ? max(Heat.intensity(heat), Self.fadingFloor) : Heat.intensity(heat)
         let fill = Heat.color(complete ? 1 : hot * 0.85)
-        let shape = Rectangle()
+        let shape = RoundedRectangle(cornerRadius: 1.5)
         let fillOpacity = fading ? 0.4 + 0.6 * pulse : complete ? 1 : heat > 0 ? 0.35 + 0.65 * hot : 0
         let base = shape
             .fill(Color.white.opacity(selected ? 0.3 : 0.07))
@@ -99,7 +83,6 @@ struct HeatStrip: View {
                             .blur(radius: 3)
                             .opacity(0.9 * pow(glow, 2.2))
                     }
-                    .clipShape(shape.scale(x: 1, y: 3))
                 )
             glowing
         } else {

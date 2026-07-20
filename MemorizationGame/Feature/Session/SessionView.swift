@@ -166,7 +166,7 @@ struct SessionView: View {
             let heats = vm.sectionHeats
             let count = max(heats.count, 1)
             let unit = geo.size.width / CGFloat(count)
-            HeatStrip(heats: heats, fading: vm.sectionFading, animated: false, highlight: vm.step, mergeableGaps: vm.mergeableGaps)
+            HeatStrip(heats: heats, fading: vm.sectionFading, animated: false, highlight: vm.step)
                 .frame(height: scrubbing ? 12 : 6)
                 .frame(maxHeight: .infinity)
                 .contentShape(Rectangle())

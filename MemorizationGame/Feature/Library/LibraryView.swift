@@ -159,7 +159,7 @@ private struct PassageRow: View {
                 }
             }
 
-            HeatStrip(heats: store.sectionHeats(for: passage), fading: fading, mergeableGaps: store.mergeableGaps(for: passage))
+            HeatStrip(heats: store.sectionHeats(for: passage), fading: fading)
                 .frame(height: 6)
         }
         .padding(.vertical, 6)
