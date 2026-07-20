@@ -18,9 +18,6 @@ struct HeatStrip: View {
     private static let mergeApartHold = 0.30
     private static let mergeCloseSpan = 0.12
     private static let mergeMergedHold = 0.30
-    private static let mergeOvershoot = 0.14
-    private static let mergeSettleDecay = 5.0
-    private static let mergeSquashGain = 0.5
 
     var body: some View {
         let hasComplete = animated && heats.contains { $0 >= 1 }
@@ -39,7 +36,7 @@ struct HeatStrip: View {
         HStack(spacing: 0) {
             ForEach(heats.indices, id: \.self) { i in
                 if i > 0 {
-                    gap(mergeable: isMergeable(i - 1), merge: merge)
+                    Color.clear.frame(width: Self.gapWidth)
                 }
                 segment(
                     heat: heats[i],
@@ -47,7 +44,7 @@ struct HeatStrip: View {
                     selected: i == highlight,
                     fading: fading.indices.contains(i) && fading[i],
                     pulse: pulse,
-                    squash: inMergeRun(i) ? 1 + Self.mergeSquashGain * max(0, merge - 1) : 1
+                    forwardFill: isMergeable(i) ? min(1, max(0, merge)) : 0
                 )
             }
         }
@@ -55,15 +52,6 @@ struct HeatStrip: View {
 
     private func isMergeable(_ gapIndex: Int) -> Bool {
         mergeableGaps.indices.contains(gapIndex) && mergeableGaps[gapIndex]
-    }
-
-    private func inMergeRun(_ index: Int) -> Bool {
-        isMergeable(index - 1) || isMergeable(index)
-    }
-
-    private func gap(mergeable: Bool, merge: Double) -> some View {
-        let width = mergeable ? max(0, Self.gapWidth * (1 - merge)) : Self.gapWidth
-        return Color.clear.frame(width: width)
     }
 
     private func crestPosition(at date: Date) -> Double {
@@ -93,16 +81,34 @@ struct HeatStrip: View {
             let p = (u - closeStart) / Self.mergeCloseSpan
             return p * p * p
         }
-        if u < mergedEnd {
-            let s = (u - closeEnd) / Self.mergeMergedHold
-            return 1 + Self.mergeOvershoot * exp(-Self.mergeSettleDecay * s) * cos(2 * .pi * s)
-        }
+        if u < mergedEnd { return 1 }
         let p = (u - mergedEnd) / (1 - mergedEnd)
         return 1 - p * p * (3 - 2 * p)
     }
 
+    private func completedFill(glow: Double) -> some View {
+        let shape = Rectangle()
+        return shape
+            .fill(Color.white.opacity(0.07))
+            .overlay(shape.fill(Heat.color(1)))
+            .shadow(color: Theme.ember.opacity(0.4), radius: 2)
+            .background(
+                ZStack {
+                    shape
+                        .fill(Theme.ember)
+                        .blur(radius: 4)
+                        .opacity(0.15 + 0.85 * glow)
+                    shape
+                        .fill(Theme.emberHot)
+                        .blur(radius: 3)
+                        .opacity(0.9 * pow(glow, 2.2))
+                }
+                .clipShape(shape.scale(x: 1, y: 3))
+            )
+    }
+
     @ViewBuilder
-    private func segment(heat: Double, glow: Double, selected: Bool, fading: Bool, pulse: Double, squash: Double) -> some View {
+    private func segment(heat: Double, glow: Double, selected: Bool, fading: Bool, pulse: Double, forwardFill: Double) -> some View {
         let complete = heat >= 1 && !fading
         let hot = fading ? max(Heat.intensity(heat), Self.fadingFloor) : Heat.intensity(heat)
         let fill = Heat.color(complete ? 1 : hot * 0.85)
@@ -115,9 +121,9 @@ struct HeatStrip: View {
                 color: fill.opacity(complete ? 0 : fading ? 0.8 * pulse : 0.8 * hot * hot),
                 radius: fading ? 1 + 3 * pulse : 1 + 3 * hot
             )
-            .scaleEffect(CGSize(width: squash, height: selected ? 2.1 : 1))
+            .scaleEffect(CGSize(width: 1, height: selected ? 2.1 : 1))
         if complete {
-            let glowing = base
+            base
                 .shadow(color: Theme.ember.opacity(0.4), radius: 2)
                 .background(
                     ZStack {
@@ -132,7 +138,13 @@ struct HeatStrip: View {
                     }
                     .clipShape(shape.scale(x: 1, y: 3))
                 )
-            glowing
+                .overlay(alignment: .trailing) {
+                    if forwardFill > 0 {
+                        completedFill(glow: glow)
+                            .frame(width: Self.gapWidth * forwardFill)
+                            .offset(x: Self.gapWidth * forwardFill)
+                    }
+                }
         } else {
             base
         }
