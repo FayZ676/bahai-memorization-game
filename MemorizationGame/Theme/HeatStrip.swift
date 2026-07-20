@@ -79,32 +79,11 @@ struct HeatStrip: View {
         if u < closeStart { return 0 }
         if u < closeEnd {
             let p = (u - closeStart) / Self.mergeCloseSpan
-            return p * p * p
+            return p * p * (3 - 2 * p)
         }
         if u < mergedEnd { return 1 }
         let p = (u - mergedEnd) / (1 - mergedEnd)
         return 1 - p * p * (3 - 2 * p)
-    }
-
-    private func completedFill(glow: Double) -> some View {
-        let shape = Rectangle()
-        return shape
-            .fill(Color.white.opacity(0.07))
-            .overlay(shape.fill(Heat.color(1)))
-            .shadow(color: Theme.ember.opacity(0.4), radius: 2)
-            .background(
-                ZStack {
-                    shape
-                        .fill(Theme.ember)
-                        .blur(radius: 4)
-                        .opacity(0.15 + 0.85 * glow)
-                    shape
-                        .fill(Theme.emberHot)
-                        .blur(radius: 3)
-                        .opacity(0.9 * pow(glow, 2.2))
-                }
-                .clipShape(shape.scale(x: 1, y: 3))
-            )
     }
 
     @ViewBuilder
@@ -140,9 +119,11 @@ struct HeatStrip: View {
                 )
                 .overlay(alignment: .trailing) {
                     if forwardFill > 0 {
-                        completedFill(glow: glow)
-                            .frame(width: Self.gapWidth * forwardFill)
-                            .offset(x: Self.gapWidth * forwardFill)
+                        Rectangle()
+                            .fill(Heat.color(1))
+                            .frame(width: Self.gapWidth)
+                            .scaleEffect(x: forwardFill, anchor: .leading)
+                            .offset(x: Self.gapWidth)
                     }
                 }
         } else {
