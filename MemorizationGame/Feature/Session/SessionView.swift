@@ -240,25 +240,30 @@ struct SessionView: View {
     }
 
     private func scripture(for card: Reviewable) -> some View {
-        FlowLayout(spacing: 7, lineSpacing: 12) {
-            ForEach(Array(card.words.enumerated()), id: \.offset) { idx, word in
-                let expected = voice.nextExpectedIndex == idx
-                WordView(
-                    token: String(word),
-                    driftSeed: idx,
-                    hidden: vm.isHidden(idx),
-                    expected: expected,
-                    recited: recitedWords.contains(idx),
-                    missed: missedWords.contains(idx),
-                    missFlashing: missFlashIndex == idx
-                )
-                    .font(Typography.recite)
-                    .modifier(ShakeEffect(shakes: missFlashIndex == idx ? CGFloat(missShakes) : 0))
-                    .onGeometryChange(for: CGRect.self) { proxy in
-                        proxy.frame(in: .named("scripture"))
-                    } action: { frame in
-                        wordFrames[idx] = frame
+        let words = card.words
+        return VStack(alignment: .leading, spacing: 18) {
+            ForEach(Array(card.paragraphs.enumerated()), id: \.offset) { _, range in
+                FlowLayout(spacing: 7, lineSpacing: 12) {
+                    ForEach(range, id: \.self) { idx in
+                        let expected = voice.nextExpectedIndex == idx
+                        WordView(
+                            token: String(words[idx]),
+                            driftSeed: idx,
+                            hidden: vm.isHidden(idx),
+                            expected: expected,
+                            recited: recitedWords.contains(idx),
+                            missed: missedWords.contains(idx),
+                            missFlashing: missFlashIndex == idx
+                        )
+                            .font(Typography.recite)
+                            .modifier(ShakeEffect(shakes: missFlashIndex == idx ? CGFloat(missShakes) : 0))
+                            .onGeometryChange(for: CGRect.self) { proxy in
+                                proxy.frame(in: .named("scripture"))
+                            } action: { frame in
+                                wordFrames[idx] = frame
+                            }
                     }
+                }
             }
         }
         .coordinateSpace(name: "scripture")

@@ -113,7 +113,7 @@ final class AppStore {
         var merged = reviewables[index]
         let offset = merged.wordCount
         merged.span.end = next.span.end
-        merged.expectedText += " " + next.expectedText
+        merged.expectedText += "\n" + next.expectedText
         merged.hiddenWords.formUnion(next.hiddenWords.map { $0 + offset })
         merged.strength = min(merged.strength, next.strength)
         merged.lastPracticed = [merged.lastPracticed, next.lastPracticed].compactMap { $0 }.min()

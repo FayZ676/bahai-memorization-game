@@ -37,8 +37,23 @@ struct Reviewable: Codable, Identifiable, Hashable {
 
     var words: [Substring] {
         expectedText
-            .split(separator: " ")
+            .split(whereSeparator: { $0 == " " || $0 == "\n" })
             .flatMap(Self.splitInternalHyphens)
+    }
+
+    var paragraphs: [Range<Int>] {
+        var ranges: [Range<Int>] = []
+        var start = 0
+        for paragraph in expectedText.split(separator: "\n", omittingEmptySubsequences: true) {
+            let count = paragraph
+                .split(separator: " ")
+                .flatMap(Self.splitInternalHyphens)
+                .count
+            guard count > 0 else { continue }
+            ranges.append(start..<(start + count))
+            start += count
+        }
+        return ranges.isEmpty ? [0..<wordCount] : ranges
     }
 
     private static func splitInternalHyphens(_ word: Substring) -> [Substring] {
