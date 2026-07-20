@@ -43,10 +43,31 @@ final class SessionViewModel {
         focus(on: card.id)
     }
 
-    var progressNumber: Int { current?.span.start ?? 0 }
-    var progressTotal: Int { max(store.cards(for: passage).count, 1) }
+    var progressNumber: Int { step + 1 }
+    var progressTotal: Int { max(queueLength, 1) }
     var sectionHeats: [Double] { store.sectionHeats(for: passage) }
     var sectionFading: [Bool] { store.sectionFading(for: passage) }
+    var mergeableGaps: [Bool] { store.mergeableGaps(for: passage) }
+
+    var sectionLabel: String {
+        guard let span = current?.span else { return "" }
+        return span.start == span.end
+            ? "SECTION \(span.start)"
+            : "SECTIONS \(span.start)–\(span.end)"
+    }
+
+    var canMerge: Bool {
+        let gaps = mergeableGaps
+        return gaps.indices.contains(step) && gaps[step]
+    }
+
+    func merge() {
+        let q = store.queue(for: passage)
+        guard canMerge, q.indices.contains(step + 1) else { return }
+        store.merge(q[step], with: q[step + 1])
+        beginGrounding()
+        presentationEpoch += 1
+    }
 
     func start() {
         let q = store.queue(for: passage)

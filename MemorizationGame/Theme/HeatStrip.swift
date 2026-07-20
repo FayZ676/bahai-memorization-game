@@ -5,6 +5,7 @@ struct HeatStrip: View {
     var fading: [Bool] = []
     var animated = true
     var highlight: Int? = nil
+    var mergeableGaps: [Bool] = []
 
     private static let waveSpeed = 13.0
     private static let waveMargin = 4.0
@@ -15,7 +16,8 @@ struct HeatStrip: View {
     var body: some View {
         let hasComplete = animated && heats.contains { $0 >= 1 }
         let hasFading = fading.contains(true)
-        TimelineView(.animation(paused: !hasComplete && !hasFading)) { context in
+        let hasMergeable = mergeableGaps.contains(true)
+        TimelineView(.animation(paused: !hasComplete && !hasFading && !hasMergeable)) { context in
             row(
                 crest: hasComplete ? crestPosition(at: context.date) : nil,
                 pulse: pulseLevel(at: context.date)
@@ -24,8 +26,11 @@ struct HeatStrip: View {
     }
 
     private func row(crest: Double?, pulse: Double) -> some View {
-        HStack(spacing: 2) {
+        HStack(spacing: 0) {
             ForEach(heats.indices, id: \.self) { i in
+                if i > 0 {
+                    gap(mergeable: mergeableGaps.indices.contains(i - 1) && mergeableGaps[i - 1], pulse: pulse)
+                }
                 segment(
                     heat: heats[i],
                     glow: crest.map { glowIntensity(index: i, crest: $0) } ?? 0,
@@ -35,6 +40,13 @@ struct HeatStrip: View {
                 )
             }
         }
+    }
+
+    private func gap(mergeable: Bool, pulse: Double) -> some View {
+        Rectangle()
+            .fill(mergeable ? Theme.emberHot.opacity(0.9 * pulse) : .clear)
+            .frame(width: 2)
+            .shadow(color: Theme.emberHot.opacity(mergeable ? 0.7 * pulse : 0), radius: 2)
     }
 
     private func crestPosition(at date: Date) -> Double {

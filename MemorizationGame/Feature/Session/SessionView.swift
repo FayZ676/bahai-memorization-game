@@ -122,10 +122,14 @@ struct SessionView: View {
     private var progressRow: some View {
         VStack(spacing: 9) {
             HStack {
-                Text("SECTION \(vm.progressNumber)")
+                Text(vm.sectionLabel)
                     .font(Typography.micro)
                     .tracking(1.8)
                     .foregroundStyle(Theme.muted)
+                Spacer()
+                if vm.canMerge {
+                    mergeButton
+                }
                 Spacer()
                 Text("\(vm.progressNumber) / \(vm.progressTotal)")
                     .font(Typography.micro)
@@ -137,6 +141,24 @@ struct SessionView: View {
         }
         .padding(.horizontal, 26)
         .padding(.bottom, 16)
+        .animation(.easeInOut(duration: 0.22), value: vm.canMerge)
+    }
+
+    private var mergeButton: some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.28)) { vm.merge() }
+        } label: {
+            Text("MERGE")
+                .font(Typography.micro)
+                .tracking(1.8)
+                .foregroundStyle(Theme.emberHot)
+                .padding(.horizontal, 11)
+                .padding(.vertical, 3)
+                .background(Capsule().stroke(Theme.ember.opacity(0.55), lineWidth: 1))
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.haptic)
+        .transition(.opacity.combined(with: .scale(scale: 0.9)))
     }
 
     private var heatBar: some View {
@@ -144,7 +166,7 @@ struct SessionView: View {
             let heats = vm.sectionHeats
             let count = max(heats.count, 1)
             let unit = geo.size.width / CGFloat(count)
-            HeatStrip(heats: heats, fading: vm.sectionFading, animated: false, highlight: vm.step)
+            HeatStrip(heats: heats, fading: vm.sectionFading, animated: false, highlight: vm.step, mergeableGaps: vm.mergeableGaps)
                 .frame(height: scrubbing ? 12 : 6)
                 .frame(maxHeight: .infinity)
                 .contentShape(Rectangle())

@@ -97,6 +97,32 @@ final class AppStore {
         return queue(for: passage).map { model.isDecaying($0, at: now) }
     }
 
+    func mergeableGaps(for passage: Passage) -> [Bool] {
+        let q = queue(for: passage)
+        guard q.count > 1 else { return [] }
+        return (0..<(q.count - 1)).map { isComplete(q[$0]) && isComplete(q[$0 + 1]) }
+    }
+
+    func isComplete(_ card: Reviewable) -> Bool {
+        card.wordCount > 0 && card.hiddenWords.count == card.wordCount
+    }
+
+    func merge(_ card: Reviewable, with next: Reviewable) {
+        guard let index = reviewables.firstIndex(where: { $0.id == card.id }),
+              let nextIndex = reviewables.firstIndex(where: { $0.id == next.id }) else { return }
+        var merged = reviewables[index]
+        let offset = merged.wordCount
+        merged.span.end = next.span.end
+        merged.expectedText += " " + next.expectedText
+        merged.hiddenWords.formUnion(next.hiddenWords.map { $0 + offset })
+        merged.strength = min(merged.strength, next.strength)
+        merged.lastPracticed = [merged.lastPracticed, next.lastPracticed].compactMap { $0 }.min()
+        merged.hiddenBaseline = merged.hiddenWords.count
+        reviewables[index] = merged
+        reviewables.removeAll { $0.id == next.id }
+        persist()
+    }
+
     func createPassage(title: String, units: [String]) {
         let passage = Passage(
             title: title.trimmingCharacters(in: .whitespacesAndNewlines),
