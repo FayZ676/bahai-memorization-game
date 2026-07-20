@@ -13,6 +13,15 @@ struct HeatStrip: View {
     private static let pulsePeriod = 1.6
     private static let fadingFloor = 0.35
 
+    private static let gapWidth = 2.0
+    private static let mergePeriod = 5.5
+    private static let mergeApartHold = 0.30
+    private static let mergeCloseSpan = 0.12
+    private static let mergeMergedHold = 0.30
+    private static let mergeOvershoot = 0.14
+    private static let mergeSettleDecay = 5.0
+    private static let mergeSquashGain = 0.5
+
     var body: some View {
         let hasComplete = animated && heats.contains { $0 >= 1 }
         let hasFading = fading.contains(true)
@@ -20,37 +29,41 @@ struct HeatStrip: View {
         TimelineView(.animation(paused: !hasComplete && !hasFading && !hasMergeable)) { context in
             row(
                 crest: hasComplete ? crestPosition(at: context.date) : nil,
-                pulse: pulseLevel(at: context.date)
+                pulse: pulseLevel(at: context.date),
+                merge: hasMergeable ? mergePhase(at: context.date) : 0
             )
         }
     }
 
-    private func row(crest: Double?, pulse: Double) -> some View {
+    private func row(crest: Double?, pulse: Double, merge: Double) -> some View {
         HStack(spacing: 0) {
             ForEach(heats.indices, id: \.self) { i in
                 if i > 0 {
-                    gap(mergeable: mergeableGaps.indices.contains(i - 1) && mergeableGaps[i - 1], pulse: pulse)
+                    gap(mergeable: isMergeable(i - 1), merge: merge)
                 }
                 segment(
                     heat: heats[i],
                     glow: crest.map { glowIntensity(index: i, crest: $0) } ?? 0,
                     selected: i == highlight,
                     fading: fading.indices.contains(i) && fading[i],
-                    pulse: pulse
+                    pulse: pulse,
+                    squash: inMergeRun(i) ? 1 + Self.mergeSquashGain * max(0, merge - 1) : 1
                 )
             }
         }
     }
 
-    private func gap(mergeable: Bool, pulse: Double) -> some View {
-        let shape = Rectangle()
-        return shape
-            .fill(Color.white.opacity(0.07))
-            .overlay(shape.fill(Heat.color(1)))
-            .shadow(color: Theme.ember.opacity(0.4), radius: 2)
-            .background(shape.fill(Theme.ember).blur(radius: 4).opacity(0.15))
-            .opacity(mergeable ? pulse : 0)
-            .frame(width: 2)
+    private func isMergeable(_ gapIndex: Int) -> Bool {
+        mergeableGaps.indices.contains(gapIndex) && mergeableGaps[gapIndex]
+    }
+
+    private func inMergeRun(_ index: Int) -> Bool {
+        isMergeable(index - 1) || isMergeable(index)
+    }
+
+    private func gap(mergeable: Bool, merge: Double) -> some View {
+        let width = mergeable ? max(0, Self.gapWidth * (1 - merge)) : Self.gapWidth
+        return Color.clear.frame(width: width)
     }
 
     private func crestPosition(at date: Date) -> Double {
@@ -70,8 +83,26 @@ struct HeatStrip: View {
         return 0.5 - 0.5 * cos(2 * .pi * t / Self.pulsePeriod)
     }
 
+    private func mergePhase(at date: Date) -> Double {
+        let u = date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: Self.mergePeriod) / Self.mergePeriod
+        let closeStart = Self.mergeApartHold
+        let closeEnd = closeStart + Self.mergeCloseSpan
+        let mergedEnd = closeEnd + Self.mergeMergedHold
+        if u < closeStart { return 0 }
+        if u < closeEnd {
+            let p = (u - closeStart) / Self.mergeCloseSpan
+            return p * p * p
+        }
+        if u < mergedEnd {
+            let s = (u - closeEnd) / Self.mergeMergedHold
+            return 1 + Self.mergeOvershoot * exp(-Self.mergeSettleDecay * s) * cos(2 * .pi * s)
+        }
+        let p = (u - mergedEnd) / (1 - mergedEnd)
+        return 1 - p * p * (3 - 2 * p)
+    }
+
     @ViewBuilder
-    private func segment(heat: Double, glow: Double, selected: Bool, fading: Bool, pulse: Double) -> some View {
+    private func segment(heat: Double, glow: Double, selected: Bool, fading: Bool, pulse: Double, squash: Double) -> some View {
         let complete = heat >= 1 && !fading
         let hot = fading ? max(Heat.intensity(heat), Self.fadingFloor) : Heat.intensity(heat)
         let fill = Heat.color(complete ? 1 : hot * 0.85)
@@ -84,7 +115,7 @@ struct HeatStrip: View {
                 color: fill.opacity(complete ? 0 : fading ? 0.8 * pulse : 0.8 * hot * hot),
                 radius: fading ? 1 + 3 * pulse : 1 + 3 * hot
             )
-            .scaleEffect(selected ? CGSize(width: 1, height: 2.1) : CGSize(width: 1, height: 1))
+            .scaleEffect(CGSize(width: squash, height: selected ? 2.1 : 1))
         if complete {
             let glowing = base
                 .shadow(color: Theme.ember.opacity(0.4), radius: 2)
