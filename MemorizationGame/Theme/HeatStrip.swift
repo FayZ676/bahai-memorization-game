@@ -13,17 +13,18 @@ struct HeatStrip: View {
     private static let fadingFloor = 0.35
 
     var body: some View {
-        let hasComplete = animated && heats.contains { $0 >= 1 }
+        let anyComplete = heats.contains { $0 >= 1 }
         let hasFading = fading.contains(true)
-        TimelineView(.animation(paused: !hasComplete && !hasFading)) { context in
+        TimelineView(.animation(paused: !anyComplete && !hasFading)) { context in
             row(
-                crest: hasComplete ? crestPosition(at: context.date) : nil,
-                pulse: pulseLevel(at: context.date)
+                crest: (animated && anyComplete) ? crestPosition(at: context.date) : nil,
+                pulse: pulseLevel(at: context.date),
+                time: emberTime(at: context.date)
             )
         }
     }
 
-    private func row(crest: Double?, pulse: Double) -> some View {
+    private func row(crest: Double?, pulse: Double, time: Double) -> some View {
         HStack(spacing: 2) {
             ForEach(heats.indices, id: \.self) { i in
                 segment(
@@ -31,10 +32,16 @@ struct HeatStrip: View {
                     glow: crest.map { glowIntensity(index: i, crest: $0) } ?? 0,
                     selected: i == highlight,
                     fading: fading.indices.contains(i) && fading[i],
-                    pulse: pulse
+                    pulse: pulse,
+                    time: time,
+                    seed: Double(i)
                 )
             }
         }
+    }
+
+    private func emberTime(at date: Date) -> Double {
+        date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 3600)
     }
 
     private func crestPosition(at date: Date) -> Double {
@@ -55,7 +62,7 @@ struct HeatStrip: View {
     }
 
     @ViewBuilder
-    private func segment(heat: Double, glow: Double, selected: Bool, fading: Bool, pulse: Double) -> some View {
+    private func segment(heat: Double, glow: Double, selected: Bool, fading: Bool, pulse: Double, time: Double, seed: Double) -> some View {
         let complete = heat >= 1 && !fading
         let hot = fading ? max(Heat.intensity(heat), Self.fadingFloor) : Heat.intensity(heat)
         let fill = Heat.color(complete ? 1 : hot * 0.85)
@@ -70,23 +77,51 @@ struct HeatStrip: View {
             )
             .scaleEffect(selected ? CGSize(width: 1, height: 2.1) : CGSize(width: 1, height: 1))
         if complete {
-            let glowing = base
-                .shadow(color: Theme.ember.opacity(0.4), radius: 2)
-                .background(
-                    ZStack {
-                        shape
-                            .fill(Theme.ember)
-                            .blur(radius: 4)
-                            .opacity(0.15 + 0.85 * glow)
-                        shape
-                            .fill(Theme.emberHot)
-                            .blur(radius: 3)
-                            .opacity(0.9 * pow(glow, 2.2))
+            let headroom: CGFloat = 5
+            shape
+                .fill(Color.white.opacity(selected ? 0.3 : 0.07))
+                .overlay {
+                    GeometryReader { geo in
+                        EmberFill(
+                            time: time,
+                            heat: 0.5 + 0.4 * glow,
+                            seed: seed,
+                            segmentHeight: geo.size.height,
+                            flameHeadroom: headroom
+                        )
+                        .frame(width: geo.size.width, height: geo.size.height + headroom)
+                        .offset(y: -headroom)
                     }
-                )
-            glowing
+                }
+                .shadow(color: Theme.ember.opacity(0.3 + 0.5 * glow), radius: 1 + 2.5 * glow)
+                .scaleEffect(selected ? CGSize(width: 1, height: 2.1) : CGSize(width: 1, height: 1))
         } else {
             base
         }
+    }
+}
+
+private struct EmberFill: View {
+    let time: Double
+    let heat: Double
+    let seed: Double
+    var segmentHeight: CGFloat
+    var flameHeadroom: CGFloat = 0
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Color.clear
+                .frame(height: flameHeadroom)
+            RoundedRectangle(cornerRadius: 1.5)
+                .fill(.white)
+                .frame(height: segmentHeight)
+        }
+        .emberEffect(
+            .heatStrip(heat: heat),
+            time: time,
+            seed: seed,
+            maxSampleOffset: CGSize(width: 3, height: flameHeadroom + 2)
+        )
+        .allowsHitTesting(false)
     }
 }

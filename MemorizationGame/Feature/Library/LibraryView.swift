@@ -18,7 +18,7 @@ struct LibraryView: View {
                     .buttonStyle(.icon)
                 }, trailing: {
                     NavigationLink {
-                        ImportView()
+                        PrayerBrowseView()
                     } label: {
                         Image(systemName: "plus")
                             .foregroundStyle(Theme.accent)
@@ -121,7 +121,7 @@ struct LibraryView: View {
     private var emptyState: some View {
         VStack {
             Spacer()
-            Text("No passages yet.\nImport one to get started.")
+            Text("No passages yet.\nBrowse prayers to get started.")
                 .font(Typography.subtitle)
                 .foregroundStyle(Theme.muted)
                 .multilineTextAlignment(.center)

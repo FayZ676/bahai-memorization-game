@@ -33,32 +33,23 @@ struct BurningNumberView: View {
     var fontSize: CGFloat = 54
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private var flameReach: CGSize { CGSize(width: fontSize * 0.3, height: fontSize * 0.74) }
+    private var flameReach: CGSize { CGSize(width: fontSize * 0.6, height: fontSize * 1.05) }
 
     var body: some View {
         TimelineView(.animation(paused: reduceMotion)) { context in
-            let time = Float(FlameScale.time(at: context.date, reduceMotion: reduceMotion))
-            let intensity = Float(FlameScale.intensity(words: today.words))
-            let heat = Float(max(today.heat, 0.3))
-            let blue = Float(FlameScale.blue(words: today.words))
+            let time = FlameScale.time(at: context.date, reduceMotion: reduceMotion)
+            let style = EmberStyle.streakNumber(
+                intensity: FlameScale.intensity(words: today.words),
+                heat: max(today.heat, 0.3),
+                azure: FlameScale.blue(words: today.words)
+            )
             Text("\(value)")
                 .font(.display(fontSize))
                 .lineLimit(1)
                 .foregroundStyle(.white)
                 .padding(.horizontal, flameReach.width)
                 .padding(.top, flameReach.height)
-                .visualEffect { [flameReach] content, proxy in
-                    content.layerEffect(
-                        ShaderLibrary.burningNumber(
-                            .float2(proxy.size),
-                            .float(time),
-                            .float(intensity),
-                            .float(heat),
-                            .float(blue)
-                        ),
-                        maxSampleOffset: flameReach
-                    )
-                }
+                .emberEffect(style, time: time, maxSampleOffset: flameReach)
                 .padding(.horizontal, -flameReach.width)
         }
     }

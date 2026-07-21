@@ -4,8 +4,13 @@ struct ImportView: View {
     @Environment(AppStore.self) private var store
     @Environment(\.dismiss) private var dismiss
 
-    @State private var title = ""
-    @State private var content = ""
+    @State private var title: String
+    @State private var content: String
+
+    init(initialTitle: String = "", initialContent: String = "") {
+        _title = State(initialValue: initialTitle)
+        _content = State(initialValue: initialContent)
+    }
 
     private var trimmedTitle: String { title.trimmingCharacters(in: .whitespacesAndNewlines) }
 

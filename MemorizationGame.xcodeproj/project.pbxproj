@@ -6,6 +6,10 @@
 	objectVersion = 70;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		63547280300F322A00750FB8 /* Fuse in Frameworks */ = {isa = PBXBuildFile; productRef = 6354727F300F322A00750FB8 /* Fuse */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		7A0000000000000000000043 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -23,7 +27,6 @@
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		7A0000000000000000000010 /* MemorizationGame */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = MemorizationGame; sourceTree = "<group>"; };
-		7A0000000000000000000011 /* MemorizationGameTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = MemorizationGameTests; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -31,6 +34,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				63547280300F322A00750FB8 /* Fuse in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -44,11 +48,18 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		6354727E300F322A00750FB8 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		7A0000000000000000000001 = {
 			isa = PBXGroup;
 			children = (
 				7A0000000000000000000010 /* MemorizationGame */,
-				7A0000000000000000000011 /* MemorizationGameTests */,
+				6354727E300F322A00750FB8 /* Frameworks */,
 				7A0000000000000000000002 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -98,23 +109,12 @@
 			dependencies = (
 				7A0000000000000000000042 /* PBXTargetDependency */,
 			);
-			fileSystemSynchronizedGroups = (
-				7A0000000000000000000011 /* MemorizationGameTests */,
-			);
 			name = MemorizationGameTests;
 			productName = MemorizationGameTests;
 			productReference = 7A0000000000000000000021 /* MemorizationGameTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
-
-/* Begin PBXTargetDependency section */
-		7A0000000000000000000042 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 7A0000000000000000000040 /* MemorizationGame */;
-			targetProxy = 7A0000000000000000000043 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
 
 /* Begin PBXProject section */
 		7A0000000000000000000003 /* Project object */ = {
@@ -143,6 +143,9 @@
 			);
 			mainGroup = 7A0000000000000000000001;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				6354727D300F310B00750FB8 /* XCRemoteSwiftPackageReference "fuse-swift" */,
+			);
 			productRefGroup = 7A0000000000000000000002 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -186,6 +189,14 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		7A0000000000000000000042 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7A0000000000000000000040 /* MemorizationGame */;
+			targetProxy = 7A0000000000000000000043 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		7A0000000000000000000060 /* Debug */ = {
@@ -384,6 +395,24 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		6354727D300F310B00750FB8 /* XCRemoteSwiftPackageReference "fuse-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/krisk/fuse-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.4.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		6354727F300F322A00750FB8 /* Fuse */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6354727D300F310B00750FB8 /* XCRemoteSwiftPackageReference "fuse-swift" */;
+			productName = Fuse;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 7A0000000000000000000003 /* Project object */;
 }
