@@ -92,11 +92,6 @@ final class AppStore {
         practiceLog.streak()
     }
 
-    func sectionFading(for passage: Passage, at now: Date = Date()) -> [Bool] {
-        let model = decay
-        return queue(for: passage).map { model.isDecaying($0, at: now) }
-    }
-
     func mergeableGaps(for passage: Passage) -> [Bool] {
         let q = queue(for: passage)
         guard q.count > 1 else { return [] }

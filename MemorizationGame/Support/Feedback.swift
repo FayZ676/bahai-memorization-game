@@ -37,4 +37,12 @@ enum Feedback {
     static func sessionComplete() {
         UINotificationFeedbackGenerator().notificationOccurred(.success)
     }
+
+    static func burn() {
+        let generator = UIImpactFeedbackGenerator(style: .soft)
+        generator.impactOccurred(intensity: CGFloat.random(in: 0.5...0.8))
+        DispatchQueue.main.asyncAfter(deadline: .now() + Double.random(in: 0.03...0.06)) {
+            generator.impactOccurred(intensity: CGFloat.random(in: 0.25...0.45))
+        }
+    }
 }

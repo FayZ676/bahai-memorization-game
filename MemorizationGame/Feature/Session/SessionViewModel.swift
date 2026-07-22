@@ -38,22 +38,21 @@ final class SessionViewModel {
 
     func toggleWord(_ idx: Int) {
         guard let card = current, !wordsRevealed else { return }
+        let wasHidden = card.hiddenWords.contains(idx)
         store.toggleWord(card, index: idx)
-        Feedback.reveal()
+        if wasHidden { Feedback.reveal() }
         focus(on: card.id)
     }
 
-    var progressNumber: Int { step + 1 }
     var progressTotal: Int { max(queueLength, 1) }
     var sectionHeats: [Double] { store.sectionHeats(for: passage) }
-    var sectionFading: [Bool] { store.sectionFading(for: passage) }
     var mergeableGaps: [Bool] { store.mergeableGaps(for: passage) }
 
     var sectionLabel: String {
         guard let span = current?.span else { return "" }
         return span.start == span.end
-            ? "SECTION \(span.start)"
-            : "SECTIONS \(span.start)–\(span.end)"
+            ? "SECTION \(span.start) / \(progressTotal)"
+            : "SECTIONS \(span.start)–\(span.end) / \(progressTotal)"
     }
 
     var canMerge: Bool {

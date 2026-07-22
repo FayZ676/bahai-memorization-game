@@ -12,6 +12,7 @@ struct SessionView: View {
     @State private var missShakes = 0
     @State private var missFlashIndex: Int?
     @State private var wordFrames: [Int: CGRect] = [:]
+    @State private var igniteTokens: [Int: Int] = [:]
     @State private var paintTargetHidden: Bool?
     @State private var painting = false
     @State private var scrollPosition = ScrollPosition()
@@ -59,10 +60,15 @@ struct SessionView: View {
             voice.stop()
             recitedWords = []
             missedWords = []
+            igniteTokens = [:]
         }
         .onChange(of: vm.current?.hiddenWords) {
             guard let card = vm.current else { return }
             voice.updateHiddenIndices(remainingHiddenIndices(of: card))
+        }
+        .onChange(of: vm.grounding) { wasGrounding, isGrounding in
+            guard wasGrounding, !isGrounding, let card = vm.current else { return }
+            for idx in card.hiddenWords { ignite(idx) }
         }
         .onDisappear { voice.stop() }
         .alert("Microphone Access Needed", isPresented: $showingMicDenied) {
@@ -130,12 +136,6 @@ struct SessionView: View {
                 if vm.canMerge {
                     mergeButton
                 }
-                Spacer()
-                Text("\(vm.progressNumber) / \(vm.progressTotal)")
-                    .font(Typography.micro)
-                    .tracking(0.5)
-                    .foregroundStyle(Theme.faint)
-                    .monospacedDigit()
             }
             heatBar
         }
@@ -166,7 +166,7 @@ struct SessionView: View {
             let heats = vm.sectionHeats
             let count = max(heats.count, 1)
             let unit = geo.size.width / CGFloat(count)
-            HeatStrip(heats: heats, fading: vm.sectionFading, animated: false, highlight: vm.step)
+            HeatStrip(heats: heats, animated: false, highlight: vm.step)
                 .frame(height: scrubbing ? 12 : 6)
                 .frame(maxHeight: .infinity)
                 .contentShape(Rectangle())
@@ -253,7 +253,8 @@ struct SessionView: View {
                             expected: expected,
                             recited: recitedWords.contains(idx),
                             missed: missedWords.contains(idx),
-                            missFlashing: missFlashIndex == idx
+                            missFlashing: missFlashIndex == idx,
+                            ignite: igniteTokens[idx] ?? 0
                         )
                             .font(Typography.recite)
                             .modifier(ShakeEffect(shakes: missFlashIndex == idx ? CGFloat(missShakes) : 0))
@@ -273,7 +274,9 @@ struct SessionView: View {
             SpatialTapGesture(coordinateSpace: .named("scripture"))
                 .onEnded { value in
                     guard !painting, let idx = wordIndex(at: value.location) else { return }
+                    let willHide = !vm.isHidden(idx)
                     withAnimation(.easeInOut(duration: 0.22)) { vm.toggleWord(idx) }
+                    if willHide { ignite(idx) }
                 }
         )
         .simultaneousGesture(paintGesture)
@@ -329,6 +332,11 @@ struct SessionView: View {
         paintTargetHidden = target
         guard vm.isHidden(idx) != target else { return }
         withAnimation(.easeInOut(duration: 0.22)) { vm.toggleWord(idx) }
+        if target { ignite(idx) }
+    }
+
+    private func ignite(_ idx: Int) {
+        igniteTokens[idx, default: 0] += 1
     }
 
     private func wordIndex(at location: CGPoint) -> Int? {
@@ -423,7 +431,12 @@ struct SessionView: View {
     private var optionsMenu: some View {
         Menu {
             Button(vm.isPeeking ? "Unpeek" : "Peek") { vm.togglePeek() }
-            Button("Hide All Words") { vm.setAllWords(hidden: true) }
+            Button("Hide All Words") {
+                if let card = vm.current {
+                    for idx in card.words.indices where !vm.isHidden(idx) { ignite(idx) }
+                }
+                vm.setAllWords(hidden: true)
+            }
             Button("Show All Words") { vm.setAllWords(hidden: false) }
         } label: {
             Image(systemName: "ellipsis")
@@ -493,7 +506,11 @@ private struct WordView: View {
     let recited: Bool
     let missed: Bool
     let missFlashing: Bool
+    let ignite: Int
     @State private var pulsing = false
+    @State private var burn: Double = 0
+    @State private var burning = false
+    @State private var burnSeed: Double = 0
 
     private var parts: (lead: String, core: String, trail: String) {
         let chars = Array(token)
@@ -514,11 +531,11 @@ private struct WordView: View {
         HStack(spacing: 0) {
             if !p.lead.isEmpty { Text(p.lead).foregroundStyle(Theme.ink) }
             if !p.core.isEmpty {
-                Text(p.core)
-                    .foregroundStyle(hidden ? .clear : Theme.ink)
+                coreText(p.core)
                     .overlay(alignment: .bottom) {
-                        if hidden || expected {
+                        if expected || (hidden && !burning) {
                             underline
+                                .transition(.opacity)
                         }
                     }
             }
@@ -541,6 +558,35 @@ private struct WordView: View {
                 try? await Task.sleep(for: .milliseconds(110))
                 withAnimation(.spring(response: 0.25, dampingFraction: 0.55)) { pulsing = false }
             }
+        }
+        .onChange(of: ignite) { _, _ in
+            guard hidden else { return }
+            burnSeed = .random(in: 0..<1000)
+            burn = 0
+            burning = true
+            let delay = Double.random(in: 0..<0.28)
+            withAnimation(.easeIn(duration: 0.55).delay(delay)) { burn = 1 }
+            Task {
+                if delay > 0 { try? await Task.sleep(for: .milliseconds(Int(delay * 1000))) }
+                Feedback.burn()
+            }
+            Task {
+                try? await Task.sleep(for: .milliseconds(700 + Int(delay * 1000)))
+                withAnimation(.easeInOut(duration: 0.45)) { burning = false }
+                burn = 0
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func coreText(_ core: String) -> some View {
+        if burning {
+            Text(core)
+                .foregroundStyle(Theme.ink)
+                .burnDissolve(progress: burn, seed: burnSeed)
+        } else {
+            Text(core)
+                .foregroundStyle(hidden ? .clear : Theme.ink)
         }
     }
 

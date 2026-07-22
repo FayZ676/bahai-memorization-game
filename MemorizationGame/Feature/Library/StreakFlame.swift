@@ -41,7 +41,8 @@ struct BurningNumberView: View {
             let style = EmberStyle.streakNumber(
                 intensity: FlameScale.intensity(words: today.words),
                 heat: max(today.heat, 0.3),
-                azure: FlameScale.blue(words: today.words)
+                azure: FlameScale.blue(words: today.words),
+                rise: fontSize * 0.76
             )
             Text("\(value)")
                 .font(.display(fontSize))

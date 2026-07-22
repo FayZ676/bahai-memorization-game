@@ -136,32 +136,46 @@ private struct PassageRow: View {
     let passage: Passage
 
     var body: some View {
-        let fading = store.sectionFading(for: passage)
-        let fadingCount = fading.count(where: { $0 })
         VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(passage.title)
                         .font(Typography.title)
                         .foregroundStyle(Theme.ink)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
 
-                    Text("Added \(passage.dateAdded.formatted(.dateTime.month(.abbreviated).day().year()))")
+                    Spacer(minLength: 8)
+
+                    Text(passage.dateAdded.elapsedDuration)
                         .font(Typography.footnote)
                         .foregroundStyle(Theme.faint)
-                }
-
-                if fadingCount > 0 {
-                    Spacer(minLength: 8)
-                    Text("\(fadingCount) Section\(fadingCount == 1 ? "" : "s") Fading")
-                        .font(Typography.footnote)
-                        .foregroundStyle(Color(hex: 0xA05A2C))
                         .fixedSize()
                 }
             }
 
-            HeatStrip(heats: store.sectionHeats(for: passage), fading: fading)
+            HeatStrip(heats: store.sectionHeats(for: passage))
                 .frame(height: 6)
         }
         .padding(.vertical, 6)
+    }
+}
+
+private extension Date {
+    var elapsedDuration: String {
+        let now = Date()
+        let units: [(Calendar.Component, String)] = [
+            (.year, "y"), (.month, "mo"), (.weekOfYear, "w"), (.day, "d"), (.hour, "h"), (.minute, "m")
+        ]
+        let parts = Calendar.current.dateComponents(
+            [.year, .month, .weekOfYear, .day, .hour, .minute],
+            from: self, to: now
+        )
+        for (component, suffix) in units {
+            if let value = parts.value(for: component), value > 0 {
+                return "\(value)\(suffix)"
+            }
+        }
+        return "now"
     }
 }
