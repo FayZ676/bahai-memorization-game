@@ -84,7 +84,7 @@ struct PrayerBrowseView: View {
             }
         }
         .padding(12)
-        .cardSurface(cornerRadius: 10)
+        .cardSurface(cornerRadius: Radius.control)
         .padding(.horizontal, 16)
         .padding(.top, 4)
         .padding(.bottom, 12)
@@ -104,7 +104,7 @@ struct PrayerBrowseView: View {
                 }
             }
         }
-        .cardSurface(cornerRadius: 12)
+        .cardSurface(cornerRadius: Radius.group)
     }
 
     private func sectionNode(_ section: PrayerLibrary.Section) -> some View {
@@ -153,7 +153,7 @@ struct PrayerBrowseView: View {
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
-            .cardSurface(cornerRadius: 12)
+            .cardSurface(cornerRadius: Radius.group)
         }
         .buttonStyle(.haptic)
     }
@@ -175,7 +175,7 @@ struct PrayerBrowseView: View {
                 }
             }
         }
-        .cardSurface(cornerRadius: 12)
+        .cardSurface(cornerRadius: Radius.group)
     }
 
     private var loadingRow: some View {

@@ -266,7 +266,7 @@ struct SessionView: View {
             SpatialTapGesture(coordinateSpace: .named("scripture"))
                 .onEnded { value in
                     guard !painting, let idx = wordIndex(at: value.location) else { return }
-                    withAnimation(.easeInOut(duration: 0.22)) { vm.toggleWord(idx) }
+                    withAnimation(Motion.toggle) { vm.toggleWord(idx) }
                 }
         )
         .simultaneousGesture(paintGesture)
@@ -321,7 +321,7 @@ struct SessionView: View {
         let target = paintTargetHidden ?? !vm.isHidden(idx)
         paintTargetHidden = target
         guard vm.isHidden(idx) != target else { return }
-        withAnimation(.easeInOut(duration: 0.22)) { vm.toggleWord(idx) }
+        withAnimation(Motion.toggle) { vm.toggleWord(idx) }
     }
 
     private func wordIndex(at location: CGPoint) -> Int? {
@@ -520,14 +520,14 @@ private struct WordView: View {
         }
         .background {
             if let highlight {
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                RoundedRectangle(cornerRadius: Radius.word, style: .continuous)
                     .fill(highlight)
                     .padding(.horizontal, -5)
                     .padding(.vertical, -3)
             }
         }
         .scaleEffect(pulsing ? 1.15 : 1)
-        .animation(.easeInOut(duration: 0.35), value: hidden)
+        .animation(Motion.fade, value: hidden)
         .animation(.easeInOut(duration: 0.18), value: expected)
         .onChange(of: recited) { wasRecited, isRecited in
             guard isRecited, !wasRecited else { return }
@@ -543,7 +543,7 @@ private struct WordView: View {
     private var showLine: Bool { hidden || expected }
 
     private var reciteLine: some View {
-        RoundedRectangle(cornerRadius: 1, style: .continuous)
+        RoundedRectangle(cornerRadius: Radius.line, style: .continuous)
             .fill(lineColor)
             .frame(height: 2)
             .offset(y: 3)

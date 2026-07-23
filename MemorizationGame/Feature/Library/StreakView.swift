@@ -6,7 +6,7 @@ struct StreakView: View {
     let count: Int
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
+        HStack(alignment: .firstTextBaseline, spacing: Spacing.sm) {
             Text("\(count)")
                 .font(Typography.numeral)
                 .foregroundStyle(Theme.ink)

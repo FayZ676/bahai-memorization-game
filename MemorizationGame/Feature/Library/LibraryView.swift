@@ -99,8 +99,8 @@ struct LibraryView: View {
 
     private var streakHeader: some View {
         StreakView(count: store.streakCount)
-            .padding(.horizontal, 20)
-            .padding(.vertical, 8)
+            .padding(.horizontal, Spacing.xl)
+            .padding(.vertical, Spacing.sm)
     }
 
     private var emptyState: some View {

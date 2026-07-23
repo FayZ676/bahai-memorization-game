@@ -1,6 +1,9 @@
 import SwiftUI
 import UIKit
 
+/// The color palette — the single source of truth for every color in the app.
+/// Every token is adaptive (light/dark); the app's chosen appearance is set once
+/// via `Theme.preferredColorScheme`.
 enum Theme {
     // Ground & surfaces
     static let bg        = adaptive(0xECEEE8, 0x0F1512)   // paper
@@ -25,6 +28,11 @@ enum Theme {
     static let gold        = adaptive(0xB9863F, 0xD4A65A)   // reward only
     static let warn        = adaptive(0xB4443A, 0xD98A80)   // recitation miss
 
+    /// The app's preferred appearance. `.light` locks the light theme; `nil`
+    /// follows the system. Dark values stay defined, so re-enabling dark — or
+    /// following the system — is a one-line change here.
+    static let preferredColorScheme: ColorScheme? = .light
+
     private static func adaptive(_ light: UInt32, _ dark: UInt32) -> Color {
         Color(uiColor: UIColor { traits in
             UIColor(hex: traits.userInterfaceStyle == .dark ? dark : light)
@@ -48,62 +56,4 @@ extension UIColor {
         let b = CGFloat(hex & 0xFF) / 255.0
         self.init(red: r, green: g, blue: b, alpha: 1.0)
     }
-}
-
-struct CardSurface: ViewModifier {
-    var cornerRadius: CGFloat = 16
-
-    func body(content: Content) -> some View {
-        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-        content
-            .background(Theme.rowBg)
-            .clipShape(shape)
-            .overlay(shape.stroke(Theme.hairline, lineWidth: 1))
-    }
-}
-
-extension View {
-    func cardSurface(cornerRadius: CGFloat = 16) -> some View {
-        modifier(CardSurface(cornerRadius: cornerRadius))
-    }
-}
-
-struct HairlineDivider: View {
-    var body: some View {
-        Rectangle()
-            .fill(Theme.hairline)
-            .frame(height: 1)
-    }
-}
-
-struct HapticButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .onChange(of: configuration.isPressed) { _, pressed in
-                if pressed { Feedback.tap() }
-            }
-    }
-}
-
-extension ButtonStyle where Self == HapticButtonStyle {
-    static var haptic: HapticButtonStyle { HapticButtonStyle() }
-}
-
-struct IconButtonStyle: ButtonStyle {
-    var size: CGFloat = 38
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .frame(width: size, height: size)
-            .background(Theme.surface, in: Circle())
-            .overlay(Circle().stroke(Theme.hairline, lineWidth: 1))
-            .opacity(configuration.isPressed ? 0.6 : 1)
-            .onChange(of: configuration.isPressed) { _, pressed in
-                if pressed { Feedback.tap() }
-            }
-    }
-}
-
-extension ButtonStyle where Self == IconButtonStyle {
-    static var icon: IconButtonStyle { IconButtonStyle() }
 }

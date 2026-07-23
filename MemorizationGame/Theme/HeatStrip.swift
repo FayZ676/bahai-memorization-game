@@ -19,7 +19,7 @@ struct HeatStrip: View {
     @ViewBuilder
     private func segment(heat: Double, selected: Bool) -> some View {
         let t = Heat.intensity(min(max(heat, 0), 1))
-        let shape = RoundedRectangle(cornerRadius: 1.5, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: Radius.segment, style: .continuous)
         shape
             .fill(Theme.ink.opacity(0.08))
             .overlay {

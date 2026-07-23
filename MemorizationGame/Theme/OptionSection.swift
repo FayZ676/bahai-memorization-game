@@ -21,7 +21,7 @@ struct OptionSection<Content: View>: View {
                 content
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .cardSurface(cornerRadius: 12)
+            .cardSurface(cornerRadius: Radius.group)
 
             if let footer {
                 Text(footer)
