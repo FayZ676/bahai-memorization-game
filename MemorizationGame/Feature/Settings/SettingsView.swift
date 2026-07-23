@@ -102,7 +102,7 @@ struct SettingsView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
                         .background(
-                            selected ? Color.white.opacity(0.08) : .clear,
+                            selected ? Theme.accent.opacity(0.14) : .clear,
                             in: RoundedRectangle(cornerRadius: 8)
                         )
                         .contentShape(Rectangle())

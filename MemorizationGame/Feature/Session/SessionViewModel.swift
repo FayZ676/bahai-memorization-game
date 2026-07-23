@@ -40,7 +40,7 @@ final class SessionViewModel {
         guard let card = current, !wordsRevealed else { return }
         let wasHidden = card.hiddenWords.contains(idx)
         store.toggleWord(card, index: idx)
-        if wasHidden { Feedback.reveal() }
+        if wasHidden { Feedback.reveal() } else { Feedback.hideTick() }
         focus(on: card.id)
     }
 

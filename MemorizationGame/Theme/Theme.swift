@@ -1,23 +1,35 @@
 import SwiftUI
+import UIKit
 
 enum Theme {
-    static let bg = Color(hex: 0x131211)
+    // Ground & surfaces
+    static let bg        = adaptive(0xECEEE8, 0x0F1512)   // paper
+    static let raised    = adaptive(0xFAFBF7, 0x18211D)   // cards, rows
+    static let rowBg     = raised
+    static let surface   = raised
 
-    static let ink = Color(hex: 0xE8E3D8)
-    static let inkBright = Color(hex: 0xECE8DF)
-    static let muted = Color(hex: 0x8A857A)
-    static let faint = Color(hex: 0x6D685F)
-    static let disabled = Color(hex: 0x4A463F)
-    static let navIcon = Color(hex: 0xC9C4BA)
+    // Text
+    static let ink       = adaptive(0x1C2521, 0xE7E4DA)
+    static let inkBright  = ink
+    static let muted     = adaptive(0x6A716B, 0x8C938C)
+    static let faint     = adaptive(0x9DA39C, 0x626A64)
+    static let navIcon   = muted
+    static let disabled  = faint
 
-    static let accent = Color(hex: 0xD9A15A)
+    // Lines
+    static let hairline  = adaptive(0xDFE2DB, 0x2A322D)
 
-    static let ember = Color(hex: 0xC2431B)
-    static let emberHot = Color(hex: 0xF5A03C)
+    // Signature + semantics
+    static let accent      = adaptive(0x2F6E5B, 0x5AAB90)   // pine
+    static let accentMuted = adaptive(0xB9BEBA, 0x3A473F)
+    static let gold        = adaptive(0xB9863F, 0xD4A65A)   // reward only
+    static let warn        = adaptive(0xB4443A, 0xD98A80)   // recitation miss
 
-    static let hairline = Color.white.opacity(0.06)
-    static let surface = Color.white.opacity(0.05)
-    static let rowBg = Color(hex: 0x1B1916)
+    private static func adaptive(_ light: UInt32, _ dark: UInt32) -> Color {
+        Color(uiColor: UIColor { traits in
+            UIColor(hex: traits.userInterfaceStyle == .dark ? dark : light)
+        })
+    }
 }
 
 extension Color {
@@ -29,11 +41,20 @@ extension Color {
     }
 }
 
+extension UIColor {
+    convenience init(hex: UInt32) {
+        let r = CGFloat((hex >> 16) & 0xFF) / 255.0
+        let g = CGFloat((hex >> 8) & 0xFF) / 255.0
+        let b = CGFloat(hex & 0xFF) / 255.0
+        self.init(red: r, green: g, blue: b, alpha: 1.0)
+    }
+}
+
 struct CardSurface: ViewModifier {
     var cornerRadius: CGFloat = 16
 
     func body(content: Content) -> some View {
-        let shape = RoundedRectangle(cornerRadius: cornerRadius)
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
         content
             .background(Theme.rowBg)
             .clipShape(shape)

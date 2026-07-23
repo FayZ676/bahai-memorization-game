@@ -12,7 +12,6 @@ struct SessionView: View {
     @State private var missShakes = 0
     @State private var missFlashIndex: Int?
     @State private var wordFrames: [Int: CGRect] = [:]
-    @State private var igniteTokens: [Int: Int] = [:]
     @State private var paintTargetHidden: Bool?
     @State private var painting = false
     @State private var scrollPosition = ScrollPosition()
@@ -60,15 +59,10 @@ struct SessionView: View {
             voice.stop()
             recitedWords = []
             missedWords = []
-            igniteTokens = [:]
         }
         .onChange(of: vm.current?.hiddenWords) {
             guard let card = vm.current else { return }
             voice.updateHiddenIndices(remainingHiddenIndices(of: card))
-        }
-        .onChange(of: vm.grounding) { wasGrounding, isGrounding in
-            guard wasGrounding, !isGrounding, let card = vm.current else { return }
-            for idx in card.hiddenWords { ignite(idx) }
         }
         .onDisappear { voice.stop() }
         .alert("Microphone Access Needed", isPresented: $showingMicDenied) {
@@ -151,10 +145,10 @@ struct SessionView: View {
             Text("MERGE")
                 .font(Typography.micro)
                 .tracking(1.8)
-                .foregroundStyle(Theme.emberHot)
+                .foregroundStyle(Theme.accent)
                 .padding(.horizontal, 11)
                 .padding(.vertical, 3)
-                .background(Capsule().stroke(Theme.ember.opacity(0.55), lineWidth: 1))
+                .background(Capsule().stroke(Theme.accent.opacity(0.55), lineWidth: 1))
                 .contentShape(Capsule())
         }
         .buttonStyle(.haptic)
@@ -248,13 +242,11 @@ struct SessionView: View {
                         let expected = voice.nextExpectedIndex == idx
                         WordView(
                             token: String(words[idx]),
-                            driftSeed: idx,
                             hidden: vm.isHidden(idx),
                             expected: expected,
                             recited: recitedWords.contains(idx),
                             missed: missedWords.contains(idx),
-                            missFlashing: missFlashIndex == idx,
-                            ignite: igniteTokens[idx] ?? 0
+                            missFlashing: missFlashIndex == idx
                         )
                             .font(Typography.recite)
                             .modifier(ShakeEffect(shakes: missFlashIndex == idx ? CGFloat(missShakes) : 0))
@@ -274,9 +266,7 @@ struct SessionView: View {
             SpatialTapGesture(coordinateSpace: .named("scripture"))
                 .onEnded { value in
                     guard !painting, let idx = wordIndex(at: value.location) else { return }
-                    let willHide = !vm.isHidden(idx)
                     withAnimation(.easeInOut(duration: 0.22)) { vm.toggleWord(idx) }
-                    if willHide { ignite(idx) }
                 }
         )
         .simultaneousGesture(paintGesture)
@@ -332,11 +322,6 @@ struct SessionView: View {
         paintTargetHidden = target
         guard vm.isHidden(idx) != target else { return }
         withAnimation(.easeInOut(duration: 0.22)) { vm.toggleWord(idx) }
-        if target { ignite(idx) }
-    }
-
-    private func ignite(_ idx: Int) {
-        igniteTokens[idx, default: 0] += 1
     }
 
     private func wordIndex(at location: CGPoint) -> Int? {
@@ -432,9 +417,6 @@ struct SessionView: View {
         Menu {
             Button(vm.isPeeking ? "Unpeek" : "Peek") { vm.togglePeek() }
             Button("Hide All Words") {
-                if let card = vm.current {
-                    for idx in card.words.indices where !vm.isHidden(idx) { ignite(idx) }
-                }
                 vm.setAllWords(hidden: true)
             }
             Button("Show All Words") { vm.setAllWords(hidden: false) }
@@ -456,7 +438,7 @@ struct SessionView: View {
         case .listening:
             Image(systemName: "mic.fill")
                 .font(.system(size: 21, weight: .semibold))
-                .foregroundStyle(Theme.emberHot)
+                .foregroundStyle(Theme.accent)
                 .symbolEffect(.pulse, options: .repeating)
         case .micDenied:
             Image(systemName: "mic.slash")
@@ -470,11 +452,11 @@ struct SessionView: View {
     }
 
     private var micFill: Color {
-        voice.state == .listening ? Theme.ember.opacity(0.28) : Theme.surface
+        voice.state == .listening ? Theme.accent.opacity(0.18) : Theme.surface
     }
 
     private var micStroke: Color {
-        voice.state == .listening ? Theme.emberHot.opacity(0.7) : Theme.hairline
+        voice.state == .listening ? Theme.accent.opacity(0.7) : Theme.hairline
     }
 
     private var emptyQueue: some View {
@@ -500,17 +482,12 @@ private struct ShakeEffect: GeometryEffect {
 
 private struct WordView: View {
     let token: String
-    let driftSeed: Int
     let hidden: Bool
     let expected: Bool
     let recited: Bool
     let missed: Bool
     let missFlashing: Bool
-    let ignite: Int
     @State private var pulsing = false
-    @State private var burn: Double = 0
-    @State private var burning = false
-    @State private var burnSeed: Double = 0
 
     private var parts: (lead: String, core: String, trail: String) {
         let chars = Array(token)
@@ -531,12 +508,12 @@ private struct WordView: View {
         HStack(spacing: 0) {
             if !p.lead.isEmpty { Text(p.lead).foregroundStyle(Theme.ink) }
             if !p.core.isEmpty {
-                coreText(p.core)
+                Text(p.core)
+                    .foregroundStyle(Theme.ink)
+                    .opacity(hidden ? 0 : 1)
+                    .blur(radius: hidden ? 2 : 0)
                     .overlay(alignment: .bottom) {
-                        if expected || (hidden && !burning) {
-                            underline
-                                .transition(.opacity)
-                        }
+                        reciteLine.opacity(showLine ? 1 : 0)
                     }
             }
             if !p.trail.isEmpty { Text(p.trail).foregroundStyle(Theme.ink) }
@@ -549,7 +526,8 @@ private struct WordView: View {
                     .padding(.vertical, -3)
             }
         }
-        .scaleEffect(pulsing ? 1.18 : 1)
+        .scaleEffect(pulsing ? 1.15 : 1)
+        .animation(.easeInOut(duration: 0.35), value: hidden)
         .animation(.easeInOut(duration: 0.18), value: expected)
         .onChange(of: recited) { wasRecited, isRecited in
             guard isRecited, !wasRecited else { return }
@@ -559,107 +537,43 @@ private struct WordView: View {
                 withAnimation(.spring(response: 0.25, dampingFraction: 0.55)) { pulsing = false }
             }
         }
-        .onChange(of: ignite) { _, _ in
-            guard hidden else { return }
-            burnSeed = .random(in: 0..<1000)
-            burn = 0
-            burning = true
-            let delay = Double.random(in: 0..<0.28)
-            withAnimation(.easeIn(duration: 0.55).delay(delay)) { burn = 1 }
-            Task {
-                if delay > 0 { try? await Task.sleep(for: .milliseconds(Int(delay * 1000))) }
-                Feedback.burn()
-            }
-            Task {
-                try? await Task.sleep(for: .milliseconds(700 + Int(delay * 1000)))
-                withAnimation(.easeInOut(duration: 0.45)) { burning = false }
-                burn = 0
-            }
-        }
     }
 
-    @ViewBuilder
-    private func coreText(_ core: String) -> some View {
-        if burning {
-            Text(core)
-                .foregroundStyle(Theme.ink)
-                .burnDissolve(progress: burn, seed: burnSeed)
-        } else {
-            Text(core)
-                .foregroundStyle(hidden ? .clear : Theme.ink)
-        }
+    // Once a word has faded, a slim line its own width cues the recitation.
+    private var showLine: Bool { hidden || expected }
+
+    private var reciteLine: some View {
+        RoundedRectangle(cornerRadius: 1, style: .continuous)
+            .fill(lineColor)
+            .frame(height: 2)
+            .offset(y: 3)
+    }
+
+    private var lineColor: Color {
+        if missFlashing || missed { return Theme.warn }
+        if recited || expected { return Theme.accent }
+        return Theme.muted
     }
 
     private var highlight: Color? {
-        if pulsing { return Theme.emberHot.opacity(0.3) }
-        if missFlashing { return Theme.ember.opacity(0.26) }
-        if expected { return Theme.accent.opacity(0.13) }
+        if pulsing { return Theme.accent.opacity(0.16) }
+        if missFlashing { return Theme.warn.opacity(0.2) }
+        if expected { return Theme.accent.opacity(0.12) }
         return nil
-    }
-
-    private var underline: some View {
-        RoundedRectangle(cornerRadius: 1)
-            .fill(underlineColor)
-            .frame(height: pulsing ? 4 : (expected ? 3 : 2))
-            .offset(y: 2)
-            .shadow(color: Theme.emberHot.opacity(pulsing ? 0.9 : 0), radius: 5)
-            .phaseAnimator([1.0, 0.35]) { bar, phase in
-                bar.opacity(expected && !missFlashing && !pulsing ? phase : 1)
-            } animation: { _ in
-                .easeInOut(duration: 0.6)
-            }
-            .modifier(FloatDrift(seed: driftSeed))
-    }
-
-    private var underlineColor: Color {
-        if missFlashing { return Theme.ember }
-        if recited { return Theme.emberHot }
-        if missed { return Theme.ember }
-        if expected { return Theme.accent }
-        return Theme.accent.opacity(0.5)
-    }
-}
-
-private struct FloatDrift: ViewModifier {
-    let seed: Int
-    @State private var bobbing = false
-    @State private var tilting = false
-
-    private func unitRandom(_ salt: Int) -> Double {
-        let raw = sin(Double(seed &* 37 &+ salt &* 101) * 12.9898) * 43758.5453
-        return raw - floor(raw)
-    }
-
-    func body(content: Content) -> some View {
-        let bobAmplitude = 0.9 + unitRandom(1) * 0.8
-        let tiltAmplitude = 0.45 + unitRandom(2) * 0.65
-        let bobDuration = 2.0 + unitRandom(3) * 1.5
-        let tiltDuration = 2.6 + unitRandom(4) * 1.7
-        content
-            .offset(y: bobbing ? -bobAmplitude : bobAmplitude)
-            .rotationEffect(.degrees(tilting ? tiltAmplitude : -tiltAmplitude))
-            .onAppear {
-                withAnimation(.easeInOut(duration: bobDuration).repeatForever(autoreverses: true).delay(unitRandom(5) * bobDuration)) {
-                    bobbing = true
-                }
-                withAnimation(.easeInOut(duration: tiltDuration).repeatForever(autoreverses: true).delay(unitRandom(6) * tiltDuration)) {
-                    tilting = true
-                }
-            }
     }
 }
 
 private struct DailyGoalToast: View {
     var body: some View {
         HStack(spacing: 10) {
-            Image(systemName: "flame.fill")
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(Theme.emberHot)
+            Image(systemName: "sparkles")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(Theme.gold)
             VStack(alignment: .leading, spacing: 2) {
                 Text("Daily goal complete")
                     .font(Typography.label)
                     .foregroundStyle(Theme.ink)
-                Text("Today's heat is full — streak secured.")
+                Text("Today's practice is in — streak secured.")
                     .font(Typography.micro)
                     .foregroundStyle(Theme.muted)
             }
@@ -669,8 +583,7 @@ private struct DailyGoalToast: View {
         .background(
             Capsule(style: .continuous)
                 .fill(Theme.rowBg)
-                .overlay(Capsule(style: .continuous).stroke(Theme.ember.opacity(0.5), lineWidth: 1))
-                .shadow(color: Theme.ember.opacity(0.35), radius: 10)
+                .overlay(Capsule(style: .continuous).stroke(Theme.gold.opacity(0.5), lineWidth: 1))
         )
     }
 }

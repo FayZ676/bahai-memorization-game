@@ -98,24 +98,9 @@ struct LibraryView: View {
     }
 
     private var streakHeader: some View {
-        let today = Date()
-        return HStack(alignment: .bottom, spacing: 8) {
-            BurningNumberView(
-                value: store.streakCount,
-                today: FlameDay(
-                    words: store.practiceLog.words(on: today),
-                    heat: store.practiceLog.heat(on: today)
-                ),
-                fontSize: 44
-            )
-            Text("Day Streak")
-                .font(Typography.footnote)
-                .tracking(1.6)
-                .textCase(.uppercase)
-                .foregroundStyle(Theme.faint)
-                .padding(.bottom, 14)
-            Spacer()
-        }
+        StreakView(count: store.streakCount)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 8)
     }
 
     private var emptyState: some View {
@@ -140,7 +125,7 @@ private struct PassageRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(passage.title)
-                        .font(Typography.title)
+                        .font(Typography.passageTitle)
                         .foregroundStyle(Theme.ink)
                         .lineLimit(1)
                         .truncationMode(.tail)

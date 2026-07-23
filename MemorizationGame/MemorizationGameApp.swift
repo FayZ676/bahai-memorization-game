@@ -14,7 +14,6 @@ struct MemorizationGameApp: App {
             LibraryView()
                 .environment(store)
                 .tint(Theme.accent)
-                .preferredColorScheme(.dark)
                 .task { ReminderScheduler.sync(store.settings) }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active { store.applyDecay() }

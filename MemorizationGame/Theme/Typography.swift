@@ -3,7 +3,6 @@ import CoreText
 
 enum AppFont {
     static let files = [
-        "Marcellus-Regular",
         "CormorantGaramond-Regular",
         "CormorantGaramond-Medium",
         "CormorantGaramond-SemiBold",
@@ -27,27 +26,28 @@ enum AppFont {
 }
 
 extension Font {
-    static func display(_ size: CGFloat) -> Font {
-        .custom("Marcellus-Regular", size: size)
-    }
-
+    /// Content face — reserved for scripture, prayer titles, and the streak numeral.
     static func scripture(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
         .custom(AppFont.scriptureName(for: weight), size: size)
     }
 }
 
 enum Typography {
-    static let title = Font.display(21)
-    static let button = Font.display(18)
-    static let subtitle = Font.display(17)
-    static let body = Font.display(16)
-    static let callout = Font.display(15)
-    static let label = Font.display(14)
-    static let caption = Font.display(13)
-    static let footnote = Font.display(12)
-    static let micro = Font.display(11)
+    // Interface chrome — system sans (SF Pro).
+    static let title    = Font.system(size: 20, weight: .semibold)
+    static let button   = Font.system(size: 17, weight: .semibold)
+    static let subtitle = Font.system(size: 17, weight: .semibold)
+    static let body     = Font.system(size: 16, weight: .regular)
+    static let callout  = Font.system(size: 15, weight: .regular)
+    static let label    = Font.system(size: 13, weight: .medium)
+    static let caption  = Font.system(size: 13, weight: .regular)
+    static let footnote = Font.system(size: 12, weight: .regular)
+    static let micro    = Font.system(size: 11, weight: .regular)
 
-    static let recite = Font.scripture(24)
-    static let prayer = Font.scripture(23, weight: .medium)
-    static let verse = Font.scripture(19)
+    // Content — Cormorant Garamond.
+    static let passageTitle = Font.scripture(21, weight: .semibold)
+    static let recite       = Font.scripture(24)
+    static let prayer       = Font.scripture(23, weight: .medium)
+    static let verse        = Font.scripture(19)
+    static let numeral      = Font.scripture(40, weight: .semibold)
 }

@@ -9,6 +9,10 @@ enum Feedback {
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
     }
 
+    static func hideTick() {
+        UIImpactFeedbackGenerator(style: .soft).impactOccurred(intensity: 0.7)
+    }
+
     static func flip() {
         UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
     }
