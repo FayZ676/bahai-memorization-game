@@ -18,7 +18,7 @@ struct HeatStrip: View {
 
     @ViewBuilder
     private func segment(heat: Double, selected: Bool) -> some View {
-        let t = Heat.intensity(min(max(heat, 0), 1))
+        let t = Self.eased(heat)
         let shape = RoundedRectangle(cornerRadius: Radius.segment, style: .continuous)
         shape
             .fill(Theme.ink.opacity(0.08))
@@ -35,5 +35,12 @@ struct HeatStrip: View {
 
     private func fillOpacity(_ t: Double) -> Double {
         t <= 0 ? 0 : 0.16 + 0.84 * t
+    }
+
+    /// Eases mastery (0…1) so the ramp reads perceptually rather than linearly.
+    private static func eased(_ heat: Double) -> Double {
+        let x = min(max(heat, 0), 1)
+        let k = 2.5
+        return (exp(k * x) - 1) / (exp(k) - 1)
     }
 }
