@@ -13,8 +13,7 @@ struct PassageCard<Accessory: View>: View {
                 Text(title)
                     .appFont(Typography.passageTitle)
                     .foregroundStyle(Theme.ink)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.leading)
+                    .lineLimit(1)
                     .truncationMode(.tail)
 
                 HStack(spacing: Spacing.xs) {
