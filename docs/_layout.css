@@ -1,0 +1,132 @@
+:root {
+  --bg: #ECEEE8;
+  --raised: #FAFBF7;
+  --ink: #1C2521;
+  --muted: #6A716B;
+  --faint: #9DA39C;
+  --hairline: #DFE2DB;
+  --accent: #2F6E5B;
+  --gold: #B9863F;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0F1512;
+    --raised: #18211D;
+    --ink: #E7E4DA;
+    --muted: #8C938C;
+    --faint: #626A64;
+    --hairline: #2A322D;
+    --accent: #C89A5A;
+    --gold: #F0CE8A;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Cormorant Garamond", Garamond, "Times New Roman", serif;
+  font-size: 20px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 4rem 1.5rem 6rem;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 3.5rem;
+}
+
+h1 {
+  font-family: Marcellus, Optima, Palatino, serif;
+  font-size: 2.75rem;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  margin: 0 0 0.35rem;
+}
+
+.tagline {
+  color: var(--muted);
+  font-style: italic;
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+h2 {
+  font-family: Marcellus, Optima, Palatino, serif;
+  font-size: 1.5rem;
+  font-weight: 400;
+  margin: 3rem 0 0.75rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--hairline);
+}
+
+h2:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
+
+h3 {
+  font-family: Marcellus, Optima, Palatino, serif;
+  font-size: 1.15rem;
+  font-weight: 400;
+  margin: 2rem 0 0.4rem;
+  color: var(--accent);
+}
+
+p { margin: 0 0 1.1rem; }
+
+a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+a:hover { opacity: 0.75; }
+
+ul { padding-left: 1.2rem; margin: 0 0 1.1rem; }
+li { margin-bottom: 0.4rem; }
+
+.card {
+  background: var(--raised);
+  border: 1px solid var(--hairline);
+  border-radius: 14px;
+  padding: 1.5rem 1.75rem;
+  margin: 2rem 0;
+}
+
+.card p:last-child { margin-bottom: 0; }
+
+.lede {
+  font-size: 1.15rem;
+  color: var(--muted);
+}
+
+footer {
+  margin-top: 4.5rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--hairline);
+  text-align: center;
+  color: var(--faint);
+  font-size: 0.95rem;
+}
+
+footer a { color: var(--muted); }
+
+.nav {
+  text-align: center;
+  margin-bottom: 2.5rem;
+  font-size: 1rem;
+}
+
+.nav a { margin: 0 0.7rem; }
+
+code {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.85em;
+  background: var(--raised);
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+}
