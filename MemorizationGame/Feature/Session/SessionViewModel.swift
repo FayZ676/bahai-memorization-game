@@ -11,7 +11,9 @@ final class SessionViewModel {
     var presentationEpoch = 0
     private(set) var isPeeking = false
     private(set) var grounding = false
+    private(set) var cascading = false
     private var groundingTask: Task<Void, Never>?
+    private var cascadeResetTask: Task<Void, Never>?
 
     init(passage: Passage, store: AppStore) {
         self.passage = passage
@@ -46,13 +48,14 @@ final class SessionViewModel {
 
     var progressTotal: Int { max(queueLength, 1) }
     var sectionHeats: [Double] { store.sectionHeats(for: passage) }
+    var sectionWeights: [Int] { store.sectionWeights(for: passage) }
     var mergeableGaps: [Bool] { store.mergeableGaps(for: passage) }
 
     var sectionLabel: String {
         guard let span = current?.span else { return "" }
         return span.start == span.end
-            ? "SECTION \(span.start) / \(progressTotal)"
-            : "SECTIONS \(span.start)–\(span.end) / \(progressTotal)"
+            ? "Section \(span.start) / \(progressTotal)"
+            : "Sections \(span.start)–\(span.end) / \(progressTotal)"
     }
 
     var canMerge: Bool {
@@ -100,30 +103,64 @@ final class SessionViewModel {
     func togglePeek() {
         groundingTask?.cancel()
         grounding = false
-        withAnimation(.easeInOut(duration: 0.32)) { isPeeking.toggle() }
+        ripple(current?.hiddenWords ?? [])
+        cascade {
+            withAnimation(.easeInOut(duration: 0.32)) { isPeeking.toggle() }
+        }
         Feedback.flip()
     }
 
     func endPeek() {
         guard isPeeking else { return }
-        withAnimation(.easeInOut(duration: 0.32)) { isPeeking = false }
+        ripple(current?.hiddenWords ?? [])
+        cascade {
+            withAnimation(.easeInOut(duration: 0.32)) { isPeeking = false }
+        }
     }
 
     private func beginGrounding() {
         groundingTask?.cancel()
         isPeeking = false
         grounding = true
-        groundingTask = Task {
+        groundingTask = Task { [weak self] in
             try? await Task.sleep(for: .seconds(1.4))
-            guard !Task.isCancelled else { return }
-            withAnimation(.easeInOut(duration: 0.6)) { grounding = false }
+            guard !Task.isCancelled, let self else { return }
+            ripple(current?.hiddenWords ?? [])
+            cascade {
+                withAnimation(.easeInOut(duration: 0.6)) { self.grounding = false }
+            }
         }
     }
 
     func setAllWords(hidden: Bool) {
         guard let card = current else { return }
-        store.setAllWords(card, hidden: hidden)
+        let changing = hidden
+            ? Set(card.words.indices).subtracting(card.hiddenWords)
+            : card.hiddenWords
+        ripple(changing)
+        cascade {
+            store.setAllWords(card, hidden: hidden)
+        }
         if hidden { Feedback.hide() } else { Feedback.reveal() }
         focus(on: card.id)
+    }
+
+    private func cascade(_ mutate: () -> Void) {
+        cascadeResetTask?.cancel()
+        cascading = true
+        mutate()
+        cascadeResetTask = Task {
+            try? await Task.sleep(for: .milliseconds(120))
+            guard !Task.isCancelled else { return }
+            cascading = false
+        }
+    }
+
+    private func ripple(_ indices: Set<Int>) {
+        guard let card = current, !indices.isEmpty else { return }
+        let count = card.words.count
+        Feedback.cascadeRipple(delays: indices.map {
+            Motion.cascadeDelay($0, of: count) + Motion.fadeDuration
+        })
     }
 }

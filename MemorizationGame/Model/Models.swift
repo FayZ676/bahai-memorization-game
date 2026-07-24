@@ -11,44 +11,36 @@ struct Reviewable: Codable, Identifiable, Hashable {
     var span: Span
     var expectedText: String
     var hiddenWords: Set<Int>
-    var lastPracticed: Date?
-    var strength: Double
-    var hiddenBaseline: Int
 
     init(
         id: UUID = UUID(),
         passageRef: UUID,
         span: Span,
         expectedText: String,
-        hiddenWords: Set<Int>,
-        lastPracticed: Date? = nil,
-        strength: Double = 0,
-        hiddenBaseline: Int = 0
+        hiddenWords: Set<Int>
     ) {
         self.id = id
         self.passageRef = passageRef
         self.span = span
         self.expectedText = expectedText
         self.hiddenWords = hiddenWords
-        self.lastPracticed = lastPracticed
-        self.strength = strength
-        self.hiddenBaseline = hiddenBaseline
+    }
+
+    static func tokens(in text: String) -> [Substring] {
+        text
+            .split(whereSeparator: { $0 == " " || $0 == "\n" })
+            .flatMap(splitInternalHyphens)
     }
 
     var words: [Substring] {
-        expectedText
-            .split(whereSeparator: { $0 == " " || $0 == "\n" })
-            .flatMap(Self.splitInternalHyphens)
+        Self.tokens(in: expectedText)
     }
 
     var paragraphs: [Range<Int>] {
         var ranges: [Range<Int>] = []
         var start = 0
         for paragraph in expectedText.split(separator: "\n", omittingEmptySubsequences: true) {
-            let count = paragraph
-                .split(separator: " ")
-                .flatMap(Self.splitInternalHyphens)
-                .count
+            let count = Self.tokens(in: String(paragraph)).count
             guard count > 0 else { continue }
             ranges.append(start..<(start + count))
             start += count
@@ -87,7 +79,6 @@ struct Reviewable: Codable, Identifiable, Hashable {
 
     private enum CodingKeys: String, CodingKey {
         case id, passageRef, span, expectedText, hiddenWords, hiddenWordCount
-        case lastPracticed, strength, hiddenBaseline
     }
 
     init(from decoder: Decoder) throws {
@@ -102,13 +93,6 @@ struct Reviewable: Codable, Identifiable, Hashable {
             let legacyPrefix = try container.decodeIfPresent(Int.self, forKey: .hiddenWordCount) ?? 0
             hiddenWords = Set(0..<legacyPrefix)
         }
-        strength = try container.decodeIfPresent(Double.self, forKey: .strength) ?? 0
-        hiddenBaseline = try container.decodeIfPresent(Int.self, forKey: .hiddenBaseline) ?? hiddenWords.count
-        if let stored = try container.decodeIfPresent(Date.self, forKey: .lastPracticed) {
-            lastPracticed = stored
-        } else {
-            lastPracticed = hiddenWords.isEmpty ? nil : Date()
-        }
     }
 
     func encode(to encoder: Encoder) throws {
@@ -118,9 +102,6 @@ struct Reviewable: Codable, Identifiable, Hashable {
         try container.encode(span, forKey: .span)
         try container.encode(expectedText, forKey: .expectedText)
         try container.encode(hiddenWords, forKey: .hiddenWords)
-        try container.encodeIfPresent(lastPracticed, forKey: .lastPracticed)
-        try container.encode(strength, forKey: .strength)
-        try container.encode(hiddenBaseline, forKey: .hiddenBaseline)
     }
 }
 
@@ -128,15 +109,19 @@ struct Passage: Codable, Identifiable, Hashable {
     var id: UUID = UUID()
     var title: String
     var dateAdded: Date
+    var author: String?
+    var section: String?
 
-    init(id: UUID = UUID(), title: String, dateAdded: Date = Date()) {
+    init(id: UUID = UUID(), title: String, dateAdded: Date = Date(), author: String? = nil, section: String? = nil) {
         self.id = id
         self.title = title
         self.dateAdded = dateAdded
+        self.author = author
+        self.section = section
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, title, dateAdded
+        case id, title, dateAdded, author, section
     }
 
     init(from decoder: Decoder) throws {
@@ -144,5 +129,7 @@ struct Passage: Codable, Identifiable, Hashable {
         id = try container.decode(UUID.self, forKey: .id)
         title = try container.decode(String.self, forKey: .title)
         dateAdded = try container.decodeIfPresent(Date.self, forKey: .dateAdded) ?? Date()
+        author = try container.decodeIfPresent(String.self, forKey: .author)
+        section = try container.decodeIfPresent(String.self, forKey: .section)
     }
 }

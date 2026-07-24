@@ -3,7 +3,6 @@ import SwiftUI
 @main
 struct MemorizationGameApp: App {
     @State private var store = AppStore()
-    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         AppFont.register()
@@ -13,12 +12,10 @@ struct MemorizationGameApp: App {
         WindowGroup {
             LibraryView()
                 .environment(store)
+                .environment(\.fontScale, store.settings.fontSize.scale)
                 .tint(Theme.accent)
-                .preferredColorScheme(Theme.preferredColorScheme)
+                .preferredColorScheme(store.settings.appTheme.colorScheme)
                 .task { ReminderScheduler.sync(store.settings) }
-                .onChange(of: scenePhase) { _, phase in
-                    if phase == .active { store.applyDecay() }
-                }
         }
     }
 }

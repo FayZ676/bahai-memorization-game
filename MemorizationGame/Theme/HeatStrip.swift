@@ -5,15 +5,48 @@ import SwiftUI
 /// animation, no glow.
 struct HeatStrip: View {
     let heats: [Double]
+    var weights: [Int]? = nil
     var animated = true          // retained for call-site compatibility
     var highlight: Int? = nil
 
+    private static let spacing: CGFloat = 3
+
     var body: some View {
-        HStack(spacing: 3) {
-            ForEach(heats.indices, id: \.self) { i in
-                segment(heat: heats[i], selected: i == highlight)
+        GeometryReader { geo in
+            let fractions = normalizedWeights
+            let available = geo.size.width - Self.spacing * CGFloat(max(heats.count - 1, 0))
+            HStack(spacing: Self.spacing) {
+                ForEach(heats.indices, id: \.self) { i in
+                    segment(heat: heats[i], selected: i == highlight)
+                        .frame(width: max(available * fractions[i], 0))
+                }
             }
         }
+    }
+
+    private static let minShareOfEqual = 0.5
+    private static let maxShareOfEqual = 2.0
+
+    private var normalizedWeights: [Double] {
+        Self.displayFractions(weights: weights, count: heats.count)
+    }
+
+    static func displayFractions(weights: [Int]?, count: Int) -> [Double] {
+        let equalShare = 1 / Double(max(count, 1))
+        guard let weights, weights.count == count, weights.contains(where: { $0 > 0 }) else {
+            return Array(repeating: equalShare, count: count)
+        }
+        let total = Double(weights.reduce(0, +))
+        var fractions = weights.map { Double($0) / total }
+        guard count > 1 else { return fractions }
+        let floor = minShareOfEqual * equalShare
+        let cap = maxShareOfEqual * equalShare
+        for _ in 0..<8 {
+            fractions = fractions.map { min(max($0, floor), cap) }
+            let sum = fractions.reduce(0, +)
+            fractions = fractions.map { $0 / sum }
+        }
+        return fractions
     }
 
     @ViewBuilder
@@ -25,12 +58,10 @@ struct HeatStrip: View {
             .overlay {
                 shape.fill(Theme.accent).opacity(fillOpacity(t))
             }
-            .overlay {
-                if selected {
-                    shape.strokeBorder(Theme.accent.opacity(0.9), lineWidth: 1)
-                }
-            }
             .frame(maxHeight: .infinity)
+            .shadow(color: Theme.ink.opacity(selected ? 0.22 : 0), radius: 3, y: 2)
+            .offset(y: selected ? -3 : 0)
+            .zIndex(selected ? 1 : 0)
     }
 
     private func fillOpacity(_ t: Double) -> Double {

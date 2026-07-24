@@ -8,12 +8,11 @@ struct StreakView: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: Spacing.sm) {
             Text("\(count)")
-                .font(Typography.numeral)
+                .appFont(Typography.numeral)
                 .foregroundStyle(Theme.ink)
             Text("Day Streak")
-                .font(Typography.footnote)
-                .tracking(1.6)
-                .textCase(.uppercase)
+                .appFont(Typography.footnote)
+                .tracking(0.5)
                 .foregroundStyle(Theme.faint)
             Spacer(minLength: 0)
         }

@@ -14,9 +14,8 @@ struct SessionView: View {
     @State private var wordFrames: [Int: CGRect] = [:]
     @State private var paintTargetHidden: Bool?
     @State private var painting = false
-    @State private var scrollPosition = ScrollPosition()
-    @State private var scrollOffset: CGFloat = 0
-    @State private var scrollableHeight: CGFloat = 0
+    @State private var showingFullText = false
+    @State private var showingEdit = false
     let passage: Passage
     private let store: AppStore
 
@@ -30,7 +29,7 @@ struct SessionView: View {
         ZStack {
             Theme.bg.ignoresSafeArea()
             VStack(spacing: 0) {
-                ScreenHeader(title: passage.title, onBack: { dismiss() }) {
+                ScreenHeader(title: currentTitle, style: .scripture, onBack: { dismiss() }, onTitleTap: { showingFullText = true }) {
                     if vm.current != nil { optionsMenu }
                 }
                 if vm.current != nil {
@@ -46,6 +45,16 @@ struct SessionView: View {
         }
         .toolbar(.hidden, for: .navigationBar)
         .navigationBarBackButtonHidden(true)
+        .navigationDestination(isPresented: $showingFullText) {
+            PassageTextView(passage: passage, store: store)
+        }
+        .navigationDestination(isPresented: $showingEdit) {
+            ImportView(editing: passage, store: store)
+        }
+        .onChange(of: showingEdit) { _, isEditing in
+            guard !isEditing else { return }
+            vm.start()
+        }
         .task {
             guard !started else { return }
             started = true
@@ -93,6 +102,10 @@ struct SessionView: View {
         }
     }
 
+    private var currentTitle: String {
+        store.passages.first { $0.id == passage.id }?.title ?? passage.title
+    }
+
     private func remainingHiddenIndices(of card: Reviewable) -> [Int] {
         card.hiddenWords
             .filter { !recitedWords.contains($0) && !missedWords.contains($0) }
@@ -123,8 +136,8 @@ struct SessionView: View {
         VStack(spacing: 9) {
             HStack {
                 Text(vm.sectionLabel)
-                    .font(Typography.micro)
-                    .tracking(1.8)
+                    .appFont(Typography.micro)
+                    .tracking(0.5)
                     .foregroundStyle(Theme.muted)
                 Spacer()
                 if vm.canMerge {
@@ -134,6 +147,7 @@ struct SessionView: View {
             heatBar
         }
         .padding(.horizontal, 26)
+        .padding(.top, Spacing.headerGap)
         .padding(.bottom, 16)
         .animation(.easeInOut(duration: 0.22), value: vm.canMerge)
     }
@@ -142,9 +156,9 @@ struct SessionView: View {
         Button {
             withAnimation(.easeInOut(duration: 0.28)) { vm.merge() }
         } label: {
-            Text("MERGE")
-                .font(Typography.micro)
-                .tracking(1.8)
+            Text("Merge")
+                .appFont(Typography.micro)
+                .tracking(0.5)
                 .foregroundStyle(Theme.accent)
                 .padding(.horizontal, 11)
                 .padding(.vertical, 3)
@@ -158,9 +172,8 @@ struct SessionView: View {
     private var heatBar: some View {
         GeometryReader { geo in
             let heats = vm.sectionHeats
-            let count = max(heats.count, 1)
-            let unit = geo.size.width / CGFloat(count)
-            HeatStrip(heats: heats, animated: false, highlight: vm.step)
+            let weights = vm.sectionWeights
+            HeatStrip(heats: heats, weights: weights, animated: false, highlight: vm.step)
                 .frame(height: scrubbing ? 12 : 6)
                 .frame(maxHeight: .infinity)
                 .contentShape(Rectangle())
@@ -171,7 +184,7 @@ struct SessionView: View {
                             withAnimation(.easeOut(duration: 0.16)) { scrubbing = true }
                         }
                         withAnimation(.easeInOut(duration: 0.18)) {
-                            vm.scrub(to: Int(value.location.x / unit))
+                            vm.scrub(to: Self.segmentIndex(at: value.location.x, width: geo.size.width, weights: weights))
                         }
                     }
                     .onEnded { _ in
@@ -183,6 +196,16 @@ struct SessionView: View {
         .animation(.easeOut(duration: 0.14), value: vm.step)
     }
 
+    private static func segmentIndex(at x: CGFloat, width: CGFloat, weights: [Int]) -> Int {
+        let fractions = HeatStrip.displayFractions(weights: weights, count: weights.count)
+        var edge: CGFloat = 0
+        for (i, fraction) in fractions.enumerated() {
+            edge += width * CGFloat(fraction)
+            if x < edge { return i }
+        }
+        return max(weights.count - 1, 0)
+    }
+
     // MARK: Reading
 
     private var readingArea: some View {
@@ -192,8 +215,8 @@ struct SessionView: View {
                     if let card = vm.current {
                         scripture(for: card)
                     }
-                    Text("Tap or glide over words to show or hide")
-                        .font(Typography.micro)
+                    Text("Tap and glide over words to show or hide them")
+                        .appFont(Typography.micro)
                         .foregroundStyle(Theme.faint)
                         .padding(.top, 20)
                     Spacer(minLength: 0)
@@ -205,16 +228,6 @@ struct SessionView: View {
             }
             .scrollIndicators(.hidden)
         .scrollDisabled(painting)
-        .scrollPosition($scrollPosition)
-        .onScrollGeometryChange(for: ScrollGeometry.self) { $0 } action: { _, geometry in
-            scrollOffset = geometry.contentOffset.y + geometry.contentInsets.top
-            scrollableHeight = geometry.contentSize.height - geometry.containerSize.height
-        }
-        .overlay(alignment: .trailing) {
-            if scrollableHeight > 1 {
-                scrollRail(viewportHeight: geo.size.height)
-            }
-        }
         .simultaneousGesture(
             DragGesture(minimumDistance: 24)
                 .onEnded { value in
@@ -246,12 +259,13 @@ struct SessionView: View {
                             expected: expected,
                             recited: recitedWords.contains(idx),
                             missed: missedWords.contains(idx),
-                            missFlashing: missFlashIndex == idx
+                            missFlashing: missFlashIndex == idx,
+                            staggerDelay: vm.cascading ? Motion.cascadeDelay(idx, of: words.count) : 0
                         )
-                            .font(Typography.recite)
+                            .appFont(Typography.recite)
                             .modifier(ShakeEffect(shakes: missFlashIndex == idx ? CGFloat(missShakes) : 0))
                             .onGeometryChange(for: CGRect.self) { proxy in
-                                proxy.frame(in: .named("scripture"))
+                                proxy.frame(in: .global)
                             } action: { frame in
                                 wordFrames[idx] = frame
                             }
@@ -259,61 +273,34 @@ struct SessionView: View {
                 }
             }
         }
-        .coordinateSpace(name: "scripture")
         .contentShape(Rectangle())
         .allowsHitTesting(!vm.wordsRevealed)
         .simultaneousGesture(
-            SpatialTapGesture(coordinateSpace: .named("scripture"))
+            SpatialTapGesture(coordinateSpace: .global)
                 .onEnded { value in
                     guard !painting, let idx = wordIndex(at: value.location) else { return }
                     withAnimation(Motion.toggle) { vm.toggleWord(idx) }
                 }
         )
-        .simultaneousGesture(paintGesture)
-    }
-
-    private func scrollRail(viewportHeight: CGFloat) -> some View {
-        let railHeight = max(viewportHeight - 44, 60)
-        let thumbHeight = max(44, railHeight * railHeight / (railHeight + scrollableHeight))
-        let travel = railHeight - thumbHeight
-        let fraction = min(max(scrollOffset / scrollableHeight, 0), 1)
-        return Capsule()
-            .fill(Theme.faint.opacity(0.45))
-            .frame(width: 2, height: thumbHeight)
-            .offset(y: travel * fraction)
-            .frame(width: 2, height: railHeight, alignment: .top)
-        .frame(width: 28, height: railHeight)
-        .contentShape(Rectangle())
-        .gesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { value in
-                    guard travel > 0 else { return }
-                    let target = min(max((value.location.y - thumbHeight / 2) / travel, 0), 1)
-                    scrollPosition.scrollTo(y: target * scrollableHeight)
-                }
-        )
-    }
-
-    private var paintGesture: some Gesture {
-        LongPressGesture(minimumDuration: 0.3)
-            .sequenced(before: DragGesture(minimumDistance: 0, coordinateSpace: .named("scripture")))
-            .onChanged { value in
-                guard case .second(true, let drag) = value else { return }
-                if !painting {
-                    painting = true
-                    Feedback.flip()
-                }
-                guard let drag else { return }
-                paint(at: drag.startLocation)
-                paint(at: drag.location)
-            }
-            .onEnded { _ in
+        .gesture(PaintRecognizer(
+            onBegan: { location in
+                guard !vm.wordsRevealed else { return }
+                painting = true
+                Feedback.flip()
+                paint(at: location)
+            },
+            onMoved: { location in
+                guard painting else { return }
+                paint(at: location)
+            },
+            onEnded: {
                 paintTargetHidden = nil
                 Task {
                     try? await Task.sleep(for: .milliseconds(80))
                     painting = false
                 }
             }
+        ))
     }
 
     private func paint(at location: CGPoint) {
@@ -361,7 +348,7 @@ struct SessionView: View {
                     .tint(Theme.muted)
             }
             Text(heardLabel)
-                .font(Typography.micro)
+                .appFont(Typography.micro)
                 .foregroundStyle(Theme.faint)
                 .lineLimit(1)
                 .truncationMode(.head)
@@ -415,6 +402,7 @@ struct SessionView: View {
 
     private var optionsMenu: some View {
         Menu {
+            Button("Edit") { showingEdit = true }
             Button(vm.isPeeking ? "Unpeek" : "Peek") { vm.togglePeek() }
             Button("Hide All Words") {
                 vm.setAllWords(hidden: true)
@@ -461,9 +449,30 @@ struct SessionView: View {
 
     private var emptyQueue: some View {
         Text("Nothing to review yet.")
-            .font(Typography.subtitle)
+            .appFont(Typography.subtitle)
             .foregroundStyle(Theme.muted)
             .multilineTextAlignment(.center)
+    }
+}
+
+private struct PaintRecognizer: UIGestureRecognizerRepresentable {
+    let onBegan: (CGPoint) -> Void
+    let onMoved: (CGPoint) -> Void
+    let onEnded: () -> Void
+
+    func makeUIGestureRecognizer(context: Context) -> UILongPressGestureRecognizer {
+        let recognizer = UILongPressGestureRecognizer()
+        recognizer.minimumPressDuration = 0.3
+        return recognizer
+    }
+
+    func handleUIGestureRecognizerAction(_ recognizer: UILongPressGestureRecognizer, context: Context) {
+        switch recognizer.state {
+        case .began: onBegan(recognizer.location(in: nil))
+        case .changed: onMoved(recognizer.location(in: nil))
+        case .ended, .cancelled, .failed: onEnded()
+        default: break
+        }
     }
 }
 
@@ -487,6 +496,7 @@ private struct WordView: View {
     let recited: Bool
     let missed: Bool
     let missFlashing: Bool
+    let staggerDelay: Double
     @State private var pulsing = false
 
     private var parts: (lead: String, core: String, trail: String) {
@@ -513,7 +523,9 @@ private struct WordView: View {
                     .opacity(hidden ? 0 : 1)
                     .blur(radius: hidden ? 2 : 0)
                     .overlay(alignment: .bottom) {
-                        reciteLine.opacity(showLine ? 1 : 0)
+                        reciteLine
+                            .opacity(showLine ? 1 : 0)
+                            .animation(hidden ? Motion.lineFadeIn.delay(staggerDelay) : .easeInOut(duration: 0.18), value: showLine)
                     }
             }
             if !p.trail.isEmpty { Text(p.trail).foregroundStyle(Theme.ink) }
@@ -527,7 +539,7 @@ private struct WordView: View {
             }
         }
         .scaleEffect(pulsing ? 1.15 : 1)
-        .animation(Motion.fade, value: hidden)
+        .animation(Motion.fade.delay(staggerDelay), value: hidden)
         .animation(.easeInOut(duration: 0.18), value: expected)
         .onChange(of: recited) { wasRecited, isRecited in
             guard isRecited, !wasRecited else { return }
@@ -571,10 +583,10 @@ private struct DailyGoalToast: View {
                 .foregroundStyle(Theme.gold)
             VStack(alignment: .leading, spacing: 2) {
                 Text("Daily goal complete")
-                    .font(Typography.label)
+                    .appFont(Typography.label)
                     .foregroundStyle(Theme.ink)
                 Text("Today's practice is in — streak secured.")
-                    .font(Typography.micro)
+                    .appFont(Typography.micro)
                     .foregroundStyle(Theme.muted)
             }
         }

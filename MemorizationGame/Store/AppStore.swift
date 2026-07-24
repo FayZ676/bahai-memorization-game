@@ -6,7 +6,6 @@ final class AppStore {
     private(set) var passages: [Passage]
     private(set) var reviewables: [Reviewable]
     private(set) var practiceLog: PracticeLog
-    private var lastSoftFloor: Date?
     var dailyGoalReached = false
     var settings: AppSettings {
         didSet {
@@ -28,7 +27,6 @@ final class AppStore {
             self.passages = snapshot.passages
             self.reviewables = snapshot.reviewables
             self.practiceLog = snapshot.practiceLog ?? PracticeLog()
-            self.lastSoftFloor = snapshot.lastSoftFloor
             self.settings = snapshot.settings
         } else {
             self.passages = []
@@ -36,35 +34,7 @@ final class AppStore {
             self.practiceLog = PracticeLog()
             self.settings = .default
         }
-
-        applyDecay()
     }
-
-    func applyDecay(at now: Date = Date()) {
-        let model = decay
-        var updated = reviewables.map { model.decayed($0, at: now) }
-        if !updated.contains(where: { model.isDecaying($0, at: now) }),
-           !Calendar.current.isDate(lastSoftFloor ?? .distantPast, inSameDayAs: now),
-           let index = softFloorIndex(in: updated, model: model, at: now) {
-            updated[index] = model.revealingFirst(updated[index])
-            lastSoftFloor = now
-        }
-        guard updated != reviewables else { return }
-        reviewables = updated
-        persist()
-    }
-
-    private func softFloorIndex(in cards: [Reviewable], model: DecayModel, at now: Date) -> Int? {
-        cards.indices
-            .filter {
-                cards[$0].lastPracticed != nil
-                    && cards[$0].hiddenBaseline > 0
-                    && cards[$0].hiddenWords.count == cards[$0].hiddenBaseline
-            }
-            .max { model.overdueRatio(cards[$0], at: now) < model.overdueRatio(cards[$1], at: now) }
-    }
-
-    var decay: DecayModel { DecayModel(rate: settings.decayRate) }
 
     func cards(for passage: Passage) -> [Reviewable] {
         reviewables.filter { $0.passageRef == passage.id }
@@ -82,6 +52,10 @@ final class AppStore {
         queue(for: passage).map { card in
             card.wordCount > 0 ? Double(card.hiddenWords.count) / Double(card.wordCount) : 0
         }
+    }
+
+    func sectionWeights(for passage: Passage) -> [Int] {
+        queue(for: passage).map(\.wordCount)
     }
 
     var practicedToday: Bool {
@@ -110,18 +84,17 @@ final class AppStore {
         merged.span.end = next.span.end
         merged.expectedText += "\n" + next.expectedText
         merged.hiddenWords.formUnion(next.hiddenWords.map { $0 + offset })
-        merged.strength = min(merged.strength, next.strength)
-        merged.lastPracticed = [merged.lastPracticed, next.lastPracticed].compactMap { $0 }.min()
-        merged.hiddenBaseline = merged.hiddenWords.count
         reviewables[index] = merged
         reviewables.removeAll { $0.id == next.id }
         persist()
     }
 
-    func createPassage(title: String, units: [String]) {
+    func createPassage(title: String, units: [String], author: String? = nil, section: String? = nil) {
         let passage = Passage(
             title: title.trimmingCharacters(in: .whitespacesAndNewlines),
-            dateAdded: Date()
+            dateAdded: Date(),
+            author: author,
+            section: section
         )
         passages.append(passage)
         let cards = units.enumerated().map { (i, text) in
@@ -132,6 +105,48 @@ final class AppStore {
                 hiddenWords: []
             )
         }
+        reviewables.append(contentsOf: cards)
+        persist()
+    }
+
+    func updatePassage(_ passage: Passage, title: String, units: [String]) {
+        guard let passageIndex = passages.firstIndex(where: { $0.id == passage.id }) else { return }
+        passages[passageIndex].title = title.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let oldCards = queue(for: passage)
+        var oldWords: [String] = []
+        var oldHidden: Set<Int> = []
+        for card in oldCards {
+            let offset = oldWords.count
+            oldWords.append(contentsOf: card.words.map(String.init))
+            oldHidden.formUnion(card.hiddenWords.map { $0 + offset })
+        }
+
+        let unitWords = units.map { Reviewable.tokens(in: $0).map(String.init) }
+        let newHidden = HiddenWordAlignment.remap(
+            oldWords: oldWords,
+            hidden: oldHidden,
+            newWords: unitWords.flatMap { $0 }
+        )
+
+        var offset = 0
+        let cards = units.enumerated().map { (i, text) in
+            let count = unitWords[i].count
+            let hiddenWords = Set(
+                newHidden
+                    .filter { $0 >= offset && $0 < offset + count }
+                    .map { $0 - offset }
+            )
+            offset += count
+            return Reviewable(
+                passageRef: passage.id,
+                span: Span(start: i + 1, end: i + 1),
+                expectedText: text,
+                hiddenWords: hiddenWords
+            )
+        }
+
+        reviewables.removeAll { $0.passageRef == passage.id }
         reviewables.append(contentsOf: cards)
         persist()
     }
@@ -155,17 +170,14 @@ final class AppStore {
         let old = reviewables[index]
         var updated = old
         change(&updated)
-        recordPractice(from: old, to: &updated)
+        recordPractice(from: old, to: updated)
         reviewables[index] = updated
         persist()
     }
 
-    private func recordPractice(from old: Reviewable, to updated: inout Reviewable, now: Date = Date()) {
+    private func recordPractice(from old: Reviewable, to updated: Reviewable) {
         let newlyHidden = updated.hiddenWords.subtracting(old.hiddenWords).count
         guard newlyHidden > 0 else { return }
-        updated.lastPracticed = now
-        updated.strength = min(updated.strength + 1, DecayModel.strengthCap)
-        updated.hiddenBaseline = updated.hiddenWords.count
         let reachedGoalBefore = practiceLog.reachedGoal()
         practiceLog.record(words: newlyHidden)
         if !reachedGoalBefore && practiceLog.reachedGoal() {
@@ -178,7 +190,6 @@ final class AppStore {
         var reviewables: [Reviewable]
         var practiceLog: PracticeLog?
         var settings: AppSettings
-        var lastSoftFloor: Date?
     }
 
     private func persist() {
@@ -186,8 +197,7 @@ final class AppStore {
             passages: passages,
             reviewables: reviewables,
             practiceLog: practiceLog,
-            settings: settings,
-            lastSoftFloor: lastSoftFloor
+            settings: settings
         )
         guard let data = try? JSONEncoder().encode(snapshot) else { return }
         try? data.write(to: storeURL, options: .atomic)

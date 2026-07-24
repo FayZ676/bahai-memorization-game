@@ -1,22 +1,31 @@
 import SwiftUI
 
 struct ScreenHeader: View {
+    enum Style {
+        case chrome
+        case scripture
+    }
+
     let title: String
+    let style: Style
+    let onTitleTap: (() -> Void)?
     let leading: AnyView
     let trailing: AnyView
 
-    init(title: String, @ViewBuilder leading: () -> some View, @ViewBuilder trailing: () -> some View) {
+    init(title: String, style: Style = .chrome, onTitleTap: (() -> Void)? = nil, @ViewBuilder leading: () -> some View, @ViewBuilder trailing: () -> some View) {
         self.title = title
+        self.style = style
+        self.onTitleTap = onTitleTap
         self.leading = AnyView(leading())
         self.trailing = AnyView(trailing())
     }
 
-    init(title: String, onBack: @escaping () -> Void, @ViewBuilder trailing: () -> some View) {
-        self.init(title: title, leading: { BackChevron(action: onBack) }, trailing: trailing)
+    init(title: String, style: Style = .chrome, onBack: @escaping () -> Void, onTitleTap: (() -> Void)? = nil, @ViewBuilder trailing: () -> some View) {
+        self.init(title: title, style: style, onTitleTap: onTitleTap, leading: { BackChevron(action: onBack) }, trailing: trailing)
     }
 
-    init(title: String, onBack: @escaping () -> Void) {
-        self.init(title: title, onBack: onBack) { Color.clear }
+    init(title: String, style: Style = .chrome, onBack: @escaping () -> Void, onTitleTap: (() -> Void)? = nil) {
+        self.init(title: title, style: style, onBack: onBack, onTitleTap: onTitleTap) { Color.clear }
     }
 
     var body: some View {
@@ -24,13 +33,18 @@ struct ScreenHeader: View {
             leading
                 .frame(width: 38, height: 38)
 
-            Text(title)
-                .font(Typography.label)
-                .tracking(1.6)
-                .textCase(.uppercase)
-                .foregroundStyle(Theme.inkBright)
-                .lineLimit(1)
-                .frame(maxWidth: .infinity)
+            Group {
+                if let onTitleTap {
+                    Button(action: onTitleTap) {
+                        titleText
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.haptic)
+                } else {
+                    titleText
+                }
+            }
+            .frame(maxWidth: .infinity)
 
             trailing
                 .frame(width: 38, height: 38)
@@ -38,6 +52,15 @@ struct ScreenHeader: View {
         .padding(.horizontal, 18)
         .padding(.top, 10)
         .padding(.bottom, 16)
+    }
+
+    private var titleText: some View {
+        Text(title)
+            .appFont(style == .scripture ? Typography.passageTitle : Typography.label)
+            .tracking(style == .scripture ? 0 : 0.5)
+            .foregroundStyle(Theme.inkBright)
+            .lineLimit(1)
+            .frame(maxWidth: .infinity)
     }
 }
 

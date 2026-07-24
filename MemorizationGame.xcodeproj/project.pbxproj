@@ -275,6 +275,7 @@
 				DEVELOPMENT_TEAM = WG5M4FAV79;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Verses;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "The microphone hears you recite so each word can be checked as you speak it.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -305,6 +306,7 @@
 				DEVELOPMENT_TEAM = WG5M4FAV79;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Verses;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "The microphone hears you recite so each word can be checked as you speak it.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

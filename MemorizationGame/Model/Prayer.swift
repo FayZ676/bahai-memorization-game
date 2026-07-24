@@ -9,6 +9,7 @@ struct Prayer: Decodable, Identifiable, Hashable {
     let primaryTag: String
     let collection: String
     let section: String
+    let source: String?
 
     var firstLine: String {
         text

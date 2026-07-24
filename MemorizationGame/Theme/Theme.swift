@@ -23,15 +23,10 @@ enum Theme {
     static let hairline  = adaptive(0xDFE2DB, 0x2A322D)
 
     // Signature + semantics
-    static let accent      = adaptive(0x2F6E5B, 0x5AAB90)   // pine
-    static let accentMuted = adaptive(0xB9BEBA, 0x3A473F)
-    static let gold        = adaptive(0xB9863F, 0xD4A65A)   // reward only
+    static let accent      = adaptive(0x2F6E5B, 0xC89A5A)   // pine on paper, gilt on ink
+    static let accentMuted = adaptive(0xB9BEBA, 0x4A3E2A)
+    static let gold        = adaptive(0xB9863F, 0xF0CE8A)   // reward only
     static let warn        = adaptive(0xB4443A, 0xD98A80)   // recitation miss
-
-    /// The app's preferred appearance. `.light` locks the light theme; `nil`
-    /// follows the system. Dark values stay defined, so re-enabling dark — or
-    /// following the system — is a one-line change here.
-    static let preferredColorScheme: ColorScheme? = .light
 
     private static func adaptive(_ light: UInt32, _ dark: UInt32) -> Color {
         Color(uiColor: UIColor { traits in

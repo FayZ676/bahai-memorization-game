@@ -68,7 +68,7 @@ struct PrayerBrowseView: View {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(Theme.muted)
             TextField("Search prayers and writings", text: $query)
-                .font(Typography.body)
+                .appFont(Typography.body)
                 .foregroundStyle(Theme.ink)
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.never)
@@ -77,7 +77,7 @@ struct PrayerBrowseView: View {
                     query = ""
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(Typography.body)
+                        .appFont(Typography.body)
                         .foregroundStyle(Theme.muted)
                 }
                 .buttonStyle(.haptic)
@@ -95,7 +95,7 @@ struct PrayerBrowseView: View {
         VStack(alignment: .leading, spacing: 0) {
             DisclosureNode(
                 title: collection.name,
-                font: Typography.title,
+                font: Typography.passageTitle,
                 color: Theme.ink,
                 initiallyExpanded: true
             ) {
@@ -115,14 +115,11 @@ struct PrayerBrowseView: View {
                 subtitle: "\(section.prayerCount)",
                 font: Typography.caption,
                 color: Theme.muted,
-                uppercase: true,
-                tracking: 0.6,
+                tracking: 0.3,
                 indent: 4
             ) {
                 ForEach(Array(section.categories.enumerated()), id: \.element.id) { index, category in
-                    NavigationLink {
-                        PrayerCategoryView(category: category)
-                    } label: {
+                    NavigationLink(value: ImportRoute.category(category)) {
                         CategoryRow(category: category)
                     }
                     .buttonStyle(.haptic)
@@ -139,15 +136,13 @@ struct PrayerBrowseView: View {
     }
 
     private var pasteOwnRow: some View {
-        NavigationLink {
-            ImportView()
-        } label: {
+        NavigationLink(value: ImportRoute.pasteOwn) {
             HStack(spacing: 10) {
                 Image(systemName: "square.and.pencil")
                     .foregroundStyle(Theme.accent)
                 Text("Paste your own text")
-                    .font(Typography.body)
-                    .foregroundStyle(Theme.ink)
+                    .appFont(Typography.body)
+                    .foregroundStyle(Theme.muted)
                 Spacer()
             }
             .padding(14)
@@ -161,9 +156,7 @@ struct PrayerBrowseView: View {
     private var searchRows: some View {
         LazyVStack(alignment: .leading, spacing: 0) {
             ForEach(Array(searchResults.enumerated()), id: \.element.id) { index, prayer in
-                NavigationLink {
-                    PrayerDetailView(prayer: prayer)
-                } label: {
+                NavigationLink(value: ImportRoute.prayer(prayer)) {
                     PrayerRow(prayer: prayer, showSection: true)
                 }
                 .buttonStyle(.haptic)
@@ -187,7 +180,7 @@ struct PrayerBrowseView: View {
 
     private var noResults: some View {
         Text("No prayers match “\(trimmedQuery)”.")
-            .font(Typography.body)
+            .appFont(Typography.body)
             .foregroundStyle(Theme.muted)
             .frame(maxWidth: .infinity)
             .padding(.top, 40)
@@ -200,13 +193,13 @@ private struct CategoryRow: View {
     var body: some View {
         HStack(spacing: 10) {
             Text(category.name)
-                .font(Typography.body)
+                .appFont(Typography.body)
                 .foregroundStyle(Theme.ink)
                 .lineLimit(2)
                 .multilineTextAlignment(.leading)
             Spacer(minLength: 8)
             Text("\(category.prayers.count)")
-                .font(Typography.footnote)
+                .appFont(Typography.footnote)
                 .foregroundStyle(Theme.faint)
             Image(systemName: "chevron.right")
                 .font(.system(size: 13, weight: .semibold))

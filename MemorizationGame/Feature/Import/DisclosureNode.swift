@@ -3,9 +3,8 @@ import SwiftUI
 struct DisclosureNode<Content: View>: View {
     let title: String
     var subtitle: String? = nil
-    var font: Font = Typography.body
+    var font: AppTextToken = Typography.body
     var color: Color = Theme.ink
-    var uppercase: Bool = false
     var tracking: CGFloat = 0
     var indent: CGFloat = 0
     var initiallyExpanded: Bool = false
@@ -16,9 +15,8 @@ struct DisclosureNode<Content: View>: View {
     init(
         title: String,
         subtitle: String? = nil,
-        font: Font = Typography.body,
+        font: AppTextToken = Typography.body,
         color: Color = Theme.ink,
-        uppercase: Bool = false,
         tracking: CGFloat = 0,
         indent: CGFloat = 0,
         initiallyExpanded: Bool = false,
@@ -28,7 +26,6 @@ struct DisclosureNode<Content: View>: View {
         self.subtitle = subtitle
         self.font = font
         self.color = color
-        self.uppercase = uppercase
         self.tracking = tracking
         self.indent = indent
         self.content = content()
@@ -42,14 +39,13 @@ struct DisclosureNode<Content: View>: View {
             } label: {
                 HStack(spacing: 10) {
                     Text(title)
-                        .font(font)
+                        .appFont(font)
                         .foregroundStyle(color)
-                        .textCase(uppercase ? .uppercase : nil)
                         .tracking(tracking)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     if let subtitle {
                         Text(subtitle)
-                            .font(Typography.footnote)
+                            .appFont(Typography.footnote)
                             .foregroundStyle(Theme.faint)
                     }
                     Image(systemName: "chevron.right")

@@ -7,16 +7,21 @@ struct SettingsView: View {
     @State private var remindersExpanded = false
 
     var body: some View {
-        VStack(spacing: 0) {
+        Screen {
             ScreenHeader(title: "Settings", onBack: { dismiss() })
-
+        } content: {
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
-                    OptionSection(label: "Decay speed", footer: store.settings.decayRate.detail) {
-                        decayPicker
+                    OptionSection(label: "Appearance") {
+                        themePicker
+                    }
+
+                    OptionSection(label: "Text Size") {
+                        fontSizePicker
                     }
 
                     OptionSection(
+                        label: "Reminders",
                         footer: permissionDenied
                             ? "Notifications are turned off for this app. Enable them in the Settings app to get reminders."
                             : nil
@@ -25,12 +30,12 @@ struct SettingsView: View {
                             withAnimation(.easeInOut(duration: 0.2)) { remindersExpanded.toggle() }
                         } label: {
                             HStack(spacing: 8) {
-                                Text("Reminders")
-                                    .font(Typography.body)
+                                Text("Daily reminders")
+                                    .appFont(Typography.body)
                                     .foregroundStyle(Theme.ink)
                                 Spacer()
                                 Text(remindersSummary)
-                                    .font(Typography.body)
+                                    .appFont(Typography.body)
                                     .foregroundStyle(Theme.muted)
                                 Image(systemName: "chevron.down")
                                     .font(.system(size: 13, weight: .semibold))
@@ -46,8 +51,8 @@ struct SettingsView: View {
                         if remindersExpanded {
                             HairlineDivider()
                             Toggle(isOn: reminderEnabled) {
-                                Text("Daily reminders")
-                                    .font(Typography.body)
+                                Text("Enabled")
+                                    .appFont(Typography.body)
                                     .foregroundStyle(Theme.ink)
                             }
                             .tint(Theme.accent)
@@ -66,7 +71,7 @@ struct SettingsView: View {
                                         Image(systemName: "plus")
                                             .font(.system(size: 13, weight: .semibold))
                                         Text("Add reminder")
-                                            .font(Typography.body)
+                                            .appFont(Typography.body)
                                     }
                                     .foregroundStyle(Theme.accent)
                                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -80,24 +85,44 @@ struct SettingsView: View {
                     }
                 }
                 .padding(.horizontal, 18)
-                .padding(.top, 4)
                 .padding(.bottom, 24)
             }
         }
-        .background(Theme.bg)
-        .toolbar(.hidden, for: .navigationBar)
-        .navigationBarBackButtonHidden(true)
     }
 
-    private var decayPicker: some View {
+    private var themePicker: some View {
         HStack(spacing: 3) {
-            ForEach(DecayRate.allCases, id: \.self) { rate in
-                let selected = store.settings.decayRate == rate
+            ForEach(AppTheme.allCases, id: \.self) { theme in
+                let selected = store.settings.appTheme == theme
                 Button {
-                    withAnimation(.easeInOut(duration: 0.2)) { store.settings.decayRate = rate }
+                    withAnimation(.easeInOut(duration: 0.2)) { store.settings.appTheme = theme }
                 } label: {
-                    Text(rate.label)
-                        .font(Typography.label)
+                    Text(theme.label)
+                        .appFont(Typography.label)
+                        .foregroundStyle(selected ? Theme.ink : Theme.muted)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(
+                            selected ? Theme.accent.opacity(0.14) : .clear,
+                            in: RoundedRectangle(cornerRadius: 8)
+                        )
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.haptic)
+            }
+        }
+        .padding(3)
+    }
+
+    private var fontSizePicker: some View {
+        HStack(spacing: 3) {
+            ForEach(FontSize.allCases, id: \.self) { size in
+                let selected = store.settings.fontSize == size
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) { store.settings.fontSize = size }
+                } label: {
+                    Text(size.label)
+                        .appFont(Typography.label)
                         .foregroundStyle(selected ? Theme.ink : Theme.muted)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
@@ -135,7 +160,7 @@ struct SettingsView: View {
             HStack {
                 DatePicker(selection: reminderTime(reminder.id), displayedComponents: .hourAndMinute) {
                     Text("Time")
-                        .font(Typography.body)
+                        .appFont(Typography.body)
                         .foregroundStyle(Theme.ink)
                 }
                 if store.settings.reminders.count > 1 {
@@ -152,7 +177,7 @@ struct SettingsView: View {
                 }
             }
             TextField("Reminder message", text: reminderMessage(reminder.id), axis: .vertical)
-                .font(Typography.body)
+                .appFont(Typography.body)
                 .foregroundStyle(Theme.muted)
                 .lineLimit(1...4)
                 .tint(Theme.accent)

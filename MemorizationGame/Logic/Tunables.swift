@@ -1,34 +1,46 @@
 import Foundation
+import SwiftUI
 
-enum DecayRate: String, Codable, CaseIterable {
-    case slow
-    case medium
-    case fast
+enum AppTheme: String, Codable, CaseIterable {
+    case system
+    case light
+    case dark
 
     var label: String {
         switch self {
-        case .slow: "Slow"
+        case .system: "System"
+        case .light: "Light"
+        case .dark: "Dark"
+        }
+    }
+
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .system: nil
+        case .light: .light
+        case .dark: .dark
+        }
+    }
+}
+
+enum FontSize: String, Codable, CaseIterable {
+    case small
+    case medium
+    case large
+
+    var label: String {
+        switch self {
+        case .small: "Small"
         case .medium: "Medium"
-        case .fast: "Fast"
+        case .large: "Large"
         }
     }
 
-    var intervalScale: Double {
+    var scale: CGFloat {
         switch self {
-        case .slow: 1.6
-        case .medium: 1.0
-        case .fast: 0.6
-        }
-    }
-
-    var detail: String {
-        switch self {
-        case .slow:
-            "Gentle. A newly learned section rests about five nights before a word slips, and well-drilled ones can rest a month."
-        case .medium:
-            "Balanced. A newly learned section rests a few nights, and well-drilled ones a few weeks."
-        case .fast:
-            "Demanding. A newly learned section rests a night or two, and even well-drilled ones return within a couple of weeks."
+        case .small: 0.85
+        case .medium: 1
+        case .large: 1.2
         }
     }
 }
@@ -42,14 +54,15 @@ struct Reminder: Codable, Equatable, Identifiable {
 struct AppSettings: Codable, Equatable {
     static let defaultReminderMessage = "A few minutes with your passages keeps them fresh."
 
-    var decayRate: DecayRate = .medium
     var reminderEnabled: Bool = false
     var reminders: [Reminder] = [Reminder()]
+    var appTheme: AppTheme = .light
+    var fontSize: FontSize = .medium
 
     static let `default` = AppSettings()
 
     private enum CodingKeys: String, CodingKey {
-        case decayRate, reminderEnabled, reminders
+        case reminderEnabled, reminders, appTheme, fontSize
         case reminderMinuteOfDay, reminderMessage
     }
 
@@ -58,8 +71,9 @@ struct AppSettings: Codable, Equatable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let d = AppSettings.default
-        decayRate = try container.decodeIfPresent(DecayRate.self, forKey: .decayRate) ?? d.decayRate
         reminderEnabled = try container.decodeIfPresent(Bool.self, forKey: .reminderEnabled) ?? d.reminderEnabled
+        appTheme = try container.decodeIfPresent(AppTheme.self, forKey: .appTheme) ?? d.appTheme
+        fontSize = try container.decodeIfPresent(FontSize.self, forKey: .fontSize) ?? d.fontSize
         if let stored = try container.decodeIfPresent([Reminder].self, forKey: .reminders) {
             reminders = stored
         } else {
@@ -71,8 +85,9 @@ struct AppSettings: Codable, Equatable {
 
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(decayRate, forKey: .decayRate)
         try container.encode(reminderEnabled, forKey: .reminderEnabled)
         try container.encode(reminders, forKey: .reminders)
+        try container.encode(appTheme, forKey: .appTheme)
+        try container.encode(fontSize, forKey: .fontSize)
     }
 }

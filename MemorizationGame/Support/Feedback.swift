@@ -42,6 +42,26 @@ enum Feedback {
         UINotificationFeedbackGenerator().notificationOccurred(.success)
     }
 
+    private static var rippleItems: [DispatchWorkItem] = []
+
+    static func cascadeRipple(delays: [Double]) {
+        rippleItems.forEach { $0.cancel() }
+        rippleItems = []
+        let sorted = delays.sorted()
+        guard let span = sorted.last, span > 0 else { return }
+        let generator = UIImpactFeedbackGenerator(style: .soft)
+        generator.prepare()
+        var lastScheduled = -Double.infinity
+        for delay in sorted {
+            guard delay - lastScheduled >= 0.05 else { continue }
+            lastScheduled = delay
+            let intensity = 0.35 + 0.3 * (delay / span)
+            let item = DispatchWorkItem { generator.impactOccurred(intensity: intensity) }
+            rippleItems.append(item)
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: item)
+        }
+    }
+
     static func burn() {
         let generator = UIImpactFeedbackGenerator(style: .soft)
         generator.impactOccurred(intensity: CGFloat.random(in: 0.5...0.8))

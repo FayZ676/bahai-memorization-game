@@ -6,13 +6,23 @@ struct FadeEdge: ViewModifier {
     var color: Color = Theme.bg
 
     func body(content: Content) -> some View {
-        content.overlay(alignment: edge == .top ? .top : .bottom) {
-            LinearGradient(
-                colors: edge == .top ? [color, color.opacity(0)] : [color.opacity(0), color],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(height: height)
+        content.overlay {
+            GeometryReader { geo in
+                let inset = edge == .top ? geo.safeAreaInsets.top : geo.safeAreaInsets.bottom
+                VStack(spacing: 0) {
+                    if edge == .bottom { Spacer(minLength: 0) }
+                    if edge == .top { color.frame(height: inset) }
+                    LinearGradient(
+                        colors: edge == .top ? [color, color.opacity(0)] : [color.opacity(0), color],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: height)
+                    if edge == .bottom { color.frame(height: inset) }
+                    if edge == .top { Spacer(minLength: 0) }
+                }
+            }
+            .ignoresSafeArea(edges: edge == .top ? .top : .bottom)
             .allowsHitTesting(false)
         }
     }

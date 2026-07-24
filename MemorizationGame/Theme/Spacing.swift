@@ -14,4 +14,5 @@ enum Spacing {
     static let screen: CGFloat = 24   // default screen margin
     static let xxl:  CGFloat = 32
     static let xxxl: CGFloat = 40
+    static let headerGap: CGFloat = xxs
 }
