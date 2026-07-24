@@ -1,5 +1,17 @@
 import SwiftUI
 
+enum ImportRoute: Hashable {
+    case browse
+    case category(PrayerLibrary.Category)
+    case prayer(Prayer)
+    case pasteOwn
+    case importPrayer(Prayer)
+}
+
+extension EnvironmentValues {
+    @Entry var popToLibrary: () -> Void = {}
+}
+
 struct LibraryView: View {
     @Environment(AppStore.self) private var store
     @State private var pendingDelete: Passage?
@@ -7,7 +19,7 @@ struct LibraryView: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            VStack(spacing: 0) {
+            Screen {
                 ScreenHeader(title: "Library", leading: {
                     NavigationLink {
                         SettingsView()
@@ -17,15 +29,13 @@ struct LibraryView: View {
                     }
                     .buttonStyle(.icon)
                 }, trailing: {
-                    NavigationLink {
-                        PrayerBrowseView()
-                    } label: {
+                    NavigationLink(value: ImportRoute.browse) {
                         Image(systemName: "plus")
                             .foregroundStyle(Theme.accent)
                     }
                     .buttonStyle(.icon)
                 })
-
+            } content: {
                 Group {
                     if store.passages.isEmpty {
                         emptyState
@@ -34,12 +44,30 @@ struct LibraryView: View {
                     }
                 }
             }
-            .background(Theme.bg)
-            .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: Passage.self) { passage in
                 SessionView(passage: passage, store: store)
             }
+            .navigationDestination(for: ImportRoute.self) { route in
+                switch route {
+                case .browse:
+                    PrayerBrowseView()
+                case .category(let category):
+                    PrayerCategoryView(category: category)
+                case .prayer(let prayer):
+                    PrayerDetailView(prayer: prayer)
+                case .pasteOwn:
+                    ImportView()
+                case .importPrayer(let prayer):
+                    ImportView(
+                        initialTitle: prayer.title,
+                        initialContent: prayer.text,
+                        author: prayer.author,
+                        section: prayer.section
+                    )
+                }
+            }
         }
+        .environment(\.popToLibrary) { path = NavigationPath() }
         .confirmationDialog(
             "Delete this passage?",
             isPresented: Binding(
@@ -71,11 +99,18 @@ struct LibraryView: View {
                         Feedback.tap()
                         path.append(passage)
                     } label: {
-                        PassageRow(passage: passage)
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 12)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .contentShape(Rectangle())
+                        PassageCard(
+                            title: passage.title,
+                            author: passage.author,
+                            section: passage.section,
+                            detail: passage.dateAdded.elapsedDuration
+                        ) {
+                            HeatStrip(
+                                heats: store.sectionHeats(for: passage),
+                                weights: store.sectionWeights(for: passage)
+                            )
+                            .frame(height: 6)
+                        }
                     }
                     .buttonStyle(.plain)
                     .listRowInsets(EdgeInsets())
@@ -91,8 +126,9 @@ struct LibraryView: View {
                 }
             }
         }
-        .listRowSpacing(12)
-        .contentMargins(.top, 4, for: .scrollContent)
+        .listRowSpacing(Spacing.md)
+        .listSectionSpacing(Spacing.md)
+        .contentMargins(.top, 0, for: .scrollContent)
         .scrollContentBackground(.hidden)
         .background(Theme.bg)
     }
@@ -100,49 +136,19 @@ struct LibraryView: View {
     private var streakHeader: some View {
         StreakView(count: store.streakCount)
             .padding(.horizontal, Spacing.xl)
-            .padding(.vertical, Spacing.sm)
+            .padding(.top, Spacing.sm)
     }
 
     private var emptyState: some View {
         VStack {
             Spacer()
             Text("No passages yet.\nBrowse prayers to get started.")
-                .font(Typography.subtitle)
+                .appFont(Typography.subtitle)
                 .foregroundStyle(Theme.muted)
                 .multilineTextAlignment(.center)
             Spacer()
         }
         .frame(maxWidth: .infinity)
-    }
-}
-
-private struct PassageRow: View {
-    @Environment(AppStore.self) private var store
-    let passage: Passage
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(passage.title)
-                        .font(Typography.passageTitle)
-                        .foregroundStyle(Theme.ink)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-
-                    Spacer(minLength: 8)
-
-                    Text(passage.dateAdded.elapsedDuration)
-                        .font(Typography.footnote)
-                        .foregroundStyle(Theme.faint)
-                        .fixedSize()
-                }
-            }
-
-            HeatStrip(heats: store.sectionHeats(for: passage))
-                .frame(height: 6)
-        }
-        .padding(.vertical, 6)
     }
 }
 
