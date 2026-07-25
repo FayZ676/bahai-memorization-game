@@ -48,6 +48,15 @@ Verses is built around one belief: memorization isn't a test to pass, it's a way
 
 ---
 
+## Support / Privacy URLs
+- Support: https://fayz676.github.io/bahai-memorization-game/
+- Privacy: https://fayz676.github.io/bahai-memorization-game/privacy.html
+
+## Screenshots
+See `store-screenshots/` — 7 × iPhone 6.9" (1320×2868) and 3 × iPad 13" (2064×2752),
+with regeneration instructions. The recitation screen is not among them; speech
+recognition can't reach its listening state in a simulator.
+
 ## Notes / decisions still open
 - **Pricing** — description says "no ads, no sign-in" but deliberately does NOT claim "free" or "no subscription", since pricing isn't decided. Add if free.
 - **On-device speech** — SpeechAnalyzer (iOS 26) processes on device; verify before shipping since it's a privacy claim.
