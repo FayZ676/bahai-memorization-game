@@ -4,10 +4,12 @@ struct OnboardingView: View {
     let onFinish: () -> Void
 
     @State private var page = 0
-    @State private var decayed = false
+    @State private var joined = false
 
     private static let verse = ["Guide", "me,", "protect", "me,", "make", "of", "me", "a", "shining", "lamp"]
     private static let demoHiddenWords: Set<Int> = [2, 3, 8]
+    private static let firstSection = ["Guide", "me,", "protect", "me,"]
+    private static let secondSection = ["make", "of", "me", "a", "shining", "lamp"]
 
     private static let pages: [Page] = [
         Page(
@@ -15,12 +17,16 @@ struct OnboardingView: View {
             body: "Commit prayers and sacred writings to memory, a few words at a time."
         ),
         Page(
-            title: "Hide a word, then recall it",
-            body: "Tap any word in a passage to hide it. Read the line and fill the gaps from memory."
+            title: "Start with a prayer",
+            body: "Tap plus to browse hundreds of prayers by category, or search for one by name. You can paste in your own writing just as easily."
         ),
         Page(
-            title: "Memory fades, and so do the words",
-            body: "Hidden words quietly return if you stay away. Practice often and they stay hidden, so a passage always shows you where memory is thinning."
+            title: "Hide a word, then recall it",
+            body: "Tap any word to hide it, and tap again to bring it back. Read the line and fill the gaps from memory."
+        ),
+        Page(
+            title: "Join what you know",
+            body: "Once every word in two neighbouring sections is hidden, merge them into one. Recite longer and longer stretches until the whole prayer is a single passage."
         )
     ]
 
@@ -51,12 +57,9 @@ struct OnboardingView: View {
         .background(Theme.bg)
         .onChange(of: page) { _, newValue in
             Feedback.navigate(forward: true)
-            guard newValue == 2 else {
-                decayed = false
-                return
-            }
-            decayed = false
-            withAnimation(Motion.fade.delay(0.4).repeatForever(autoreverses: true)) { decayed = true }
+            joined = false
+            guard newValue == Self.pages.count - 1 else { return }
+            withAnimation(Motion.standard.delay(0.7).repeatForever(autoreverses: true)) { joined = true }
         }
     }
 
@@ -107,11 +110,13 @@ struct OnboardingView: View {
     private func illustration(for index: Int) -> some View {
         switch index {
         case 0:
-            DemoVerse(words: Self.verse, hidden: [], decayReveal: 0)
+            DemoCard { DemoWords(words: Self.verse, hidden: []) }
         case 1:
-            DemoVerse(words: Self.verse, hidden: Self.demoHiddenWords, decayReveal: 0)
+            DemoImport()
+        case 2:
+            DemoCard { DemoWords(words: Self.verse, hidden: Self.demoHiddenWords) }
         default:
-            DemoVerse(words: Self.verse, hidden: Self.demoHiddenWords, decayReveal: decayed ? 1 : 0)
+            DemoMerge(first: Self.firstSection, second: Self.secondSection, joined: joined)
         }
     }
 
@@ -153,10 +158,22 @@ struct OnboardingView: View {
     }
 }
 
-private struct DemoVerse: View {
+private struct DemoCard<Content: View>: View {
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        content
+            .padding(.horizontal, Spacing.xl)
+            .padding(.vertical, Spacing.xxl)
+            .frame(maxWidth: .infinity)
+            .cardSurface()
+            .padding(.horizontal, Spacing.screen)
+    }
+}
+
+private struct DemoWords: View {
     let words: [String]
     let hidden: Set<Int>
-    let decayReveal: Double
 
     var body: some View {
         FlowLayout(spacing: 7, lineSpacing: 10) {
@@ -165,8 +182,8 @@ private struct DemoVerse: View {
                 Text(word)
                     .appFont(Typography.recite)
                     .foregroundStyle(Theme.ink)
-                    .opacity(isHidden ? decayReveal : 1)
-                    .blur(radius: isHidden ? 2 * (1 - decayReveal) : 0)
+                    .opacity(isHidden ? 0 : 1)
+                    .blur(radius: isHidden ? 2 : 0)
                     .overlay(alignment: .bottom) {
                         if isHidden {
                             RoundedRectangle(cornerRadius: Radius.line, style: .continuous)
@@ -177,10 +194,55 @@ private struct DemoVerse: View {
                     }
             }
         }
-        .padding(.horizontal, Spacing.xl)
-        .padding(.vertical, Spacing.xxl)
-        .frame(maxWidth: .infinity)
-        .cardSurface()
+    }
+}
+
+private struct DemoImport: View {
+    var body: some View {
+        VStack(spacing: Spacing.md) {
+            row(title: "Long Healing Prayer", author: "Bahá’u’lláh")
+            row(title: "Parents", author: "The Báb")
+            row(title: "The Nineteen Day Feast", author: "‘Abdu’l‑Bahá")
+        }
         .padding(.horizontal, Spacing.screen)
+    }
+
+    private func row(title: String, author: String) -> some View {
+        PassageCard(title: title, author: author)
+            .cardSurface(cornerRadius: Radius.group)
+    }
+}
+
+private struct DemoMerge: View {
+    let first: [String]
+    let second: [String]
+    let joined: Bool
+
+    var body: some View {
+        DemoCard {
+            VStack(spacing: joined ? Spacing.xs : Spacing.lg) {
+                DemoWords(words: first, hidden: Set(first.indices))
+
+                ZStack {
+                    HairlineDivider()
+                    mergeChip
+                }
+                .opacity(joined ? 0 : 1)
+                .frame(height: joined ? 0 : 24)
+
+                DemoWords(words: second, hidden: Set(second.indices))
+            }
+        }
+    }
+
+    private var mergeChip: some View {
+        Text("Merge")
+            .appFont(Typography.micro)
+            .tracking(0.5)
+            .foregroundStyle(Theme.accent)
+            .padding(.horizontal, 11)
+            .padding(.vertical, 3)
+            .background(Theme.rowBg, in: Capsule(style: .continuous))
+            .background(Capsule(style: .continuous).stroke(Theme.accent.opacity(0.55), lineWidth: 1))
     }
 }
