@@ -68,6 +68,9 @@ struct LibraryView: View {
             }
         }
         .environment(\.popToLibrary) { path = NavigationPath() }
+        .fullScreenCover(isPresented: showOnboarding) {
+            OnboardingView { store.settings.hasCompletedOnboarding = true }
+        }
         .confirmationDialog(
             "Delete this passage?",
             isPresented: Binding(
@@ -82,6 +85,15 @@ struct LibraryView: View {
         } message: { passage in
             Text("“\(passage.title)” and all its progress will be removed. This can't be undone.")
         }
+    }
+
+    private var showOnboarding: Binding<Bool> {
+        Binding(
+            get: { !store.settings.hasCompletedOnboarding },
+            set: { presented in
+                if !presented { store.settings.hasCompletedOnboarding = true }
+            }
+        )
     }
 
     private var list: some View {

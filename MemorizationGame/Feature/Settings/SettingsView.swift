@@ -5,6 +5,7 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var permissionDenied = false
     @State private var remindersExpanded = false
+    @State private var replayOnboarding = false
 
     var body: some View {
         Screen {
@@ -83,10 +84,33 @@ struct SettingsView: View {
                             }
                         }
                     }
+
+                    OptionSection(label: "Help") {
+                        Button {
+                            replayOnboarding = true
+                        } label: {
+                            HStack(spacing: 8) {
+                                Text("Show welcome tour")
+                                    .appFont(Typography.body)
+                                    .foregroundStyle(Theme.ink)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(Theme.faint)
+                            }
+                            .padding(.vertical, 12)
+                            .padding(.horizontal, 16)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.haptic)
+                    }
                 }
                 .padding(.horizontal, 18)
                 .padding(.bottom, 24)
             }
+        }
+        .fullScreenCover(isPresented: $replayOnboarding) {
+            OnboardingView { replayOnboarding = false }
         }
     }
 

@@ -53,17 +53,20 @@ struct Reminder: Codable, Equatable, Identifiable {
 
 struct AppSettings: Codable, Equatable {
     static let defaultReminderMessage = "A few minutes with your passages keeps them fresh."
+    static let onboardedWhenSnapshotPredatesOnboarding = true
 
     var reminderEnabled: Bool = false
     var reminders: [Reminder] = [Reminder()]
     var appTheme: AppTheme = .light
     var fontSize: FontSize = .medium
+    var hasCompletedOnboarding: Bool = false
 
     static let `default` = AppSettings()
 
     private enum CodingKeys: String, CodingKey {
         case reminderEnabled, reminders, appTheme, fontSize
         case reminderMinuteOfDay, reminderMessage
+        case hasCompletedOnboarding
     }
 
     init() {}
@@ -74,6 +77,8 @@ struct AppSettings: Codable, Equatable {
         reminderEnabled = try container.decodeIfPresent(Bool.self, forKey: .reminderEnabled) ?? d.reminderEnabled
         appTheme = try container.decodeIfPresent(AppTheme.self, forKey: .appTheme) ?? d.appTheme
         fontSize = try container.decodeIfPresent(FontSize.self, forKey: .fontSize) ?? d.fontSize
+        hasCompletedOnboarding = try container.decodeIfPresent(Bool.self, forKey: .hasCompletedOnboarding)
+            ?? AppSettings.onboardedWhenSnapshotPredatesOnboarding
         if let stored = try container.decodeIfPresent([Reminder].self, forKey: .reminders) {
             reminders = stored
         } else {
@@ -89,5 +94,6 @@ struct AppSettings: Codable, Equatable {
         try container.encode(reminders, forKey: .reminders)
         try container.encode(appTheme, forKey: .appTheme)
         try container.encode(fontSize, forKey: .fontSize)
+        try container.encode(hasCompletedOnboarding, forKey: .hasCompletedOnboarding)
     }
 }
