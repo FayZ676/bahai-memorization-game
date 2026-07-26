@@ -176,22 +176,10 @@ private struct DemoWords: View {
     let hidden: Set<Int>
 
     var body: some View {
-        FlowLayout(spacing: 7, lineSpacing: 10) {
+        FlowLayout(spacing: 7, lineSpacing: 12) {
             ForEach(Array(words.enumerated()), id: \.offset) { index, word in
-                let isHidden = hidden.contains(index)
-                Text(word)
+                WordView(token: word, hidden: hidden.contains(index))
                     .appFont(Typography.recite)
-                    .foregroundStyle(Theme.ink)
-                    .opacity(isHidden ? 0 : 1)
-                    .blur(radius: isHidden ? 2 : 0)
-                    .overlay(alignment: .bottom) {
-                        if isHidden {
-                            RoundedRectangle(cornerRadius: Radius.line, style: .continuous)
-                                .fill(Theme.muted)
-                                .frame(height: 2)
-                                .offset(y: 3)
-                        }
-                    }
             }
         }
     }
@@ -225,7 +213,7 @@ private struct DemoMerge: View {
 
                 ZStack {
                     HairlineDivider()
-                    mergeChip
+                    MergeChip(filled: true)
                 }
                 .opacity(joined ? 0 : 1)
                 .frame(height: joined ? 0 : 24)
@@ -235,14 +223,4 @@ private struct DemoMerge: View {
         }
     }
 
-    private var mergeChip: some View {
-        Text("Merge")
-            .appFont(Typography.micro)
-            .tracking(0.5)
-            .foregroundStyle(Theme.accent)
-            .padding(.horizontal, 11)
-            .padding(.vertical, 3)
-            .background(Theme.rowBg, in: Capsule(style: .continuous))
-            .background(Capsule(style: .continuous).stroke(Theme.accent.opacity(0.55), lineWidth: 1))
-    }
 }
