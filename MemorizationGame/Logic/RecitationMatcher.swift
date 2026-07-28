@@ -11,6 +11,7 @@ struct RecitationMatcher {
     private var queuePosition = 0
     private var failedAttempts = 0
     private var segmentMatchConsumed = 0
+    private var normalizedCache: [String: String] = [:]
 
     init(words: [String], hiddenIndices: [Int]) {
         self.words = words.map(Self.normalize)
@@ -37,8 +38,22 @@ struct RecitationMatcher {
         return events
     }
 
+    /// Volatile results resend the whole segment on every update, so this runs over the same
+    /// leading tokens repeatedly. Memoizing keeps that repetition off the Unicode-folding path.
+    private mutating func normalized(_ token: String) -> String {
+        if let cached = normalizedCache[token] { return cached }
+        let value = Self.normalize(token)
+        normalizedCache[token] = value
+        return value
+    }
+
     private mutating func scan(_ segmentTokens: [String], commitMisses: Bool) -> [Event] {
-        let tokens = segmentTokens.map(Self.normalize).filter { !$0.isEmpty }
+        var tokens: [String] = []
+        tokens.reserveCapacity(segmentTokens.count)
+        for raw in segmentTokens {
+            let token = normalized(raw)
+            if !token.isEmpty { tokens.append(token) }
+        }
         var events: [Event] = []
         var position = min(segmentMatchConsumed, tokens.count)
         while position < tokens.count, let expected = nextExpectedIndex {
@@ -98,10 +113,17 @@ struct RecitationMatcher {
         "oh": "o",
     ]
 
+    private static let foldingLocale = Locale(identifier: "en_US")
+
     static func normalize(_ token: some StringProtocol) -> String {
-        let folded = token
-            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "en_US"))
-            .filter(\.isLetter)
+        let folded: String
+        if token.unicodeScalars.allSatisfy(\.isASCII) {
+            folded = token.lowercased().filter(\.isLetter)
+        } else {
+            folded = token
+                .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: foldingLocale)
+                .filter(\.isLetter)
+        }
         return spokenEquivalents[folded] ?? folded
     }
 

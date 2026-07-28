@@ -172,7 +172,7 @@ final class VoiceRecitationController {
         }
         converter.primeMethod = .none
         input.removeTap(onBus: 0)
-        input.installTap(onBus: 0, bufferSize: 4096, format: tapFormat) { buffer, _ in
+        input.installTap(onBus: 0, bufferSize: 1024, format: tapFormat) { buffer, _ in
             guard let converted = Self.converted(buffer, with: converter, to: analyzerFormat) else { return }
             inputBuilder.yield(AnalyzerInput(buffer: converted))
         }

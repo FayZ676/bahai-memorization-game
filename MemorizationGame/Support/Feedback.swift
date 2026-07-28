@@ -21,12 +21,24 @@ enum Feedback {
         UISelectionFeedbackGenerator().selectionChanged()
     }
 
+    private static let matchGenerator = UIImpactFeedbackGenerator(style: .medium)
+    private static let missGenerator = UINotificationFeedbackGenerator()
+
+    /// Re-primed after every firing: an unprepared generator waits for the Taptic Engine to spin
+    /// up, which reads as the match confirmation lagging the highlight it accompanies.
+    static func prepareRecitation() {
+        matchGenerator.prepare()
+        missGenerator.prepare()
+    }
+
     static func wordMatched() {
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred(intensity: 1.0)
+        matchGenerator.impactOccurred(intensity: 1.0)
+        matchGenerator.prepare()
     }
 
     static func recitationMiss() {
-        UINotificationFeedbackGenerator().notificationOccurred(.error)
+        missGenerator.notificationOccurred(.error)
+        missGenerator.prepare()
     }
 
     static func scrub() {
