@@ -61,7 +61,7 @@ struct SessionView: View {
             vm.start()
             voice.onWordsMatched = { registerRecited($0) }
             voice.onMiss = { registerMiss($0, movedOn: $1) }
-            voice.onCompleted = { Feedback.sessionComplete() }
+            voice.onCompleted = { completeChunk() }
             voice.prewarm()
         }
         .onChange(of: vm.presentationEpoch) {
@@ -115,6 +115,14 @@ struct SessionView: View {
     private func registerRecited(_ indices: [Int]) {
         recitedWords.formUnion(indices)
         Feedback.wordMatched()
+    }
+
+    private func completeChunk() {
+        Feedback.sessionComplete()
+        withAnimation(.easeInOut(duration: 0.3)) {
+            recitedWords = []
+            missedWords = []
+        }
     }
 
     private func registerMiss(_ index: Int, movedOn: Bool) {
