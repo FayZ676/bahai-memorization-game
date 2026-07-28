@@ -44,7 +44,7 @@ final class VoiceRecitationController {
         }
     }
 
-    func start(words: [String], hiddenIndices: [Int]) async {
+    func start(words: [String], contextText: String, hiddenIndices: [Int]) async {
         guard !hiddenIndices.isEmpty else { return }
         guard state == .idle || state == .failed || state == .micDenied else { return }
         guard await Self.micPermissionGranted() else {
@@ -64,6 +64,14 @@ final class VoiceRecitationController {
             let analyzer = SpeechAnalyzer(modules: [transcriber], options: Self.analyzerOptions)
             self.transcriber = transcriber
             self.analyzer = analyzer
+            let context = AnalysisContext()
+            context.contextualStrings = [
+                .general: RecitationContext.contextualStrings(
+                    for: contextText,
+                    hidden: Set(hiddenIndices)
+                )
+            ]
+            try await analyzer.setContext(context)
             try await analyzer.prepareToAnalyze(in: analyzerFormat)
             guard state == .preparingModel else { return }
             try Self.activateAudioSession()

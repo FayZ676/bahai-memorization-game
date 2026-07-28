@@ -384,6 +384,7 @@ struct SessionView: View {
                 Task {
                     await voice.start(
                         words: card.words.map(String.init),
+                        contextText: card.expectedText,
                         hiddenIndices: remaining
                     )
                 }
