@@ -381,9 +381,11 @@ struct SessionView: View {
                     missedWords = []
                     remaining = card.hiddenWords.sorted()
                 }
+                Feedback.prepareRecitation()
                 Task {
                     await voice.start(
                         words: card.words.map(String.init),
+                        contextText: card.expectedText,
                         hiddenIndices: remaining
                     )
                 }

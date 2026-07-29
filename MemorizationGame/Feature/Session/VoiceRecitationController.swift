@@ -44,7 +44,7 @@ final class VoiceRecitationController {
         }
     }
 
-    func start(words: [String], hiddenIndices: [Int]) async {
+    func start(words: [String], contextText: String, hiddenIndices: [Int]) async {
         guard !hiddenIndices.isEmpty else { return }
         guard state == .idle || state == .failed || state == .micDenied else { return }
         guard await Self.micPermissionGranted() else {
@@ -64,6 +64,14 @@ final class VoiceRecitationController {
             let analyzer = SpeechAnalyzer(modules: [transcriber], options: Self.analyzerOptions)
             self.transcriber = transcriber
             self.analyzer = analyzer
+            let context = AnalysisContext()
+            context.contextualStrings = [
+                .general: RecitationContext.contextualStrings(
+                    for: contextText,
+                    hidden: Set(hiddenIndices)
+                )
+            ]
+            try await analyzer.setContext(context)
             try await analyzer.prepareToAnalyze(in: analyzerFormat)
             guard state == .preparingModel else { return }
             try Self.activateAudioSession()
@@ -164,7 +172,7 @@ final class VoiceRecitationController {
         }
         converter.primeMethod = .none
         input.removeTap(onBus: 0)
-        input.installTap(onBus: 0, bufferSize: 4096, format: tapFormat) { buffer, _ in
+        input.installTap(onBus: 0, bufferSize: 1024, format: tapFormat) { buffer, _ in
             guard let converted = Self.converted(buffer, with: converter, to: analyzerFormat) else { return }
             inputBuilder.yield(AnalyzerInput(buffer: converted))
         }
