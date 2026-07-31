@@ -56,8 +56,8 @@ struct ScreenHeader: View {
 
     private var titleText: some View {
         Text(title)
-            .appFont(style == .scripture ? Typography.passageTitle : Typography.label)
-            .tracking(style == .scripture ? 0 : 0.5)
+            .appFont(style == .scripture ? Typography.passageTitle : Typography.screenTitle)
+            .tracking(style == .scripture ? 0 : 0.2)
             .foregroundStyle(Theme.inkBright)
             .lineLimit(1)
             .frame(maxWidth: .infinity)

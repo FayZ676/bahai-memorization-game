@@ -56,6 +56,7 @@ struct AppTextToken {
 
 enum Typography {
     // Interface chrome — system sans (SF Pro).
+    static let screenTitle = AppTextToken(20, weight: .semibold)
     static let button   = AppTextToken(17, weight: .semibold)
     static let subtitle = AppTextToken(17, weight: .semibold)
     static let body     = AppTextToken(16, weight: .regular)
