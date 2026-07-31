@@ -9,3 +9,6 @@ DerivedData/
 # Claude Code local state, except shared project skills
 .claude/*
 !.claude/skills/
+
+__pycache__/
+*.pyc
