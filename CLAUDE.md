@@ -18,6 +18,7 @@ Xcode project `MemorizationGame.xcodeproj`, scheme `MemorizationGame`. Tested li
 - `Logic/DecayModel.swift` — pure calculation of how many hidden words should still be hidden given elapsed time; applied on app foreground.
 - `Feature/` — one folder per screen (`Library`, `Session`, `Import`, `Settings`).
 - `Theme/` — all colors/type/spacing as design tokens (`Theme.swift`, `Typography.swift`, etc.); never hardcode values in views. `design-theme.html` at repo root is the canonical visual reference.
+- `Design/` — generators for art that ships as an asset, one folder per thing, each with a README that is the source of truth for it: `AppIcon/` (the nine-pointed star, rasterised into `Assets.xcassets`) and `Badges/` (achievement badge image prompts). The asset is the artefact — edit the generator, never the output. Read the folder's README before changing anything there.
 
 ## Conventions
 

@@ -19,6 +19,11 @@ the same style anchor, so the anchor lives in one string and the per-badge diffe
 are a handful of substituted fields. If you find yourself hand-editing a prompt before
 pasting it into an image model, that difference belongs in `badges.json` instead.
 
+So: always run the tool and use exactly what it prints. Never write a badge prompt by
+hand, never reuse one pasted into a chat or a note, and never tweak one on its way to the
+image model. A prompt that did not just come out of `badges.py` is not a badge prompt.
+That applies to Claude too — this README is the instruction, there is no skill.
+
 ## Layering
 
 Broadest to narrowest, later layers win:
@@ -100,5 +105,11 @@ correction is a nudge and not a repaint.
 
 **`delete` is a hard delete.** It removes the category from `badges.json` outright, and
 any achievement a user has already earned loses the definition that names and renders it.
-The tool asks for the category name to confirm, and refuses non-interactively unless you
-pass `--yes`. If the badge has shipped, prefer leaving it in place.
+The tool asks for the category name to confirm. If the badge has shipped, prefer leaving
+it in place.
+
+**`--yes` is not a way past the confirmation.** The prompt exists to catch a human
+mid-mistake, so it only works at a terminal; anywhere else — a script, or Claude running
+the command — `delete` refuses and names `--yes` in the error. That error is not
+permission to use the flag. Pass `--yes` only when a specific category has been named for
+deletion by the person who wants it gone, never to get an automated run unstuck.
