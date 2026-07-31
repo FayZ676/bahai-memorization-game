@@ -11,7 +11,7 @@ struct PassageTextView: View {
 
     var body: some View {
         Screen {
-            ScreenHeader(title: passage.title, style: .scripture, onBack: { dismiss() })
+            ScreenHeader(title: passage.title, onBack: { dismiss() })
         } content: {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {

@@ -1,31 +1,24 @@
 import SwiftUI
 
 struct ScreenHeader: View {
-    enum Style {
-        case chrome
-        case scripture
-    }
-
     let title: String
-    let style: Style
     let onTitleTap: (() -> Void)?
     let leading: AnyView
     let trailing: AnyView
 
-    init(title: String, style: Style = .chrome, onTitleTap: (() -> Void)? = nil, @ViewBuilder leading: () -> some View, @ViewBuilder trailing: () -> some View) {
+    init(title: String, onTitleTap: (() -> Void)? = nil, @ViewBuilder leading: () -> some View, @ViewBuilder trailing: () -> some View) {
         self.title = title
-        self.style = style
         self.onTitleTap = onTitleTap
         self.leading = AnyView(leading())
         self.trailing = AnyView(trailing())
     }
 
-    init(title: String, style: Style = .chrome, onBack: @escaping () -> Void, onTitleTap: (() -> Void)? = nil, @ViewBuilder trailing: () -> some View) {
-        self.init(title: title, style: style, onTitleTap: onTitleTap, leading: { BackChevron(action: onBack) }, trailing: trailing)
+    init(title: String, onBack: @escaping () -> Void, onTitleTap: (() -> Void)? = nil, @ViewBuilder trailing: () -> some View) {
+        self.init(title: title, onTitleTap: onTitleTap, leading: { BackChevron(action: onBack) }, trailing: trailing)
     }
 
-    init(title: String, style: Style = .chrome, onBack: @escaping () -> Void, onTitleTap: (() -> Void)? = nil) {
-        self.init(title: title, style: style, onBack: onBack, onTitleTap: onTitleTap) { Color.clear }
+    init(title: String, onBack: @escaping () -> Void, onTitleTap: (() -> Void)? = nil) {
+        self.init(title: title, onBack: onBack, onTitleTap: onTitleTap) { Color.clear }
     }
 
     var body: some View {
@@ -56,8 +49,7 @@ struct ScreenHeader: View {
 
     private var titleText: some View {
         Text(title)
-            .appFont(style == .scripture ? Typography.passageTitle : Typography.screenTitle)
-            .tracking(style == .scripture ? 0 : 0.2)
+            .appFont(Typography.passageTitle)
             .foregroundStyle(Theme.inkBright)
             .lineLimit(1)
             .frame(maxWidth: .infinity)

@@ -29,7 +29,7 @@ struct SessionView: View {
         ZStack {
             Theme.bg.ignoresSafeArea()
             VStack(spacing: 0) {
-                ScreenHeader(title: currentTitle, style: .scripture, onBack: { dismiss() }, onTitleTap: { showingFullText = true }) {
+                ScreenHeader(title: currentTitle, onBack: { dismiss() }, onTitleTap: { showingFullText = true }) {
                     if vm.current != nil { optionsMenu }
                 }
                 if vm.current != nil {
