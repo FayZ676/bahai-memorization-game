@@ -26,7 +26,7 @@ struct OnboardingView: View {
         ),
         Page(
             title: "Join what you know",
-            body: "Once every word in two neighbouring sections is hidden, merge them into one. Recite longer and longer stretches until the whole prayer is a single passage."
+            body: "Once every word in a section is hidden, merge it with the one next to it. Recite longer and longer stretches until the whole prayer is a single passage."
         )
     ]
 

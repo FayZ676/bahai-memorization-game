@@ -69,7 +69,7 @@ final class AppStore {
     func mergeableGaps(for passage: Passage) -> [Bool] {
         let q = queue(for: passage)
         guard q.count > 1 else { return [] }
-        return (0..<(q.count - 1)).map { isComplete(q[$0]) && isComplete(q[$0 + 1]) }
+        return (0..<(q.count - 1)).map { isComplete(q[$0]) || isComplete(q[$0 + 1]) }
     }
 
     func isComplete(_ card: Reviewable) -> Bool {
