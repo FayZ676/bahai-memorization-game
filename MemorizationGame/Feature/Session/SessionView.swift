@@ -45,6 +45,7 @@ struct SessionView: View {
         }
         .toolbar(.hidden, for: .navigationBar)
         .navigationBarBackButtonHidden(true)
+        .completesTourStep(.openPassage)
         .navigationDestination(isPresented: $showingFullText) {
             PassageTextView(passage: passage, store: store)
         }
@@ -167,6 +168,7 @@ struct SessionView: View {
             MergeChip()
         }
         .buttonStyle(.haptic)
+        .tourAnchor(.mergeChip)
         .transition(.opacity.combined(with: .scale(scale: 0.9)))
     }
 
@@ -270,6 +272,7 @@ struct SessionView: View {
                             } action: { frame in
                                 wordFrames[idx] = frame
                             }
+                            .tourAnchor(idx == 0 ? .firstWord : nil)
                     }
                 }
             }

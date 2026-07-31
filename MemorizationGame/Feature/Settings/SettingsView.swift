@@ -3,6 +3,7 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(AppStore.self) private var store
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.tour) private var tour
     @State private var permissionDenied = false
     @State private var remindersExpanded = false
     @State private var replayOnboarding = false
@@ -85,24 +86,26 @@ struct SettingsView: View {
                         }
                     }
 
-                    OptionSection(label: "Help") {
-                        Button {
-                            replayOnboarding = true
-                        } label: {
-                            HStack(spacing: 8) {
-                                Text("Show welcome tour")
-                                    .appFont(Typography.body)
-                                    .foregroundStyle(Theme.ink)
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 13, weight: .semibold))
-                                    .foregroundStyle(Theme.faint)
+                    if tour == nil {
+                        OptionSection(label: "Help") {
+                            Button {
+                                replayOnboarding = true
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Text("Show welcome tour")
+                                        .appFont(Typography.body)
+                                        .foregroundStyle(Theme.ink)
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 13, weight: .semibold))
+                                        .foregroundStyle(Theme.faint)
+                                }
+                                .padding(.vertical, 12)
+                                .padding(.horizontal, 16)
+                                .contentShape(Rectangle())
                             }
-                            .padding(.vertical, 12)
-                            .padding(.horizontal, 16)
-                            .contentShape(Rectangle())
+                            .buttonStyle(.haptic)
                         }
-                        .buttonStyle(.haptic)
                     }
                 }
                 .padding(.horizontal, 18)
@@ -110,7 +113,7 @@ struct SettingsView: View {
             }
         }
         .fullScreenCover(isPresented: $replayOnboarding) {
-            OnboardingView { replayOnboarding = false }
+            OnboardingView(settings: store.settings) { replayOnboarding = false }
         }
     }
 
