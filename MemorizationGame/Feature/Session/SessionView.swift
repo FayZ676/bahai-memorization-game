@@ -424,24 +424,36 @@ struct SessionView: View {
 
     @ViewBuilder
     private var micIcon: some View {
-        switch voice.state {
-        case .preparingModel:
+        if voice.state == .preparingModel {
             ProgressView()
                 .controlSize(.small)
                 .tint(Theme.muted)
-        case .listening:
-            Image(systemName: "mic.fill")
+        } else {
+            Image(systemName: micSymbol)
                 .font(.system(size: 21, weight: .semibold))
-                .foregroundStyle(Theme.accent)
-                .symbolEffect(.pulse, options: .repeating)
-        case .micDenied:
-            Image(systemName: "mic.slash")
-                .font(.system(size: 21, weight: .semibold))
-                .foregroundStyle(Theme.muted.opacity(0.5))
-        case .idle, .failed:
-            Image(systemName: "mic")
-                .font(.system(size: 21, weight: .semibold))
-                .foregroundStyle(Theme.navIcon)
+                .foregroundStyle(micTint)
+                .contentTransition(.symbolEffect(.replace.magic(fallback: .replace.offUp)))
+                .symbolEffect(
+                    .variableColor.iterative.dimInactiveLayers,
+                    options: .repeat(.continuous),
+                    isActive: voice.state == .listening
+                )
+        }
+    }
+
+    private var micSymbol: String {
+        switch voice.state {
+        case .listening: "waveform"
+        case .micDenied: "mic.slash"
+        case .idle, .failed, .preparingModel: "mic"
+        }
+    }
+
+    private var micTint: Color {
+        switch voice.state {
+        case .listening: Theme.accent
+        case .micDenied: Theme.muted.opacity(0.5)
+        case .idle, .failed, .preparingModel: Theme.navIcon
         }
     }
 
