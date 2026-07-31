@@ -38,6 +38,7 @@ struct PrayerBrowseView: View {
         .background(Theme.bg)
         .toolbar(.hidden, for: .navigationBar)
         .navigationBarBackButtonHidden(true)
+        .completesTourStep(.openBrowse)
         .onChange(of: query) { _, _ in
             let pending = trimmedQuery
             searchTask?.cancel()
