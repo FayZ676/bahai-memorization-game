@@ -6,9 +6,7 @@ final class AppStore {
     private(set) var passages: [Passage]
     private(set) var reviewables: [Reviewable]
     private(set) var practiceLog: PracticeLog
-    private(set) var earnedAchievements: [String: Date]
     var dailyGoalReached = false
-    var justEarned: Achievement?
     var settings: AppSettings {
         didSet {
             guard storeURL != nil else { return }
@@ -34,19 +32,15 @@ final class AppStore {
             self.passages = snapshot.passages
             self.reviewables = snapshot.reviewables
             self.practiceLog = snapshot.practiceLog ?? PracticeLog()
-            self.earnedAchievements = snapshot.earnedAchievements ?? [:]
             self.settings = snapshot.settings
         } else {
             self.passages = []
             self.reviewables = []
             self.practiceLog = PracticeLog()
-            self.earnedAchievements = [:]
             self.settings = .default
         }
 
-        let linked = linkPassagesToLibrary()
-        let earned = refreshAchievements(announce: false)
-        if linked || earned { persist() }
+        if linkPassagesToLibrary() { persist() }
     }
 
     private init(inheriting settings: AppSettings) {
@@ -54,7 +48,6 @@ final class AppStore {
         self.passages = []
         self.reviewables = []
         self.practiceLog = PracticeLog()
-        self.earnedAchievements = [:]
         self.settings = settings
     }
 
@@ -109,40 +102,6 @@ final class AppStore {
     func isMemorized(_ passage: Passage) -> Bool {
         let cards = queue(for: passage)
         return !cards.isEmpty && cards.allSatisfy(isComplete)
-    }
-
-    func isEarned(_ achievement: Achievement) -> Bool {
-        earnedAchievements[achievement.id] != nil
-    }
-
-    func dateEarned(_ achievement: Achievement) -> Date? {
-        earnedAchievements[achievement.id]
-    }
-
-    var earnedAchievementCount: Int {
-        AchievementCatalog.all.count(where: isEarned)
-    }
-
-    private var memorizedPrayers: [Prayer] {
-        passages
-            .filter(isMemorized)
-            .compactMap { $0.sourceID.flatMap(PrayerLibrary.prayer(id:)) }
-    }
-
-    /// Once earned, an achievement is never revoked: hidden words decay back into
-    /// view over time, and a trophy that evaporated with them would fight that.
-    @discardableResult
-    private func refreshAchievements(announce: Bool) -> Bool {
-        let memorized = memorizedPrayers
-        guard !memorized.isEmpty else { return false }
-        var changed = false
-        for achievement in AchievementCatalog.all where earnedAchievements[achievement.id] == nil {
-            guard achievement.isSatisfied(by: memorized) else { continue }
-            earnedAchievements[achievement.id] = Date()
-            changed = true
-            if announce { justEarned = achievement }
-        }
-        return changed
     }
 
     @discardableResult
@@ -262,7 +221,6 @@ final class AppStore {
         change(&updated)
         recordPractice(from: old, to: updated)
         reviewables[index] = updated
-        refreshAchievements(announce: true)
         persist()
     }
 
@@ -286,7 +244,6 @@ final class AppStore {
         var passages: [Passage]
         var reviewables: [Reviewable]
         var practiceLog: PracticeLog?
-        var earnedAchievements: [String: Date]?
         var settings: AppSettings
     }
 
@@ -296,7 +253,6 @@ final class AppStore {
             passages: passages,
             reviewables: reviewables,
             practiceLog: practiceLog,
-            earnedAchievements: earnedAchievements,
             settings: settings
         )
         guard let data = try? JSONEncoder().encode(snapshot) else { return }
