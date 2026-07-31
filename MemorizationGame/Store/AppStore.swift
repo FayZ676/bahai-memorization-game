@@ -15,6 +15,9 @@ final class AppStore {
                 || oldValue.reminders != settings.reminders {
                 ReminderScheduler.sync(settings)
             }
+            if oldValue.streakReminderEnabled != settings.streakReminderEnabled {
+                ReminderScheduler.syncStreakReminder(settings, log: practiceLog)
+            }
         }
     }
 
@@ -50,6 +53,7 @@ final class AppStore {
         var seeded = settings
         seeded.hasCompletedOnboarding = true
         seeded.reminderEnabled = false
+        seeded.streakReminderEnabled = false
         return AppStore(inheriting: seeded)
     }
 
@@ -200,6 +204,12 @@ final class AppStore {
         if !reachedGoalBefore && practiceLog.reachedGoal() {
             dailyGoalReached = true
         }
+        syncStreakReminder()
+    }
+
+    func syncStreakReminder() {
+        guard storeURL != nil else { return }
+        ReminderScheduler.syncStreakReminder(settings, log: practiceLog)
     }
 
     private struct Snapshot: Codable {

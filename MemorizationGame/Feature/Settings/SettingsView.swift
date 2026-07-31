@@ -83,6 +83,21 @@ struct SettingsView: View {
                                 }
                                 .buttonStyle(.haptic)
                             }
+
+                            HairlineDivider()
+                            Toggle(isOn: streakReminderEnabled) {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text("Streak alerts")
+                                        .appFont(Typography.body)
+                                        .foregroundStyle(Theme.ink)
+                                    Text("A nudge in the evening when your streak is about to end.")
+                                        .appFont(Typography.label)
+                                        .foregroundStyle(Theme.muted)
+                                }
+                            }
+                            .tint(Theme.accent)
+                            .padding(.vertical, 12)
+                            .padding(.horizontal, 16)
                         }
                     }
 
@@ -176,6 +191,23 @@ struct SettingsView: View {
                 Task {
                     let granted = await ReminderScheduler.requestPermission()
                     store.settings.reminderEnabled = granted
+                    permissionDenied = !granted
+                }
+            }
+        )
+    }
+
+    private var streakReminderEnabled: Binding<Bool> {
+        Binding(
+            get: { store.settings.streakReminderEnabled },
+            set: { enabled in
+                guard enabled else {
+                    store.settings.streakReminderEnabled = false
+                    return
+                }
+                Task {
+                    let granted = await ReminderScheduler.requestPermission()
+                    store.settings.streakReminderEnabled = granted
                     permissionDenied = !granted
                 }
             }
