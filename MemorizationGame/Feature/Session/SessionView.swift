@@ -326,13 +326,13 @@ struct SessionView: View {
 
     private var bottomBar: some View {
         VStack(spacing: 0) {
-            if voice.isListening {
-                heardRow
-            }
             if micVisible {
                 micButton
                     .padding(.top, 12)
                     .transition(.opacity.combined(with: .scale(scale: 0.85)))
+            }
+            if voice.isListening {
+                heardRow
             }
         }
         .padding(.bottom, 12)
@@ -359,7 +359,7 @@ struct SessionView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 26)
-        .padding(.top, 6)
+        .padding(.top, 8)
         .animation(.easeInOut(duration: 0.15), value: voice.isSettling)
     }
 
