@@ -20,7 +20,7 @@ struct LibraryView: View {
     var body: some View {
         NavigationStack(path: $path) {
             Screen {
-                ScreenHeader(title: "Library", leading: {
+                ScreenHeader(title: "Library", slotWidth: 84, leading: {
                     NavigationLink {
                         SettingsView()
                     } label: {
@@ -29,12 +29,22 @@ struct LibraryView: View {
                     }
                     .buttonStyle(.icon)
                 }, trailing: {
-                    NavigationLink(value: ImportRoute.browse) {
-                        Image(systemName: "plus")
-                            .foregroundStyle(Theme.accent)
+                    HStack(spacing: Spacing.sm) {
+                        NavigationLink {
+                            AchievementsView()
+                        } label: {
+                            Image(systemName: hasAchievements ? "trophy.fill" : "trophy")
+                                .foregroundStyle(hasAchievements ? Theme.gold : Theme.accent)
+                        }
+                        .buttonStyle(.icon)
+
+                        NavigationLink(value: ImportRoute.browse) {
+                            Image(systemName: "plus")
+                                .foregroundStyle(Theme.accent)
+                        }
+                        .buttonStyle(.icon)
+                        .tourAnchor(.addPassage)
                     }
-                    .buttonStyle(.icon)
-                    .tourAnchor(.addPassage)
                 })
             } content: {
                 Group {
@@ -63,7 +73,8 @@ struct LibraryView: View {
                         initialTitle: prayer.title,
                         initialContent: prayer.text,
                         author: prayer.author,
-                        section: prayer.section
+                        section: prayer.section,
+                        sourceID: prayer.id
                     )
                 }
             }
@@ -87,6 +98,8 @@ struct LibraryView: View {
             Text("“\(passage.title)” and all its progress will be removed. This can't be undone.")
         }
     }
+
+    private var hasAchievements: Bool { store.earnedAchievementCount > 0 }
 
     private var showOnboarding: Binding<Bool> {
         Binding(

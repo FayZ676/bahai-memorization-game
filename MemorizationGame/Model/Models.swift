@@ -111,17 +111,26 @@ struct Passage: Codable, Identifiable, Hashable {
     var dateAdded: Date
     var author: String?
     var section: String?
+    var sourceID: Int?
 
-    init(id: UUID = UUID(), title: String, dateAdded: Date = Date(), author: String? = nil, section: String? = nil) {
+    init(
+        id: UUID = UUID(),
+        title: String,
+        dateAdded: Date = Date(),
+        author: String? = nil,
+        section: String? = nil,
+        sourceID: Int? = nil
+    ) {
         self.id = id
         self.title = title
         self.dateAdded = dateAdded
         self.author = author
         self.section = section
+        self.sourceID = sourceID
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, title, dateAdded, author, section
+        case id, title, dateAdded, author, section, sourceID
     }
 
     init(from decoder: Decoder) throws {
@@ -131,5 +140,6 @@ struct Passage: Codable, Identifiable, Hashable {
         dateAdded = try container.decodeIfPresent(Date.self, forKey: .dateAdded) ?? Date()
         author = try container.decodeIfPresent(String.self, forKey: .author)
         section = try container.decodeIfPresent(String.self, forKey: .section)
+        sourceID = try container.decodeIfPresent(Int.self, forKey: .sourceID)
     }
 }

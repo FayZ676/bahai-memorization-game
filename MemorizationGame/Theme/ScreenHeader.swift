@@ -5,10 +5,18 @@ struct ScreenHeader: View {
     let onTitleTap: (() -> Void)?
     let leading: AnyView
     let trailing: AnyView
+    let slotWidth: CGFloat
 
-    init(title: String, onTitleTap: (() -> Void)? = nil, @ViewBuilder leading: () -> some View, @ViewBuilder trailing: () -> some View) {
+    init(
+        title: String,
+        onTitleTap: (() -> Void)? = nil,
+        slotWidth: CGFloat = 38,
+        @ViewBuilder leading: () -> some View,
+        @ViewBuilder trailing: () -> some View
+    ) {
         self.title = title
         self.onTitleTap = onTitleTap
+        self.slotWidth = slotWidth
         self.leading = AnyView(leading())
         self.trailing = AnyView(trailing())
     }
@@ -24,7 +32,7 @@ struct ScreenHeader: View {
     var body: some View {
         HStack(spacing: 12) {
             leading
-                .frame(width: 38, height: 38)
+                .frame(width: slotWidth, height: 38, alignment: .leading)
 
             Group {
                 if let onTitleTap {
@@ -40,7 +48,7 @@ struct ScreenHeader: View {
             .frame(maxWidth: .infinity)
 
             trailing
-                .frame(width: 38, height: 38)
+                .frame(width: slotWidth, height: 38, alignment: .trailing)
         }
         .padding(.horizontal, 18)
         .padding(.top, 10)

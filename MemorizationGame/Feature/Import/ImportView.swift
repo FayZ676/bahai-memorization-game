@@ -9,13 +9,21 @@ struct ImportView: View {
     @State private var content: String
     private let author: String?
     private let section: String?
+    private let sourceID: Int?
     private let editing: Passage?
 
-    init(initialTitle: String = "", initialContent: String = "", author: String? = nil, section: String? = nil) {
+    init(
+        initialTitle: String = "",
+        initialContent: String = "",
+        author: String? = nil,
+        section: String? = nil,
+        sourceID: Int? = nil
+    ) {
         _title = State(initialValue: initialTitle)
         _content = State(initialValue: initialContent)
         self.author = author
         self.section = section
+        self.sourceID = sourceID
         self.editing = nil
     }
 
@@ -26,6 +34,7 @@ struct ImportView: View {
             .joined(separator: "\n"))
         self.author = passage.author
         self.section = passage.section
+        self.sourceID = passage.sourceID
         self.editing = passage
     }
 
@@ -48,7 +57,13 @@ struct ImportView: View {
                         store.updatePassage(editing, title: trimmedTitle, units: units)
                         dismiss()
                     } else {
-                        store.createPassage(title: trimmedTitle, units: units, author: author, section: section)
+                        store.createPassage(
+                            title: trimmedTitle,
+                            units: units,
+                            author: author,
+                            section: section,
+                            sourceID: sourceID
+                        )
                         popToLibrary()
                     }
                 } label: {

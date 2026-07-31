@@ -84,6 +84,22 @@ enum PrayerLibrary {
         return order.map { ($0, buckets[$0] ?? []) }
     }
 
+    static func prayer(id: Int) -> Prayer? {
+        byID[id]
+    }
+
+    static func prayer(matchingTitle title: String, author: String?) -> Prayer? {
+        all.first { candidate in
+            candidate.title.compare(title, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
+                && (author == nil || candidate.author == author)
+        }
+    }
+
+    private static let byID: [Int: Prayer] = Dictionary(
+        all.map { ($0.id, $0) },
+        uniquingKeysWith: { first, _ in first }
+    )
+
     private struct Snapshot: Decodable {
         let entries: [Prayer]
     }
