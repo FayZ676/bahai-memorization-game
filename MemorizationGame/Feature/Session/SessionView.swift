@@ -424,37 +424,32 @@ struct SessionView: View {
 
     @ViewBuilder
     private var micIcon: some View {
-        if voice.state == .preparingModel {
+        switch voice.state {
+        case .preparingModel:
             ProgressView()
                 .controlSize(.small)
                 .tint(Theme.muted)
-        } else {
+        case .listening:
+            Image(systemName: "waveform")
+                .font(.system(size: 21, weight: .semibold))
+                .foregroundStyle(Theme.accent)
+                .symbolEffect(.variableColor.iterative.dimInactiveLayers, options: .repeat(.continuous))
+                .transition(.symbolEffect(.drawOn))
+        case .idle, .failed, .micDenied:
             Image(systemName: micSymbol)
                 .font(.system(size: 21, weight: .semibold))
                 .foregroundStyle(micTint)
                 .contentTransition(.symbolEffect(.replace.magic(fallback: .replace.offUp)))
-                .symbolEffect(
-                    .variableColor.iterative.dimInactiveLayers,
-                    options: .repeat(.continuous),
-                    isActive: voice.state == .listening
-                )
+                .transition(.opacity)
         }
     }
 
     private var micSymbol: String {
-        switch voice.state {
-        case .listening: "waveform"
-        case .micDenied: "mic.slash"
-        case .idle, .failed, .preparingModel: "mic"
-        }
+        voice.state == .micDenied ? "mic.slash" : "mic"
     }
 
     private var micTint: Color {
-        switch voice.state {
-        case .listening: Theme.accent
-        case .micDenied: Theme.muted.opacity(0.5)
-        case .idle, .failed, .preparingModel: Theme.navIcon
-        }
+        voice.state == .micDenied ? Theme.muted.opacity(0.5) : Theme.navIcon
     }
 
     private var micFill: Color {
