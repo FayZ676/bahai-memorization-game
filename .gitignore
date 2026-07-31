@@ -6,5 +6,6 @@ DerivedData/
 *.xcworkspace/xcuserdata/
 .swiftpm/
 
-# Claude Code local state
-.claude/
+# Claude Code local state, except shared project skills
+.claude/*
+!.claude/skills/
