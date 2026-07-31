@@ -15,12 +15,12 @@
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --paper:#0F1512; --raised:#18211D; --ink:#E7E4DA; --muted:#8C938C;
-      --faint:#626A64; --hairline:rgba(255,255,255,.07); --accent:#C89A5A; --gold:#F0CE8A; --shadow:0 0 0;
+      --paper:#121212; --raised:#1E1E1E; --ink:#EDEDED; --muted:#9A9A9A;
+      --faint:#6A6A6A; --hairline:rgba(255,255,255,.07); --accent:#C89A5A; --gold:#F0CE8A; --shadow:0 0 0;
     }
   }
   :root[data-theme="light"]{ --paper:#ECEEE8; --raised:#FAFBF7; --ink:#1C2521; --muted:#6A716B; --faint:#9DA39C; --hairline:#DFE2DB; --accent:#2F6E5B; --gold:#B9863F; --shadow:30 40 36; }
-  :root[data-theme="dark"]{ --paper:#0F1512; --raised:#18211D; --ink:#E7E4DA; --muted:#8C938C; --faint:#626A64; --hairline:rgba(255,255,255,.07); --accent:#C89A5A; --gold:#F0CE8A; --shadow:0 0 0; }
+  :root[data-theme="dark"]{ --paper:#121212; --raised:#1E1E1E; --ink:#EDEDED; --muted:#9A9A9A; --faint:#6A6A6A; --hairline:rgba(255,255,255,.07); --accent:#C89A5A; --gold:#F0CE8A; --shadow:0 0 0; }
 
   * { box-sizing:border-box; }
   body { margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans);
@@ -90,7 +90,7 @@
   .srow .role { flex-basis:100%; font-size:12.5px; opacity:.62; margin-top:-2px; }
   .pal.light { background:#ECEEE8; color:#1C2521; border-color:#DFE2DB; }
   .pal.light .srow + .srow { border-color:#DFE2DB; }
-  .pal.dark { background:#0F1512; color:#E7E4DA; border-color:rgba(255,255,255,.09); }
+  .pal.dark { background:#121212; color:#EDEDED; border-color:rgba(255,255,255,.09); }
   .pal.dark .srow + .srow { border-color:rgba(255,255,255,.07); }
 
   .subhead { font-size:12px; letter-spacing:.03em; color:var(--muted); font-weight:600; margin:30px 0 14px; }
@@ -266,7 +266,7 @@
   <!-- 3 color -->
   <section>
     <div class="sechead"><span class="num">03</span><div><h2>Color</h2>
-      <p>Two themes share one token set. Light is the recommended default; dark is the same system on a deep pine-ink ground. <code style="font-size:12px">paper</code> and <code style="font-size:12px">ink</code> do ~90% of the work; <code style="font-size:12px">accent</code> ~5%; <code style="font-size:12px">gold</code> under 1%.</p></div></div>
+      <p>Two themes share one token set. Light is the recommended default; dark is the same system on a neutral near-black ground. <code style="font-size:12px">paper</code> and <code style="font-size:12px">ink</code> do ~90% of the work; <code style="font-size:12px">accent</code> ~5%; <code style="font-size:12px">gold</code> under 1%.</p></div></div>
 
     <div class="palettes">
       <div class="pal light">
@@ -282,11 +282,11 @@
       </div>
       <div class="pal dark">
         <div class="pt">Dark</div>
-        <div class="srow"><span class="box" style="background:#0F1512"></span><span class="tok">paper</span><span class="hex">#0F1512</span><span class="role">Background — deep pine ink (cool, not warm near-black)</span></div>
-        <div class="srow"><span class="box" style="background:#18211D"></span><span class="tok">raised</span><span class="hex">#18211D</span><span class="role">Cards, rows</span></div>
-        <div class="srow"><span class="box" style="background:#E7E4DA"></span><span class="tok">ink</span><span class="hex">#E7E4DA</span><span class="role">Primary text — warm parchment on cool ground</span></div>
-        <div class="srow"><span class="box" style="background:#8C938C"></span><span class="tok">muted</span><span class="hex">#8C938C</span><span class="role">Secondary text</span></div>
-        <div class="srow"><span class="box" style="background:#626A64"></span><span class="tok">faint</span><span class="hex">#626A64</span><span class="role">Tertiary</span></div>
+        <div class="srow"><span class="box" style="background:#121212"></span><span class="tok">paper</span><span class="hex">#121212</span><span class="role">Background — neutral near-black, no hue cast</span></div>
+        <div class="srow"><span class="box" style="background:#1E1E1E"></span><span class="tok">raised</span><span class="hex">#1E1E1E</span><span class="role">Cards, rows</span></div>
+        <div class="srow"><span class="box" style="background:#EDEDED"></span><span class="tok">ink</span><span class="hex">#EDEDED</span><span class="role">Primary text — neutral off-white</span></div>
+        <div class="srow"><span class="box" style="background:#9A9A9A"></span><span class="tok">muted</span><span class="hex">#9A9A9A</span><span class="role">Secondary text</span></div>
+        <div class="srow"><span class="box" style="background:#6A6A6A"></span><span class="tok">faint</span><span class="hex">#6A6A6A</span><span class="role">Tertiary</span></div>
         <div class="srow"><span class="box" style="background:rgba(255,255,255,.09)"></span><span class="tok">hairline</span><span class="hex">rgba 255·.07</span><span class="role">Dividers, borders</span></div>
         <div class="srow"><span class="box" style="background:#C89A5A"></span><span class="tok">accent</span><span class="hex">#C89A5A</span><span class="role">Signature color — gilt, the warm counterpart to pine</span></div>
         <div class="srow"><span class="box" style="background:#F0CE8A"></span><span class="tok">gold</span><span class="hex">#F0CE8A</span><span class="role">Delight — lifted above gilt so reward still reads</span></div>
@@ -296,7 +296,7 @@
     <div class="subhead">The accent — pine on paper, gilt on ink</div>
     <div class="acc-lock">
       <span class="pair"><span style="background:#2F6E5B"></span><span style="background:#C89A5A"></span></span>
-      <p>The accent is <b>one role, two hues</b> — because the two grounds are not mirror images. On paper, <b>pine</b> (#2F6E5B) is a deep teal-green: contemplative, garden-like, and dark enough to carry weight against a bright field. On ink, that same hue has nowhere to go — the dark ground is <em>itself</em> pine-tinted, so a green accent either sinks into it or, brightened enough to separate, turns mint. Dark mode instead takes <b>gilt</b> (#C89A5A), which sits opposite the ground on the wheel and shares the warmth of the parchment ink. Either way it is the only accent: one color per ground, used sparingly, is what makes it read as intentional.</p>
+      <p>The accent is <b>one role, two hues</b> — because the two grounds are not mirror images. On paper, <b>pine</b> (#2F6E5B) is a deep teal-green: contemplative, garden-like, and dark enough to carry weight against a bright field. On ink, that same hue has nowhere to go — pushed bright enough to separate from a near-black ground it turns mint, and left dark it sinks. Dark mode instead takes <b>gilt</b> (#C89A5A), whose warmth reads unmistakably as accent against a neutral ground. Either way it is the only accent: one color per ground, used sparingly, is what makes it read as intentional.</p>
     </div>
   </section>
 
@@ -515,10 +515,10 @@
 
 <span class="cm">COLOR (light):</span> paper #ECEEE8 · raised #FAFBF7 · ink #1C2521 · muted #6A716B ·
                faint #9DA39C · hairline #DFE2DB · accent(pine) #2F6E5B · gold #B9863F
-<span class="cm">COLOR (dark):</span>  paper #0F1512 · raised #18211D · ink #E7E4DA · muted #8C938C ·
-               faint #626A64 · hairline rgba(255,255,255,.07) · accent(gilt) #C89A5A · gold #F0CE8A
-<span class="cm">ACCENT</span> is pine #2F6E5B on light, gilt #C89A5A on dark — one role, two hues, because the
-       dark ground is itself pine-tinted. Use ~5% of a screen.
+<span class="cm">COLOR (dark):</span>  paper #121212 · raised #1E1E1E · ink #EDEDED · muted #9A9A9A ·
+               faint #6A6A6A · hairline rgba(255,255,255,.07) · accent(gilt) #C89A5A · gold #F0CE8A
+<span class="cm">ACCENT</span> is pine #2F6E5B on light, gilt #C89A5A on dark — one role, two hues, because pine
+       cannot separate from a near-black ground. Use ~5% of a screen.
 <span class="cm">GOLD</span> means reward only — used &lt;1%. On dark it lifts to #F0CE8A to stay clear of gilt.
 
 <span class="cm">TYPE:</span>  serif = Cormorant Garamond, ONLY for scripture, prayer titles, streak numeral.
