@@ -15,6 +15,7 @@ struct PrayerDetailView: View {
                         .fixedSize()
                 }
                 .buttonStyle(.haptic)
+                .tourAnchor(.importPrayer)
             }
         } content: {
             ScrollView {
@@ -46,5 +47,6 @@ struct PrayerDetailView: View {
             }
             .fadeEdge(color: Theme.bg)
         }
+        .completesTourStep(.pickPrayer)
     }
 }

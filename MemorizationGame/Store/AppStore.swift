@@ -9,6 +9,7 @@ final class AppStore {
     var dailyGoalReached = false
     var settings: AppSettings {
         didSet {
+            guard storeURL != nil else { return }
             persist()
             if oldValue.reminderEnabled != settings.reminderEnabled
                 || oldValue.reminders != settings.reminders {
@@ -17,12 +18,13 @@ final class AppStore {
         }
     }
 
-    private let storeURL: URL
+    private let storeURL: URL?
 
     init(filename: String = "store.json") {
-        self.storeURL = AppStore.documentsDirectory.appendingPathComponent(filename)
+        let url = AppStore.documentsDirectory.appendingPathComponent(filename)
+        self.storeURL = url
 
-        if let data = try? Data(contentsOf: storeURL),
+        if let data = try? Data(contentsOf: url),
            let snapshot = try? JSONDecoder().decode(Snapshot.self, from: data) {
             self.passages = snapshot.passages
             self.reviewables = snapshot.reviewables
@@ -34,6 +36,21 @@ final class AppStore {
             self.practiceLog = PracticeLog()
             self.settings = .default
         }
+    }
+
+    private init(inheriting settings: AppSettings) {
+        self.storeURL = nil
+        self.passages = []
+        self.reviewables = []
+        self.practiceLog = PracticeLog()
+        self.settings = settings
+    }
+
+    static func sandbox(inheriting settings: AppSettings) -> AppStore {
+        var seeded = settings
+        seeded.hasCompletedOnboarding = true
+        seeded.reminderEnabled = false
+        return AppStore(inheriting: seeded)
     }
 
     func cards(for passage: Passage) -> [Reviewable] {
@@ -193,6 +210,7 @@ final class AppStore {
     }
 
     private func persist() {
+        guard let storeURL else { return }
         let snapshot = Snapshot(
             passages: passages,
             reviewables: reviewables,

@@ -34,6 +34,7 @@ struct LibraryView: View {
                             .foregroundStyle(Theme.accent)
                     }
                     .buttonStyle(.icon)
+                    .tourAnchor(.addPassage)
                 })
             } content: {
                 Group {
@@ -69,7 +70,7 @@ struct LibraryView: View {
         }
         .environment(\.popToLibrary) { path = NavigationPath() }
         .fullScreenCover(isPresented: showOnboarding) {
-            OnboardingView { store.settings.hasCompletedOnboarding = true }
+            OnboardingView(settings: store.settings) { store.settings.hasCompletedOnboarding = true }
         }
         .confirmationDialog(
             "Delete this passage?",
@@ -106,7 +107,7 @@ struct LibraryView: View {
             }
 
             Section {
-                ForEach(store.passagesSorted) { passage in
+                ForEach(Array(store.passagesSorted.enumerated()), id: \.element.id) { index, passage in
                     Button {
                         Feedback.tap()
                         path.append(passage)
@@ -125,6 +126,7 @@ struct LibraryView: View {
                         }
                     }
                     .buttonStyle(.plain)
+                    .tourAnchor(index == 0 ? .passageRow : nil)
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear.cardSurface())
                     .listRowSeparator(.hidden)
