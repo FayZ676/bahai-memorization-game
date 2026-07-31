@@ -1,20 +1,23 @@
 # Achievement badges
 
-Source of truth for the prompts that generate achievement badge art. The prompt is a
-generated artefact — edit the registries in `generate_badge_prompt.py`, never a
-prompt you pasted somewhere earlier.
+Source of truth for the prompts that generate achievement badge art.
+
+- `badges.json` — every style decision. The data.
+- `badges.py` — template substitution, validation, and the CRUD verbs. The code.
+- `test_badges.py` — asserts every invalid config is rejected.
 
 ```sh
-python3 Design/Badges/generate_badge_prompt.py healing 1
-python3 Design/Badges/generate_badge_prompt.py first_prayer_memorized
-python3 Design/Badges/generate_badge_prompt.py --list
-python3 Design/Badges/generate_badge_prompt.py --all
+python3 Design/Badges/badges.py list
+python3 Design/Badges/badges.py prompt healing 1
+python3 Design/Badges/badges.py prompt first_prayer_memorized
+python3 Design/Badges/badges.py prompt --all
+python3 Design/Badges/badges.py validate
 ```
 
 The point is determinism. A badge set only reads as a *set* if every badge came out of
 the same style anchor, so the anchor lives in one string and the per-badge differences
 are a handful of substituted fields. If you find yourself hand-editing a prompt before
-pasting it into an image model, that difference belongs in the registry instead.
+pasting it into an image model, that difference belongs in `badges.json` instead.
 
 ## Layering
 
@@ -22,19 +25,23 @@ Broadest to narrowest, later layers win:
 
 | Layer | Owns | Applies to |
 |---|---|---|
-| `GLOBAL` | `finish`, `detail_level` | every badge, always |
-| `LEVEL_REGISTRY` | default `border` per level | any leveled category |
-| `CATEGORY_REGISTRY[c]` | `shape`, `icon`, `color` | one category |
-| `CATEGORY_REGISTRY[c]["levels"][n]` | `label`, `icon_variation`, `overrides` | one badge |
+| `global` | `finish`, `detail_level` | every badge, always |
+| `levels` | default `border` per level | any leveled category |
+| `categories.<name>` | `shape`, `icon`, `color` | one category |
+| `categories.<name>.levels.<n>` | `label`, `icon_variation`, `overrides` | one badge |
 
 A category with no `levels` key is binary — earned or not — and supplies its own
-`border` directly. Passing a level to it is an error, as is omitting a level for a
-leveled category. The generator raises rather than guessing.
+`border`. Passing a level to it is an error, as is omitting a level for a leveled
+category. The generator raises rather than guessing.
+
+Put a change at the broadest layer that is still true. Something true of every badge
+belongs in `global`; something true of every level 2 belongs in `levels`.
 
 ## Two protected fields
 
-`icon` and `shape` may **never** appear in a level's `overrides`; validation rejects it
-by name. This is the rule that keeps a badge family recognisable as it levels up.
+`icon` and `shape` may **never** appear in a level's `overrides`. Validation rejects it
+by name, on load *and* on write, and `update` refuses the flags at level scope. This is
+the rule that keeps a badge family recognisable as it levels up.
 
 `icon` can still change with level, but only *additively*, via `icon_variation` — the
 string is appended to the category icon, never substituted for it. So the compass rose
@@ -45,24 +52,32 @@ whole visual grammar of progression here: same object, more elaboration, richer 
 its category's silhouette, it wants to be its own category. If that turns out to be
 wrong, loosen `PROTECTED_OVERRIDE_KEYS` deliberately, and write down why.
 
-## Adding a category
+Changing a *category's* own `icon` or `shape` is legal — that is a deliberate redesign,
+not a level quietly diverging. `update <category> --icon ...` allows it;
+`update <category> <level> --icon ...` does not.
 
-Add one entry to `CATEGORY_REGISTRY`:
+## Editing
 
-```python
-"category_name": {
-    "shape": "circular",
-    "icon": "a bold, describable object silhouette",
-    "color": "soft teal",
-    "levels": {
-        1: {"label": "Novice"},
-        2: {"label": "Practiced", "icon_variation": "with ..."},
-        3: {"label": "Healer", "icon_variation": "with ..."},
-    },
-},
+```sh
+badges.py create devotion --shape circular --icon "a lit oil lamp" --color "warm amber" \
+    --level "1=Kindled" --level "2=Steady|with a taller flame" \
+    --level "3=Constant|with a halo of fine rays"
+
+badges.py create night_vigil --shape circular --icon "a crescent moon over still water" \
+    --color "deep slate" --border "plain double ring"
+
+badges.py update devotion --color "burnt orange"
+badges.py update devotion 3 --icon-variation "with a doubled halo"
+badges.py update devotion 3 --color "blood red"      # writes a level override
+badges.py delete devotion                            # confirms first
 ```
 
-Then run `--all` and read the three prompts side by side before generating any art.
+`--level` is `N=Label` with an optional `|icon_variation` after the label. Every mutation
+re-validates before writing and replaces the file atomically, so a rejected edit leaves
+`badges.json` untouched. After a category-wide change the tool prints every affected
+prompt, so you can read the family side by side.
+
+Editing `badges.json` by hand is fine too — run `badges.py validate` afterwards.
 
 ## Things that will bite you
 
@@ -82,3 +97,8 @@ earned. Escalate the border by default and the icon sparingly.
 better than `#4A9B8E`, and the generated art gets colour-corrected against the app
 palette afterwards anyway. Keep the prose in the same family as `design-theme.html` so
 correction is a nudge and not a repaint.
+
+**`delete` is a hard delete.** It removes the category from `badges.json` outright, and
+any achievement a user has already earned loses the definition that names and renders it.
+The tool asks for the category name to confirm, and refuses non-interactively unless you
+pass `--yes`. If the badge has shipped, prefer leaving it in place.

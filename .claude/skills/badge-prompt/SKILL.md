@@ -1,58 +1,74 @@
 ---
 name: badge-prompt
-description: Generate the image-generation prompt for an achievement badge icon, or add/change a badge category or level. Use whenever the user asks for a badge prompt, a new achievement badge, a new badge tier or level, or wants an existing badge's art regenerated or restyled. Triggers on "badge", "achievement icon", "badge prompt", "new achievement", "badge tier".
+description: Generate the image-generation prompt for an achievement badge icon, or list, create, update or delete a badge category or level. Use whenever the user asks for a badge prompt, a new achievement badge, a new badge tier, or wants an existing badge changed, removed, or its art regenerated. Triggers on "badge", "achievement icon", "badge prompt", "new achievement", "badge tier", "badge list".
 ---
 
-# Achievement badge prompts
+# Achievement badges
 
-Badge prompts are **generated, never hand-written**. The generator and its style
-registries live at `Design/Badges/generate_badge_prompt.py`; the design rationale and
-the rules behind it are in `Design/Badges/README.md`.
+Badge style lives in `Design/Badges/badges.json`; `Design/Badges/badges.py` is the only
+thing that reads or writes it. The design rationale is in `Design/Badges/README.md` —
+read it before any edit.
 
 Never compose a badge prompt yourself, never paste a previously generated prompt from
-the conversation, and never tweak a generated prompt before handing it over. Same input,
-same bytes out — that is the entire reason this exists. A badge set only reads as a set
-if every prompt came out of the same style anchor.
+the conversation, and never tweak a generated prompt before handing it over. Never
+hand-edit `badges.json` when a verb exists for the change. Same input, same bytes out —
+that is the entire reason this exists. A badge set only reads as a set if every prompt
+came out of the same style anchor.
 
-## Getting a prompt
+Always run the tool and quote its actual output. If it errors, surface the message as-is
+— the errors are written to say exactly what is wrong — and fix the cause rather than
+working around it by hand.
+
+## Verbs
 
 ```sh
-python3 Design/Badges/generate_badge_prompt.py <category> [level]
-python3 Design/Badges/generate_badge_prompt.py --list   # every registered badge
-python3 Design/Badges/generate_badge_prompt.py --all    # every prompt, labelled
+python3 Design/Badges/badges.py list
+python3 Design/Badges/badges.py prompt <category> [level]
+python3 Design/Badges/badges.py prompt --all
+python3 Design/Badges/badges.py validate
+
+python3 Design/Badges/badges.py create <category> --shape S --icon I --color C \
+    --level "1=Label" --level "2=Label|icon variation"
+python3 Design/Badges/badges.py create <category> --shape S --icon I --color C --border B
+python3 Design/Badges/badges.py update <category> [level] [--shape|--icon|--color|--border|--label|--icon-variation]
+python3 Design/Badges/badges.py delete <category>
 ```
 
-Run `--list` first if you are not certain the category exists. If the script raises,
-surface the error as-is; the messages are written to say exactly what is wrong (missing
-level, level on a non-leveled category, unknown category). Do not work around an error
-by generating the prompt by hand.
+Run `list` first when you are not certain a category exists. Output prompts verbatim in
+a fenced block so the user can paste them straight into an image model.
 
-Output the prompt verbatim in your reply, in a fenced block, so the user can copy it
-straight into an image model.
+`create` with `--level` makes a leveled category; with `--border` a binary one. A leveled
+category takes its border from the level registry, so the two are mutually exclusive.
 
-## Adding or changing a badge
+## The rules the tool enforces
 
-Edit the registries in `generate_badge_prompt.py` — that is the only correct place for a
-style decision. Read `Design/Badges/README.md` before editing; it covers the layering
-order, what each layer owns, and the icon/silhouette pitfalls.
+- **`icon` and `shape` are protected at the level layer.** A level elaborates its icon
+  only additively, through `--icon-variation`, appended to the category icon and never
+  replacing it. Changing a *category's* own icon or shape is legal — that is a deliberate
+  redesign — so `update <category> --icon` works while `update <category> <level> --icon`
+  is refused.
+- **Put a change at the broadest layer that is still true.** True of every badge → the
+  `global` block. True of every level 2 → the `levels` registry. Not per category.
+- **A category with no levels is binary** and supplies its own `border`.
 
-The rules that matter most:
+Validation runs on read and again before every write, so a rejected edit leaves
+`badges.json` untouched. After changing anything, run `prompt --all` (or read the prompts
+the mutation prints) and check the family still reads as one set.
 
-- **`icon` and `shape` are protected.** They may never appear in a level's `overrides`;
-  validation rejects it by name. A level changes its icon only *additively*, through
-  `icon_variation`, which is appended to the category icon and never replaces it.
-- **Put a change at the broadest layer that is still true.** Something true of every
-  badge belongs in `GLOBAL`, not repeated per category. Something true of every level 2
-  belongs in `LEVEL_REGISTRY`, not per category.
-- **A category with no `levels` key is binary** — earned or not — and supplies its own
-  `border`.
+## Deleting
 
-After editing, run `--all` and check that the family still reads as one set, then show
-the user the affected prompts.
+`delete` is a hard delete: the category leaves `badges.json`, and any achievement a user
+has already earned loses the definition that names and renders it.
+
+The tool asks for the category name to confirm. Because you are not an interactive
+terminal it will refuse and tell you to pass `--yes`. **Only pass `--yes` when the user
+has explicitly asked for that specific category to be deleted** — never to get past the
+prompt on your own initiative. If the badge may have shipped, say so and suggest leaving
+it in place instead.
 
 ## Where the art goes
 
 Generated badge PNGs belong in `MemorizationGame/Assets.xcassets`, matching the app icon
-convention: the asset is the artefact, the script is the source of truth. Follow the
-existing token system in `Theme/` for any surrounding UI, and colour-correct generated
-art toward the `design-theme.html` palette rather than restyling it in the prompt.
+convention: the asset is the artefact, the config is the source of truth. Follow the
+token system in `Theme/` for surrounding UI, and colour-correct generated art toward the
+`design-theme.html` palette rather than restyling it in the prompt.

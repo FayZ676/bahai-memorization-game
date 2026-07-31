@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "global": {
+    "finish": "cloisonné/enamel-pin technique, flat-to-subtly-shaded color regions separated by consistent-width metal cell walls, organic sculpted silhouette with flowing rounded shapes rather than geometric precision, mostly flat color fill with a touch of sheen for dimension, no heavy 3D bevel or glossy highlight, no photorealistic texture",
+    "detail_level": "Bold simplified silhouette, thick clean linework, minimal fine texture or gradient, strong contrast between icon and background, designed to stay legible at small mobile icon sizes (roughly 40-60px)"
+  },
+  "levels": {
+    "1": {
+      "border": "thin plain color rim band, same hue family as the field but one shade lighter"
+    },
+    "2": {
+      "border": "color rim band with small evenly-spaced metal accent dots circling it"
+    },
+    "3": {
+      "border": "color rim band with metal ray or laurel accents circling it, more ornate"
+    }
+  },
+  "categories": {
+    "healing": {
+      "shape": "circular",
+      "icon": "a simple ceramic bowl silhouette with one bold crack down the center, mended in a thick gold seam",
+      "color": "soft teal",
+      "levels": {
+        "1": {
+          "label": "Novice"
+        },
+        "2": {
+          "label": "Practiced"
+        },
+        "3": {
+          "label": "Healer"
+        }
+      }
+    },
+    "obligatory_prayer": {
+      "shape": "hexagonal",
+      "icon": "a compass rose",
+      "color": "deep indigo",
+      "levels": {
+        "1": {
+          "label": "Short"
+        },
+        "2": {
+          "label": "Medium",
+          "icon_variation": "with a single ring of fine radiating lines around it"
+        },
+        "3": {
+          "label": "Long",
+          "icon_variation": "with two concentric rings of fine radiating lines around it, more ornate detailing on the needle"
+        }
+      }
+    },
+    "first_prayer_memorized": {
+      "shape": "circular",
+      "icon": "an open hand releasing a single small bird",
+      "color": "warm gold",
+      "border": "plain single ring"
+    }
+  }
+}
