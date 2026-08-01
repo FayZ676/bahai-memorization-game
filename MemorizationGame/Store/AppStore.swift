@@ -7,6 +7,7 @@ final class AppStore {
     private(set) var reviewables: [Reviewable]
     private(set) var practiceLog: PracticeLog
     var dailyGoalReached = false
+    var justEarned: Achievement?
     var settings: AppSettings {
         didSet {
             guard storeURL != nil else { return }
@@ -232,9 +233,20 @@ final class AppStore {
         let old = reviewables[index]
         var updated = old
         change(&updated)
+        let memorizedBefore = memorizedPrayerIDs
         recordPractice(from: old, to: updated)
         reviewables[index] = updated
+        announceAchievements(memorizedBefore: memorizedBefore)
         persist()
+    }
+
+    /// Earned state is derived, so the only moment it can be observed changing is
+    /// the mutation that changes it -- there is no stored flag to compare against
+    /// on a later launch.
+    private func announceAchievements(memorizedBefore: Set<Int>) {
+        let gained = memorizedPrayerIDs.subtracting(memorizedBefore)
+        guard !gained.isEmpty else { return }
+        justEarned = AchievementCatalog.all.first { gained.contains($0.prayerID) }
     }
 
     private func recordPractice(from old: Reviewable, to updated: Reviewable) {

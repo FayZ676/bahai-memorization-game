@@ -87,7 +87,9 @@ struct SessionView: View {
         }
         .overlay(alignment: .top) {
             Group {
-                if store.dailyGoalReached {
+                if let earned = store.justEarned {
+                    AchievementToast(achievement: earned)
+                } else if store.dailyGoalReached {
                     DailyGoalToast()
                 }
             }
@@ -95,12 +97,21 @@ struct SessionView: View {
             .transition(.move(edge: .top).combined(with: .opacity))
         }
         .animation(.spring(response: 0.42, dampingFraction: 0.8), value: store.dailyGoalReached)
+        .animation(.spring(response: 0.42, dampingFraction: 0.8), value: store.justEarned)
         .onChange(of: store.dailyGoalReached) { _, reached in
             guard reached else { return }
             Feedback.sessionComplete()
             Task {
                 try? await Task.sleep(for: .seconds(3))
                 store.dailyGoalReached = false
+            }
+        }
+        .onChange(of: store.justEarned) { _, earned in
+            guard earned != nil else { return }
+            Feedback.sessionComplete()
+            Task {
+                try? await Task.sleep(for: .seconds(3))
+                store.justEarned = nil
             }
         }
     }
@@ -501,6 +512,40 @@ private struct ShakeEffect: GeometryEffect {
 
     func effectValue(size: CGSize) -> ProjectionTransform {
         ProjectionTransform(CGAffineTransform(translationX: 4 * sin(shakes * .pi * 3), y: 0))
+    }
+}
+
+private struct AchievementToast: View {
+    let achievement: Achievement
+
+    private var detail: String {
+        guard let group = AchievementCatalog.group(containing: achievement) else {
+            return achievement.title
+        }
+        return "\(achievement.title) · \(group.title)"
+    }
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "\(achievement.symbol).fill")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(Theme.gold)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Achievement earned")
+                    .appFont(Typography.label)
+                    .foregroundStyle(Theme.ink)
+                Text(detail)
+                    .appFont(Typography.micro)
+                    .foregroundStyle(Theme.muted)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(
+            Capsule(style: .continuous)
+                .fill(Theme.rowBg)
+                .overlay(Capsule(style: .continuous).stroke(Theme.gold.opacity(0.5), lineWidth: 1))
+        )
     }
 }
 

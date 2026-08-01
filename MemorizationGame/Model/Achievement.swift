@@ -97,4 +97,11 @@ enum AchievementCatalog {
     ]
 
     static let all: [Achievement] = entries.flatMap(\.achievements)
+
+    static func group(containing achievement: Achievement) -> AchievementGroup? {
+        for case .group(let group) in entries where group.achievements.contains(achievement) {
+            return group
+        }
+        return nil
+    }
 }
