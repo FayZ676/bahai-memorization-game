@@ -1,5 +1,9 @@
 import SwiftUI
 
+enum LibraryRoute: Hashable {
+    case achievements
+}
+
 enum ImportRoute: Hashable {
     case browse
     case category(PrayerLibrary.Category)
@@ -30,9 +34,7 @@ struct LibraryView: View {
                     .buttonStyle(.icon)
                 }, trailing: {
                     HStack(spacing: Spacing.sm) {
-                        NavigationLink {
-                            AchievementsView()
-                        } label: {
+                        NavigationLink(value: LibraryRoute.achievements) {
                             Image(systemName: "trophy.fill")
                                 .foregroundStyle(hasAchievements ? Theme.gold : Theme.accent)
                         }
@@ -53,6 +55,12 @@ struct LibraryView: View {
                     } else {
                         list
                     }
+                }
+            }
+            .navigationDestination(for: LibraryRoute.self) { route in
+                switch route {
+                case .achievements:
+                    AchievementsView()
                 }
             }
             .navigationDestination(for: Passage.self) { passage in
