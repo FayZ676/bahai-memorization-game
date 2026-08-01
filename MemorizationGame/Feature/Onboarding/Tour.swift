@@ -14,7 +14,7 @@ enum TourStep: Int, CaseIterable {
     var title: String {
         switch self {
         case .openBrowse: "Start with a prayer"
-        case .pickPrayer: "Pick one to learn"
+        case .pickPrayer: "Start with a short one"
         case .addPrayer: "Add it to your library"
         case .openPassage: "Open your passage"
         case .hideWord: "Hide a word, then recall it"
@@ -27,7 +27,7 @@ enum TourStep: Int, CaseIterable {
     var body: String {
         switch self {
         case .openBrowse: "Tap plus to browse hundreds of prayers by category, or search for one by name."
-        case .pickPrayer: "Open a collection and choose a prayer. A short one is the easiest place to begin."
+        case .pickPrayer: "Open General Prayers, then Aid and Assistance, and tap the first prayer in the list. Two sentences — small enough to hold in one go."
         case .addPrayer: "Read it over, then add it. Each line becomes a section you practise on its own."
         case .openPassage: "Tap it to begin. The bar underneath fills in as more of it lives in memory."
         case .hideWord: "Tap a word to hide it, and tap again to bring it back. Press and glide to hide a whole run at once."
@@ -49,6 +49,10 @@ enum TourStep: Int, CaseIterable {
         case .finished: nil
         }
     }
+
+    var isPrompt: Bool {
+        anchor == nil && self != .finished
+    }
 }
 
 enum TourAnchor: Hashable {
@@ -63,11 +67,19 @@ enum TourAnchor: Hashable {
 @Observable
 final class Tour {
     private(set) var step: TourStep = .openBrowse
+    private(set) var hasAcknowledgedPrompt = false
 
     func complete(_ completed: TourStep) {
         guard completed.rawValue >= step.rawValue,
               let next = TourStep(rawValue: completed.rawValue + 1) else { return }
-        withAnimation(Motion.standard) { step = next }
+        withAnimation(Motion.standard) {
+            step = next
+            hasAcknowledgedPrompt = false
+        }
+    }
+
+    func acknowledgePrompt() {
+        withAnimation(Motion.standard) { hasAcknowledgedPrompt = true }
     }
 }
 

@@ -3,23 +3,32 @@ import SwiftUI
 struct TourOverlay: View {
     let step: TourStep
     let spotlight: CGRect?
+    let hasAcknowledgedPrompt: Bool
     let size: CGSize
     let onSkip: () -> Void
+    let onAcknowledge: () -> Void
     let onFinish: () -> Void
 
     private static let gap: CGFloat = 14
     private static let topInset: CGFloat = 64
     private static let bottomInset: CGFloat = 132
 
+    private var isPresenting: Bool {
+        if step == .finished { return true }
+        if step.isPrompt { return !hasAcknowledgedPrompt }
+        return spotlight != nil
+    }
+
     var body: some View {
         ZStack {
-            if spotlight != nil || step == .finished {
+            if isPresenting {
                 scrim.transition(.opacity)
+                placedCard.transition(.opacity)
             }
-            placedCard
         }
         .animation(Motion.standard, value: step)
         .animation(Motion.standard, value: spotlight)
+        .animation(Motion.standard, value: hasAcknowledgedPrompt)
     }
 
     private var scrim: some View {
@@ -45,12 +54,12 @@ struct TourOverlay: View {
                         .position(x: spotlight.midX, y: spotlight.midY)
                 }
             }
-            .allowsHitTesting(false)
+            .allowsHitTesting(spotlight == nil)
     }
 
     @ViewBuilder
     private var placedCard: some View {
-        if step == .finished {
+        if spotlight == nil {
             VStack(spacing: 0) {
                 Spacer(minLength: Self.topInset)
                 card
@@ -67,12 +76,6 @@ struct TourOverlay: View {
                 Spacer(minLength: Self.topInset)
                 card
                 Color.clear.frame(height: max(size.height - spotlight.minY + Self.gap, Self.bottomInset))
-            }
-        } else {
-            VStack(spacing: 0) {
-                Spacer(minLength: Self.topInset)
-                card
-                Spacer().frame(height: Self.bottomInset)
             }
         }
     }
@@ -102,31 +105,44 @@ struct TourOverlay: View {
     @ViewBuilder
     private var footer: some View {
         if step == .finished {
-            Button(action: onFinish) {
-                Text("Start for real")
-                    .appFont(Typography.button)
-                    .foregroundStyle(Theme.bg)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, Spacing.md)
-                    .background(Theme.accent, in: Capsule(style: .continuous))
-                    .contentShape(Capsule(style: .continuous))
+            primaryButton("Start for real", action: onFinish)
+        } else if step.isPrompt {
+            VStack(spacing: Spacing.md) {
+                primaryButton("Got it", action: onAcknowledge)
+                progressRow
+            }
+        } else {
+            progressRow
+        }
+    }
+
+    private func primaryButton(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .appFont(Typography.button)
+                .foregroundStyle(Theme.bg)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Spacing.md)
+                .background(Theme.accent, in: Capsule(style: .continuous))
+                .contentShape(Capsule(style: .continuous))
+        }
+        .buttonStyle(.haptic)
+    }
+
+    private var progressRow: some View {
+        HStack(spacing: Spacing.md) {
+            dots
+            Spacer(minLength: Spacing.md)
+            Button(action: onSkip) {
+                Text("Skip")
+                    .appFont(Typography.label)
+                    .tracking(0.5)
+                    .foregroundStyle(Theme.muted)
+                    .padding(.vertical, Spacing.xs)
+                    .padding(.leading, Spacing.md)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.haptic)
-        } else {
-            HStack(spacing: Spacing.md) {
-                dots
-                Spacer(minLength: Spacing.md)
-                Button(action: onSkip) {
-                    Text("Skip")
-                        .appFont(Typography.label)
-                        .tracking(0.5)
-                        .foregroundStyle(Theme.muted)
-                        .padding(.vertical, Spacing.xs)
-                        .padding(.leading, Spacing.md)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.haptic)
-            }
         }
     }
 
