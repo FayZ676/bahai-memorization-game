@@ -45,6 +45,13 @@ enum AchievementCatalog {
             case .standalone(let achievement): return [achievement]
             }
         }
+
+        var librarySection: String? {
+            switch self {
+            case .group(let group): return group.librarySection
+            case .standalone(let achievement): return achievement.librarySection
+            }
+        }
     }
 
     static let entries: [Entry] = [

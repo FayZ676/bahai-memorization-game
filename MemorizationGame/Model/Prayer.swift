@@ -88,6 +88,16 @@ enum PrayerLibrary {
         byID[id]
     }
 
+    static func section(named name: String) -> Section? {
+        collections.lazy.compactMap { collection in
+            collection.sections.first { $0.name == name }
+        }.first
+    }
+
+    static func category(named name: String, inSection sectionName: String) -> Category? {
+        section(named: sectionName)?.categories.first { $0.name == name }
+    }
+
     static func prayer(matchingTitle title: String, author: String?) -> Prayer? {
         all.first { candidate in
             candidate.title.compare(title, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame

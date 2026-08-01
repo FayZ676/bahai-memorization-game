@@ -132,7 +132,7 @@ struct PrayerBrowseView: View {
                 initiallyExpanded: section.name == focusSection
             ) {
                 ForEach(Array(section.categories.enumerated()), id: \.element.id) { index, category in
-                    NavigationLink(value: ImportRoute.category(category)) {
+                    BrowseLink(.category(category, in: section)) {
                         CategoryRow(category: category)
                     }
                     .buttonStyle(.haptic)
@@ -150,7 +150,7 @@ struct PrayerBrowseView: View {
     }
 
     private var pasteOwnRow: some View {
-        NavigationLink(value: ImportRoute.pasteOwn) {
+        BrowseLink(.pasteOwn) {
             HStack(spacing: 10) {
                 Image(systemName: "square.and.pencil")
                     .foregroundStyle(Theme.accent)
@@ -170,7 +170,7 @@ struct PrayerBrowseView: View {
     private var searchRows: some View {
         LazyVStack(alignment: .leading, spacing: 0) {
             ForEach(Array(searchResults.enumerated()), id: \.element.id) { index, prayer in
-                NavigationLink(value: ImportRoute.prayer(prayer)) {
+                BrowseLink(.prayer(prayer)) {
                     PrayerRow(prayer: prayer, showSection: true)
                 }
                 .buttonStyle(.haptic)

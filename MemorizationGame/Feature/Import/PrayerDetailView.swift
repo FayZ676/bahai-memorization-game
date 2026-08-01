@@ -7,7 +7,7 @@ struct PrayerDetailView: View {
     var body: some View {
         Screen {
             ScreenHeader(title: "Preview", onBack: { dismiss() }) {
-                NavigationLink(value: ImportRoute.importPrayer(prayer)) {
+                BrowseLink(.importPrayer(prayer.id)) {
                     Text("Import")
                         .appFont(Typography.body)
                         .foregroundStyle(Theme.accent)

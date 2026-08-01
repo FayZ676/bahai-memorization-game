@@ -12,7 +12,7 @@ struct PrayerCategoryView: View {
                 LazyVStack(alignment: .leading, spacing: 0) {
                     OptionSection {
                         ForEach(Array(category.prayers.enumerated()), id: \.element.id) { index, prayer in
-                            NavigationLink(value: ImportRoute.prayer(prayer)) {
+                            BrowseLink(.prayer(prayer)) {
                                 PrayerRow(prayer: prayer)
                             }
                             .buttonStyle(.haptic)

@@ -4,15 +4,6 @@ enum LibraryRoute: Hashable {
     case achievements
 }
 
-enum ImportRoute: Hashable {
-    case browse
-    case section(String)
-    case category(PrayerLibrary.Category)
-    case prayer(Prayer)
-    case pasteOwn
-    case importPrayer(Prayer)
-}
-
 extension EnvironmentValues {
     @Entry var popToLibrary: () -> Void = {}
 }
@@ -41,7 +32,7 @@ struct LibraryView: View {
                         }
                         .buttonStyle(.icon)
 
-                        NavigationLink(value: ImportRoute.browse) {
+                        BrowseLink(.browse) {
                             Image(systemName: "plus")
                                 .foregroundStyle(Theme.accent)
                         }
@@ -67,28 +58,7 @@ struct LibraryView: View {
             .navigationDestination(for: Passage.self) { passage in
                 SessionView(passage: passage, store: store)
             }
-            .navigationDestination(for: ImportRoute.self) { route in
-                switch route {
-                case .browse:
-                    PrayerBrowseView()
-                case .section(let name):
-                    PrayerBrowseView(focusSection: name)
-                case .category(let category):
-                    PrayerCategoryView(category: category)
-                case .prayer(let prayer):
-                    PrayerDetailView(prayer: prayer)
-                case .pasteOwn:
-                    ImportView()
-                case .importPrayer(let prayer):
-                    ImportView(
-                        initialTitle: prayer.title,
-                        initialContent: prayer.text,
-                        author: prayer.author,
-                        section: prayer.section,
-                        sourceID: prayer.id
-                    )
-                }
-            }
+            .browseDestinations()
         }
         .environment(\.popToLibrary) { path = NavigationPath() }
         .fullScreenCover(isPresented: showOnboarding) {
