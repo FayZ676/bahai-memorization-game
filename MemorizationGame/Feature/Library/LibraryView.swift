@@ -37,7 +37,6 @@ struct LibraryView: View {
                                 .foregroundStyle(Theme.accent)
                         }
                         .buttonStyle(.icon)
-                        .tourAnchor(.addPassage)
                     }
                 })
             } content: {
@@ -120,7 +119,6 @@ struct LibraryView: View {
                         }
                     }
                     .buttonStyle(.plain)
-                    .tourAnchor(index == 0 ? .passageRow : nil)
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear.cardSurface())
                     .listRowSeparator(.hidden)

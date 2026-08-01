@@ -15,7 +15,6 @@ struct PrayerDetailView: View {
                         .fixedSize()
                 }
                 .buttonStyle(.haptic)
-                .tourAnchor(.importPrayer)
             }
         } content: {
             ScrollView {

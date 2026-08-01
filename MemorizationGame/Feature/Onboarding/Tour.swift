@@ -37,27 +37,6 @@ enum TourStep: Int, CaseIterable {
         }
     }
 
-    var anchor: TourAnchor? {
-        switch self {
-        case .openBrowse: .addPassage
-        case .pickPrayer: nil
-        case .addPrayer: .importPrayer
-        case .openPassage: .passageRow
-        case .hideWord: .firstWord
-        case .hideSection: nil
-        case .merge: .mergeChip
-        case .finished: nil
-        }
-    }
-
-}
-
-enum TourAnchor: Hashable {
-    case addPassage
-    case importPrayer
-    case passageRow
-    case firstWord
-    case mergeChip
 }
 
 @MainActor
@@ -84,29 +63,11 @@ final class Tour {
     }
 }
 
-struct TourAnchorKey: PreferenceKey {
-    static var defaultValue: [TourAnchor: Anchor<CGRect>] { [:] }
-
-    static func reduce(
-        value: inout [TourAnchor: Anchor<CGRect>],
-        nextValue: () -> [TourAnchor: Anchor<CGRect>]
-    ) {
-        value.merge(nextValue()) { _, latest in latest }
-    }
-}
-
 extension EnvironmentValues {
     @Entry var tour: Tour?
 }
 
 extension View {
-    func tourAnchor(_ anchor: TourAnchor?) -> some View {
-        anchorPreference(key: TourAnchorKey.self, value: .bounds) { bounds in
-            guard let anchor else { return [:] }
-            return [anchor: bounds]
-        }
-    }
-
     func completesTourStep(_ step: TourStep) -> some View {
         modifier(TourStepReporter(step: step))
     }

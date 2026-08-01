@@ -2,7 +2,6 @@ import SwiftUI
 
 struct TourOverlay: View {
     let step: TourStep
-    let spotlight: CGRect?
     let isPromptVisible: Bool
     let onSkip: () -> Void
     let onDismissPrompt: () -> Void
@@ -17,14 +16,10 @@ struct TourOverlay: View {
                 scrim.transition(.opacity)
                 card.transition(.opacity)
             } else {
-                if let spotlight {
-                    ring(around: spotlight).transition(.opacity)
-                }
                 helpButton.transition(.opacity.combined(with: .scale(scale: 0.8)))
             }
         }
         .animation(Motion.standard, value: step)
-        .animation(Motion.standard, value: spotlight)
         .animation(Motion.standard, value: isPromptVisible)
     }
 
@@ -32,14 +27,6 @@ struct TourOverlay: View {
         Rectangle()
             .fill(Theme.bg.opacity(0.88))
             .ignoresSafeArea()
-    }
-
-    private func ring(around rect: CGRect) -> some View {
-        RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
-            .stroke(Theme.accent.opacity(0.55), lineWidth: 1.5)
-            .frame(width: rect.width + 14, height: rect.height + 12)
-            .position(x: rect.midX, y: rect.midY)
-            .allowsHitTesting(false)
     }
 
     private var card: some View {
@@ -134,6 +121,6 @@ struct TourOverlay: View {
             }
         }
         .padding(.trailing, Spacing.lg)
-        .padding(.bottom, Spacing.xxxl)
+        .padding(.bottom, Spacing.md)
     }
 }

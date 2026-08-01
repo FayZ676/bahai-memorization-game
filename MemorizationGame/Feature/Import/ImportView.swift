@@ -73,7 +73,6 @@ struct ImportView: View {
                 }
                 .buttonStyle(.haptic)
                 .disabled(!isValid)
-                .tourAnchor(editing == nil ? .importPrayer : nil)
             }
         } content: {
             ScrollView {

@@ -15,19 +15,15 @@ struct OnboardingView: View {
         LibraryView()
             .environment(sandbox)
             .environment(\.tour, tour)
-            .overlayPreferenceValue(TourAnchorKey.self) { anchors in
-                GeometryReader { proxy in
-                    TourOverlay(
-                        step: tour.step,
-                        spotlight: spotlight(in: anchors, proxy: proxy),
-                        isPromptVisible: tour.isPromptVisible,
-                        onSkip: onFinish,
-                        onDismissPrompt: tour.dismissPrompt,
-                        onShowPrompt: tour.showPrompt,
-                        onFinish: finish
-                    )
-                }
-                .ignoresSafeArea()
+            .overlay {
+                TourOverlay(
+                    step: tour.step,
+                    isPromptVisible: tour.isPromptVisible,
+                    onSkip: onFinish,
+                    onDismissPrompt: tour.dismissPrompt,
+                    onShowPrompt: tour.showPrompt,
+                    onFinish: finish
+                )
             }
             .onChange(of: sandbox.passages.count) { _, count in
                 if count > 0 { tour.complete(.addPrayer) }
@@ -52,13 +48,6 @@ struct OnboardingView: View {
 
     private var hasCompletedSection: Bool {
         sandbox.reviewables.contains { sandbox.isComplete($0) }
-    }
-
-    private func spotlight(in anchors: [TourAnchor: Anchor<CGRect>], proxy: GeometryProxy) -> CGRect? {
-        guard let anchor = tour.step.anchor, let bounds = anchors[anchor] else { return nil }
-        let rect = proxy[bounds]
-        guard rect.width > 0, rect.height > 0 else { return nil }
-        return rect
     }
 
     private func finish() {
