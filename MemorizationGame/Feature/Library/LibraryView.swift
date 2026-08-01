@@ -6,6 +6,7 @@ enum LibraryRoute: Hashable {
 
 enum ImportRoute: Hashable {
     case browse
+    case section(String)
     case category(PrayerLibrary.Category)
     case prayer(Prayer)
     case pasteOwn
@@ -70,6 +71,8 @@ struct LibraryView: View {
                 switch route {
                 case .browse:
                     PrayerBrowseView()
+                case .section(let name):
+                    PrayerBrowseView(focusSection: name)
                 case .category(let category):
                     PrayerCategoryView(category: category)
                 case .prayer(let prayer):

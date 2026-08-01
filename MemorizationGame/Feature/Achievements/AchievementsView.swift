@@ -19,8 +19,11 @@ struct AchievementsView: View {
                         case .group(let group):
                             GroupSection(group: group, memorized: memorized)
                         case .standalone(let achievement):
-                            AchievementLink(achievement: achievement, earned: achievement.isEarned(in: memorized))
-                                .cardSurface()
+                            StandaloneAchievementLink(
+                                achievement: achievement,
+                                earned: achievement.isEarned(in: memorized)
+                            )
+                            .cardSurface()
                         }
                     }
                 }
@@ -66,7 +69,17 @@ private struct GroupSection: View {
         }
     }
 
+    @ViewBuilder
     private var header: some View {
+        if let section = group.librarySection {
+            NavigationLink(value: ImportRoute.section(section)) { headerLabel }
+                .buttonStyle(.haptic)
+        } else {
+            headerLabel
+        }
+    }
+
+    private var headerLabel: some View {
         let earned = group.achievements.count { $0.isEarned(in: memorized) }
         return HStack(spacing: Spacing.sm) {
             Image(systemName: group.symbol)
@@ -80,8 +93,12 @@ private struct GroupSection: View {
             Text("\(earned) of \(group.achievements.count)")
                 .appFont(Typography.micro)
                 .foregroundStyle(earned > 0 ? Theme.gold : Theme.faint)
+            Image(systemName: "chevron.right")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Theme.faint)
         }
         .padding(.horizontal, Spacing.xs)
+        .contentShape(Rectangle())
     }
 }
 
@@ -96,6 +113,28 @@ private struct AchievementLink: View {
                 .buttonStyle(.haptic)
         } else if let prayer = PrayerLibrary.prayer(id: achievement.prayerID) {
             NavigationLink(value: ImportRoute.prayer(prayer)) { row }
+                .buttonStyle(.haptic)
+        } else {
+            row
+        }
+    }
+
+    private var row: some View {
+        AchievementRow(achievement: achievement, earned: earned)
+    }
+}
+
+private struct StandaloneAchievementLink: View {
+    @Environment(AppStore.self) private var store
+    let achievement: Achievement
+    let earned: Bool
+
+    var body: some View {
+        if let passage = store.passage(forPrayerID: achievement.prayerID) {
+            NavigationLink(value: passage) { row }
+                .buttonStyle(.haptic)
+        } else if let section = achievement.librarySection {
+            NavigationLink(value: ImportRoute.section(section)) { row }
                 .buttonStyle(.haptic)
         } else {
             row

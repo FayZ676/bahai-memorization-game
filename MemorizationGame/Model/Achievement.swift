@@ -7,6 +7,10 @@ struct Achievement: Identifiable, Hashable {
     let symbol: String
     let prayerID: Int
 
+    var librarySection: String? {
+        PrayerLibrary.prayer(id: prayerID)?.section
+    }
+
     func isEarned(in memorizedPrayerIDs: Set<Int>) -> Bool {
         memorizedPrayerIDs.contains(prayerID)
     }
@@ -17,6 +21,10 @@ struct AchievementGroup: Identifiable, Hashable {
     let title: String
     let symbol: String
     let achievements: [Achievement]
+
+    var librarySection: String? {
+        achievements.first?.librarySection
+    }
 }
 
 enum AchievementCatalog {

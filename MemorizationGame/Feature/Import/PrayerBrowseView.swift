@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct PrayerBrowseView: View {
+    var focusSection: String? = nil
+
     @Environment(\.dismiss) private var dismiss
     @State private var query = ""
     @State private var searchResults: [Prayer] = []
@@ -15,24 +17,33 @@ struct PrayerBrowseView: View {
 
             searchField
 
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 20) {
-                    if trimmedQuery.isEmpty {
-                        pasteOwnRow
-                        ForEach(PrayerLibrary.collections) { collection in
-                            collectionCard(collection)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 20) {
+                        if trimmedQuery.isEmpty {
+                            pasteOwnRow
+                            ForEach(PrayerLibrary.collections) { collection in
+                                collectionCard(collection)
+                            }
+                        } else if isSearching {
+                            loadingRow
+                        } else if searchResults.isEmpty {
+                            noResults
+                        } else {
+                            searchRows
                         }
-                    } else if isSearching {
-                        loadingRow
-                    } else if searchResults.isEmpty {
-                        noResults
-                    } else {
-                        searchRows
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                    .padding(.bottom, 16)
+                }
+                .task {
+                    guard let focusSection else { return }
+                    try? await Task.sleep(for: .milliseconds(50))
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        proxy.scrollTo(focusSection, anchor: .top)
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-                .padding(.bottom, 16)
             }
         }
         .background(Theme.bg)
@@ -117,7 +128,8 @@ struct PrayerBrowseView: View {
                 font: Typography.caption,
                 color: Theme.muted,
                 tracking: 0.3,
-                indent: 4
+                indent: 4,
+                initiallyExpanded: section.name == focusSection
             ) {
                 ForEach(Array(section.categories.enumerated()), id: \.element.id) { index, category in
                     NavigationLink(value: ImportRoute.category(category)) {
@@ -134,6 +146,7 @@ struct PrayerBrowseView: View {
                 }
             }
         }
+        .id(section.name)
     }
 
     private var pasteOwnRow: some View {
