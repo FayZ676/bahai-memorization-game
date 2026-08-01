@@ -104,6 +104,15 @@ final class AppStore {
         return !cards.isEmpty && cards.allSatisfy(isComplete)
     }
 
+    var memorizedPrayerIDs: Set<Int> {
+        Set(passages.filter(isMemorized).compactMap(\.sourceID))
+    }
+
+    var earnedAchievementCount: Int {
+        let memorized = memorizedPrayerIDs
+        return AchievementCatalog.all.count { $0.isEarned(in: memorized) }
+    }
+
     @discardableResult
     private func linkPassagesToLibrary() -> Bool {
         var changed = false
