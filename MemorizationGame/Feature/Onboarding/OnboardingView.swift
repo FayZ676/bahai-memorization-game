@@ -20,10 +20,10 @@ struct OnboardingView: View {
                     TourOverlay(
                         step: tour.step,
                         spotlight: spotlight(in: anchors, proxy: proxy),
-                        hasAcknowledgedPrompt: tour.hasAcknowledgedPrompt,
-                        size: proxy.size,
+                        isPromptVisible: tour.isPromptVisible,
                         onSkip: onFinish,
-                        onAcknowledge: tour.acknowledgePrompt,
+                        onDismissPrompt: tour.dismissPrompt,
+                        onShowPrompt: tour.showPrompt,
                         onFinish: finish
                     )
                 }

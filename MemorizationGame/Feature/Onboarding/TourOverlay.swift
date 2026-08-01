@@ -3,81 +3,43 @@ import SwiftUI
 struct TourOverlay: View {
     let step: TourStep
     let spotlight: CGRect?
-    let hasAcknowledgedPrompt: Bool
-    let size: CGSize
+    let isPromptVisible: Bool
     let onSkip: () -> Void
-    let onAcknowledge: () -> Void
+    let onDismissPrompt: () -> Void
+    let onShowPrompt: () -> Void
     let onFinish: () -> Void
 
-    private static let gap: CGFloat = 14
-    private static let topInset: CGFloat = 64
-    private static let bottomInset: CGFloat = 132
-
-    private var isPresenting: Bool {
-        if step == .finished { return true }
-        if step.isPrompt { return !hasAcknowledgedPrompt }
-        return spotlight != nil
-    }
+    private var isPrompting: Bool { isPromptVisible || step == .finished }
 
     var body: some View {
         ZStack {
-            if isPresenting {
+            if isPrompting {
                 scrim.transition(.opacity)
-                placedCard.transition(.opacity)
+                card.transition(.opacity)
+            } else {
+                if let spotlight {
+                    ring(around: spotlight).transition(.opacity)
+                }
+                helpButton.transition(.opacity.combined(with: .scale(scale: 0.8)))
             }
         }
         .animation(Motion.standard, value: step)
         .animation(Motion.standard, value: spotlight)
-        .animation(Motion.standard, value: hasAcknowledgedPrompt)
+        .animation(Motion.standard, value: isPromptVisible)
     }
 
     private var scrim: some View {
         Rectangle()
             .fill(Theme.bg.opacity(0.88))
-            .mask {
-                ZStack {
-                    Rectangle()
-                    if let spotlight {
-                        RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
-                            .frame(width: spotlight.width + 14, height: spotlight.height + 12)
-                            .position(x: spotlight.midX, y: spotlight.midY)
-                            .blendMode(.destinationOut)
-                    }
-                }
-                .compositingGroup()
-            }
-            .overlay {
-                if let spotlight {
-                    RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
-                        .stroke(Theme.accent.opacity(0.55), lineWidth: 1.5)
-                        .frame(width: spotlight.width + 14, height: spotlight.height + 12)
-                        .position(x: spotlight.midX, y: spotlight.midY)
-                }
-            }
-            .allowsHitTesting(spotlight == nil)
+            .ignoresSafeArea()
     }
 
-    @ViewBuilder
-    private var placedCard: some View {
-        if spotlight == nil {
-            VStack(spacing: 0) {
-                Spacer(minLength: Self.topInset)
-                card
-                Spacer(minLength: Self.bottomInset)
-            }
-        } else if let spotlight, spotlight.midY < size.height * 0.5 {
-            VStack(spacing: 0) {
-                Color.clear.frame(height: spotlight.maxY + Self.gap)
-                card
-                Spacer(minLength: Self.bottomInset)
-            }
-        } else if let spotlight {
-            VStack(spacing: 0) {
-                Spacer(minLength: Self.topInset)
-                card
-                Color.clear.frame(height: max(size.height - spotlight.minY + Self.gap, Self.bottomInset))
-            }
-        }
+    private func ring(around rect: CGRect) -> some View {
+        RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
+            .stroke(Theme.accent.opacity(0.55), lineWidth: 1.5)
+            .frame(width: rect.width + 14, height: rect.height + 12)
+            .position(x: rect.midX, y: rect.midY)
+            .allowsHitTesting(false)
     }
 
     private var card: some View {
@@ -106,13 +68,11 @@ struct TourOverlay: View {
     private var footer: some View {
         if step == .finished {
             primaryButton("Start for real", action: onFinish)
-        } else if step.isPrompt {
+        } else {
             VStack(spacing: Spacing.md) {
-                primaryButton("Got it", action: onAcknowledge)
+                primaryButton("Got it", action: onDismissPrompt)
                 progressRow
             }
-        } else {
-            progressRow
         }
     }
 
@@ -154,5 +114,26 @@ struct TourOverlay: View {
                     .frame(width: 6, height: 6)
             }
         }
+    }
+
+    private var helpButton: some View {
+        VStack {
+            Spacer()
+            HStack {
+                Spacer()
+                Button(action: onShowPrompt) {
+                    Image(systemName: "questionmark")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(Theme.bg)
+                        .frame(width: 44, height: 44)
+                        .background(Theme.accent, in: Circle())
+                        .contentShape(Circle())
+                        .shadow(color: .black.opacity(0.22), radius: 10, y: 4)
+                }
+                .buttonStyle(.haptic)
+            }
+        }
+        .padding(.trailing, Spacing.lg)
+        .padding(.bottom, Spacing.xxxl)
     }
 }

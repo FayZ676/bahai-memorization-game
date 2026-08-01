@@ -50,9 +50,6 @@ enum TourStep: Int, CaseIterable {
         }
     }
 
-    var isPrompt: Bool {
-        anchor == nil && self != .finished
-    }
 }
 
 enum TourAnchor: Hashable {
@@ -67,19 +64,23 @@ enum TourAnchor: Hashable {
 @Observable
 final class Tour {
     private(set) var step: TourStep = .openBrowse
-    private(set) var hasAcknowledgedPrompt = false
+    private(set) var isPromptVisible = true
 
     func complete(_ completed: TourStep) {
         guard completed.rawValue >= step.rawValue,
               let next = TourStep(rawValue: completed.rawValue + 1) else { return }
         withAnimation(Motion.standard) {
             step = next
-            hasAcknowledgedPrompt = false
+            isPromptVisible = true
         }
     }
 
-    func acknowledgePrompt() {
-        withAnimation(Motion.standard) { hasAcknowledgedPrompt = true }
+    func dismissPrompt() {
+        withAnimation(Motion.standard) { isPromptVisible = false }
+    }
+
+    func showPrompt() {
+        withAnimation(Motion.standard) { isPromptVisible = true }
     }
 }
 
