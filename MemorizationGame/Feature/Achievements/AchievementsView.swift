@@ -19,7 +19,7 @@ struct AchievementsView: View {
                         case .group(let group):
                             GroupSection(group: group, memorized: memorized)
                         case .standalone(let achievement):
-                            AchievementRow(achievement: achievement, earned: achievement.isEarned(in: memorized))
+                            AchievementLink(achievement: achievement, earned: achievement.isEarned(in: memorized))
                                 .cardSurface()
                         }
                     }
@@ -59,7 +59,7 @@ private struct GroupSection: View {
                     if index > 0 {
                         HairlineDivider().padding(.leading, Spacing.lg)
                     }
-                    AchievementRow(achievement: achievement, earned: achievement.isEarned(in: memorized))
+                    AchievementLink(achievement: achievement, earned: achievement.isEarned(in: memorized))
                 }
             }
             .cardSurface()
@@ -85,6 +85,28 @@ private struct GroupSection: View {
     }
 }
 
+private struct AchievementLink: View {
+    @Environment(AppStore.self) private var store
+    let achievement: Achievement
+    let earned: Bool
+
+    var body: some View {
+        if let passage = store.passage(forPrayerID: achievement.prayerID) {
+            NavigationLink(value: passage) { row }
+                .buttonStyle(.haptic)
+        } else if let prayer = PrayerLibrary.prayer(id: achievement.prayerID) {
+            NavigationLink(value: ImportRoute.prayer(prayer)) { row }
+                .buttonStyle(.haptic)
+        } else {
+            row
+        }
+    }
+
+    private var row: some View {
+        AchievementRow(achievement: achievement, earned: earned)
+    }
+}
+
 private struct AchievementRow: View {
     let achievement: Achievement
     let earned: Bool
@@ -105,9 +127,14 @@ private struct AchievementRow: View {
             }
 
             Spacer(minLength: 0)
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Theme.faint)
         }
         .padding(Spacing.lg)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
     }
 }
 

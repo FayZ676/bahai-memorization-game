@@ -104,6 +104,10 @@ final class AppStore {
         return !cards.isEmpty && cards.allSatisfy(isComplete)
     }
 
+    func passage(forPrayerID prayerID: Int) -> Passage? {
+        passages.first { $0.sourceID == prayerID }
+    }
+
     var memorizedPrayerIDs: Set<Int> {
         Set(passages.filter(isMemorized).compactMap(\.sourceID))
     }
