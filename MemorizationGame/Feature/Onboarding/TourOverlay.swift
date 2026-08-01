@@ -70,7 +70,7 @@ struct TourOverlay: View {
             primaryButton("Start for real", action: onFinish)
         } else {
             VStack(spacing: Spacing.md) {
-                primaryButton("Got it", action: onDismissPrompt)
+                primaryButton("Try it", action: onDismissPrompt)
                 progressRow
             }
         }
