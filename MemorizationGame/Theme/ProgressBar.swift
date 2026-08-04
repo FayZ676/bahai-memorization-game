@@ -14,7 +14,7 @@ struct ProgressBar: View {
     private static let spacing: CGFloat = 3
 
     var body: some View {
-        HStack(spacing: Spacing.md) {
+        HStack(spacing: Self.spacing) {
             bar
                 .frame(height: barHeight)
 
@@ -23,7 +23,7 @@ struct ProgressBar: View {
                     .appFont(Typography.footnote)
                     .monospacedDigit()
                     .foregroundStyle(Theme.accent)
-                    .frame(width: 34, alignment: .trailing)
+                    .fixedSize()
             }
         }
     }
