@@ -169,11 +169,17 @@ private extension Date {
             [.year, .month, .weekOfYear, .day, .hour, .minute],
             from: self, to: now
         )
-        for (component, suffix) in units {
-            if let value = parts.value(for: component), value > 0 {
-                return "\(value)\(suffix)"
+        guard let leadIndex = units.firstIndex(where: { (parts.value(for: $0.0) ?? 0) > 0 }) else {
+            return "now"
+        }
+        let lead = units[leadIndex]
+        var text = "\(parts.value(for: lead.0) ?? 0)\(lead.1)"
+        if leadIndex + 1 < units.count {
+            let next = units[leadIndex + 1]
+            if let value = parts.value(for: next.0), value > 0 {
+                text += " \(value)\(next.1)"
             }
         }
-        return "now"
+        return text
     }
 }
