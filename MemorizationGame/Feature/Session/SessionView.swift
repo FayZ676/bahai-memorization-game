@@ -7,6 +7,7 @@ struct SessionView: View {
     @State private var started = false
     @State private var showingMicDenied = false
     @State private var scrubbing = false
+    @State private var barWidth: CGFloat = 0
     @State private var recitedWords: Set<Int> = []
     @State private var missedWords: Set<Int> = []
     @State private var missShakes = 0
@@ -185,28 +186,32 @@ struct SessionView: View {
     }
 
     private var heatBar: some View {
-        GeometryReader { geo in
-            let heats = vm.sectionHeats
-            let weights = vm.sectionWeights
-            ProgressBar(heats: heats, weights: weights, animated: false, highlight: vm.step)
-                .frame(height: scrubbing ? 12 : 6)
-                .frame(maxHeight: .infinity)
-                .contentShape(Rectangle())
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { value in
-                        if !scrubbing {
-                            withAnimation(.easeOut(duration: 0.16)) { scrubbing = true }
-                        }
-                        withAnimation(.easeInOut(duration: 0.18)) {
-                            vm.scrub(to: Self.segmentIndex(at: value.location.x, width: geo.size.width, weights: weights))
-                        }
+        let weights = vm.sectionWeights
+        return ProgressBar(
+            heats: vm.sectionHeats,
+            weights: weights,
+            animated: false,
+            highlight: vm.step,
+            completion: vm.hiddenFraction,
+            barHeight: scrubbing ? 12 : 6
+        )
+        .frame(maxHeight: .infinity)
+        .contentShape(Rectangle())
+        .gesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { value in
+                    if !scrubbing {
+                        withAnimation(.easeOut(duration: 0.16)) { scrubbing = true }
                     }
-                    .onEnded { _ in
-                        withAnimation(.easeOut(duration: 0.2)) { scrubbing = false }
+                    withAnimation(.easeInOut(duration: 0.18)) {
+                        vm.scrub(to: Self.segmentIndex(at: value.location.x, width: barWidth, weights: weights))
                     }
-            )
-        }
+                }
+                .onEnded { _ in
+                    withAnimation(.easeOut(duration: 0.2)) { scrubbing = false }
+                }
+        )
+        .onPreferenceChange(ProgressBarWidth.self) { barWidth = $0 }
         .frame(height: 20)
         .animation(.easeOut(duration: 0.14), value: vm.step)
     }

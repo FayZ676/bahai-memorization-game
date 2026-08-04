@@ -38,6 +38,7 @@ struct ProgressBar: View {
                         .frame(width: max(available * fractions[i], 0))
                 }
             }
+            .preference(key: ProgressBarWidth.self, value: geo.size.width)
         }
     }
 
@@ -101,5 +102,13 @@ struct ProgressBar: View {
         let x = min(max(heat, 0), 1)
         let k = 2.5
         return (exp(k * x) - 1) / (exp(k) - 1)
+    }
+}
+
+struct ProgressBarWidth: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
 }

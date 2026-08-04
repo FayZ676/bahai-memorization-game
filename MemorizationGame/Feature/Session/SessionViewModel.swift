@@ -49,6 +49,7 @@ final class SessionViewModel {
     var progressTotal: Int { max(queueLength, 1) }
     var sectionHeats: [Double] { store.sectionHeats(for: passage) }
     var sectionWeights: [Int] { store.sectionWeights(for: passage) }
+    var hiddenFraction: Double { store.hiddenFraction(for: passage) }
     var mergeableGaps: [Bool] { store.mergeableGaps(for: passage) }
 
     var sectionLabel: String {
