@@ -22,7 +22,7 @@ struct ProgressBar: View {
                 Text(Self.percentLabel(completion))
                     .appFont(Typography.footnote)
                     .monospacedDigit()
-                    .foregroundStyle(Theme.muted)
+                    .foregroundStyle(Theme.accent)
                     .frame(width: 34, alignment: .trailing)
             }
         }
