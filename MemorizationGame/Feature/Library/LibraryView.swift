@@ -27,7 +27,7 @@ struct LibraryView: View {
                 }, trailing: {
                     HStack(spacing: Spacing.sm) {
                         NavigationLink(value: LibraryRoute.achievements) {
-                            Image(systemName: "trophy.fill")
+                            Image(systemName: "trophy")
                                 .foregroundStyle(hasAchievements ? Theme.gold : Theme.accent)
                         }
                         .buttonStyle(.icon)
