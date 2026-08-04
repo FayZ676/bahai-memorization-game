@@ -3,11 +3,11 @@ import CoreText
 
 enum AppFont {
     static let files = [
-        "CormorantGaramond-Regular",
-        "CormorantGaramond-Medium",
-        "CormorantGaramond-SemiBold",
-        "CormorantGaramond-Bold",
-        "CormorantGaramond-Italic"
+        "Merriweather-Regular",
+        "Merriweather-Medium",
+        "Merriweather-SemiBold",
+        "Merriweather-Bold",
+        "Merriweather-Italic"
     ]
 
     static func register() {
@@ -19,10 +19,10 @@ enum AppFont {
 
     static func scriptureName(for weight: Font.Weight) -> String {
         switch weight {
-        case .medium: return "CormorantGaramond-Medium"
-        case .semibold: return "CormorantGaramond-SemiBold"
-        case .bold, .heavy, .black: return "CormorantGaramond-Bold"
-        default: return "CormorantGaramond-Regular"
+        case .medium: return "Merriweather-Medium"
+        case .semibold: return "Merriweather-SemiBold"
+        case .bold, .heavy, .black: return "Merriweather-Bold"
+        default: return "Merriweather-Regular"
         }
     }
 }
@@ -65,7 +65,7 @@ enum Typography {
     static let footnote = AppTextToken(12, weight: .regular)
     static let micro    = AppTextToken(11, weight: .regular)
 
-    // Content — Cormorant Garamond.
+    // Content — Merriweather.
     static let heading      = AppTextToken(28, weight: .bold, face: .scripture)
     static let passageTitle = AppTextToken(21, weight: .bold, face: .scripture)
     static let recite       = AppTextToken(24, face: .scripture)
