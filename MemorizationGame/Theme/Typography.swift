@@ -7,7 +7,12 @@ enum AppFont {
         "Merriweather-Medium",
         "Merriweather-SemiBold",
         "Merriweather-Bold",
-        "Merriweather-Italic"
+        "Merriweather-Italic",
+        "CormorantGaramond-Regular",
+        "CormorantGaramond-Medium",
+        "CormorantGaramond-SemiBold",
+        "CormorantGaramond-Bold",
+        "CormorantGaramond-Italic"
     ]
 
     static func register() {
@@ -25,10 +30,20 @@ enum AppFont {
         default: return "Merriweather-Regular"
         }
     }
+
+    static func displayName(for weight: Font.Weight) -> String {
+        switch weight {
+        case .medium: return "CormorantGaramond-Medium"
+        case .semibold: return "CormorantGaramond-SemiBold"
+        case .bold, .heavy, .black: return "CormorantGaramond-Bold"
+        default: return "CormorantGaramond-Regular"
+        }
+    }
 }
 
 enum TextFace {
     case sans
+    case display
     case scripture
 }
 
@@ -48,6 +63,8 @@ struct AppTextToken {
         switch face {
         case .sans:
             return .system(size: scaled, weight: weight)
+        case .display:
+            return .custom(AppFont.displayName(for: weight), size: scaled)
         case .scripture:
             return .custom(AppFont.scriptureName(for: weight), size: scaled)
         }
@@ -65,13 +82,15 @@ enum Typography {
     static let footnote = AppTextToken(12, weight: .regular)
     static let micro    = AppTextToken(11, weight: .regular)
 
-    // Content — Merriweather.
-    static let heading      = AppTextToken(28, weight: .bold, face: .scripture)
-    static let passageTitle = AppTextToken(21, weight: .bold, face: .scripture)
+    // Headings and titles — Cormorant Garamond.
+    static let heading      = AppTextToken(28, weight: .bold, face: .display)
+    static let passageTitle = AppTextToken(21, weight: .bold, face: .display)
+    static let numeral      = AppTextToken(40, weight: .semibold, face: .display)
+
+    // Reading copy — Merriweather.
     static let recite       = AppTextToken(24, face: .scripture)
     static let prayer       = AppTextToken(23, weight: .medium, face: .scripture)
     static let verse        = AppTextToken(19, face: .scripture)
-    static let numeral      = AppTextToken(40, weight: .semibold, face: .scripture)
 }
 
 private struct FontScaleKey: EnvironmentKey {
