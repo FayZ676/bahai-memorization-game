@@ -10,6 +10,8 @@ enum BrowseRoute: Hashable {
     case prayer(Int)
     case pasteOwn
     case importPrayer(Int)
+    case savedWriting(UUID)
+    case importText(title: String, content: String)
 }
 
 extension BrowseRoute {
@@ -42,6 +44,10 @@ extension BrowseRoute {
             }
         case .pasteOwn:
             ImportView()
+        case .savedWriting(let id):
+            SavedWritingDetailView(writingID: id)
+        case .importText(let title, let content):
+            ImportView(initialTitle: title, initialContent: content)
         case .importPrayer(let id):
             if let prayer = PrayerLibrary.prayer(id: id) {
                 ImportView(

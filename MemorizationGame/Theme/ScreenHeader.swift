@@ -21,8 +21,14 @@ struct ScreenHeader: View {
         self.trailing = AnyView(trailing())
     }
 
-    init(title: String, onBack: @escaping () -> Void, onTitleTap: (() -> Void)? = nil, @ViewBuilder trailing: () -> some View) {
-        self.init(title: title, onTitleTap: onTitleTap, leading: { BackChevron(action: onBack) }, trailing: trailing)
+    init(title: String, onBack: @escaping () -> Void, onTitleTap: (() -> Void)? = nil, slotWidth: CGFloat = 38, @ViewBuilder trailing: () -> some View) {
+        self.init(
+            title: title,
+            onTitleTap: onTitleTap,
+            slotWidth: slotWidth,
+            leading: { BackChevron(action: onBack) },
+            trailing: trailing
+        )
     }
 
     init(title: String, onBack: @escaping () -> Void, onTitleTap: (() -> Void)? = nil) {

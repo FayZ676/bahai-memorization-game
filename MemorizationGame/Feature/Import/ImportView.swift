@@ -7,6 +7,7 @@ struct ImportView: View {
 
     @State private var title: String
     @State private var content: String
+    @State private var savedWritingID: UUID?
     private let author: String?
     private let section: String?
     private let sourceID: Int?
@@ -49,30 +50,70 @@ struct ImportView: View {
 
     private var isValid: Bool { !trimmedTitle.isEmpty && !units.isEmpty }
 
+    private var canSaveToWritings: Bool { editing == nil && sourceID == nil }
+
+    private var canSaveNow: Bool { !units.isEmpty }
+
+    private var savedTitle: String {
+        trimmedTitle.isEmpty ? (units.first ?? "") : trimmedTitle
+    }
+
+    private func toggleSavedToWritings() {
+        if let savedWritingID {
+            store.removeSavedWriting(id: savedWritingID)
+            self.savedWritingID = nil
+        } else {
+            savedWritingID = store.saveWriting(title: savedTitle, text: content).id
+        }
+    }
+
+    private func syncSavedWriting() {
+        guard let savedWritingID else { return }
+        store.updateSavedWriting(id: savedWritingID, title: savedTitle, text: content)
+    }
+
     var body: some View {
         Screen {
-            ScreenHeader(title: editing == nil ? "Import" : "Edit", onBack: { dismiss() }) {
-                Button {
-                    if let editing {
-                        store.updatePassage(editing, title: trimmedTitle, units: units)
-                        dismiss()
-                    } else {
-                        store.createPassage(
-                            title: trimmedTitle,
-                            units: units,
-                            author: author,
-                            section: section,
-                            sourceID: sourceID
-                        )
-                        popToLibrary()
+            ScreenHeader(
+                title: editing == nil ? "Import" : "Edit",
+                onBack: { dismiss() },
+                slotWidth: canSaveToWritings ? 76 : 38
+            ) {
+                HStack(spacing: Spacing.sm) {
+                    if canSaveToWritings {
+                        Button {
+                            Feedback.tap()
+                            toggleSavedToWritings()
+                        } label: {
+                            Image(systemName: savedWritingID == nil ? "bookmark" : "bookmark.fill")
+                                .foregroundStyle(canSaveNow ? Theme.accent : Theme.disabled)
+                        }
+                        .buttonStyle(.icon)
+                        .disabled(!canSaveNow)
                     }
-                } label: {
-                    Text(editing == nil ? "Add" : "Save")
-                        .appFont(Typography.body)
-                        .foregroundStyle(isValid ? Theme.accent : Theme.disabled)
+
+                    Button {
+                        if let editing {
+                            store.updatePassage(editing, title: trimmedTitle, units: units)
+                            dismiss()
+                        } else {
+                            store.createPassage(
+                                title: trimmedTitle,
+                                units: units,
+                                author: author,
+                                section: section,
+                                sourceID: sourceID
+                            )
+                            popToLibrary()
+                        }
+                    } label: {
+                        Text(editing == nil ? "Add" : "Save")
+                            .appFont(Typography.body)
+                            .foregroundStyle(isValid ? Theme.accent : Theme.disabled)
+                    }
+                    .buttonStyle(.haptic)
+                    .disabled(!isValid)
                 }
-                .buttonStyle(.haptic)
-                .disabled(!isValid)
             }
         } content: {
             ScrollView {
@@ -115,6 +156,8 @@ struct ImportView: View {
                 .padding(.bottom, 16)
             }
         }
+        .onChange(of: title) { _, _ in syncSavedWriting() }
+        .onChange(of: content) { _, _ in syncSavedWriting() }
     }
 
     private static let placeholder =

@@ -33,7 +33,7 @@ struct LibraryView: View {
                         .buttonStyle(.icon)
 
                         BrowseLink(.browse) {
-                            Image(systemName: "plus")
+                            Image(systemName: "book")
                                 .foregroundStyle(Theme.accent)
                         }
                         .buttonStyle(.icon)
@@ -148,7 +148,7 @@ struct LibraryView: View {
     private var emptyState: some View {
         VStack {
             Spacer()
-            Text("No passages yet.\nBrowse prayers to get started.")
+            Text("No passages yet.\nOpen the writings to get started.")
                 .appFont(Typography.subtitle)
                 .foregroundStyle(Theme.muted)
                 .multilineTextAlignment(.center)
