@@ -22,10 +22,10 @@ struct PrayerBrowseView: View {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 20) {
                         if trimmedQuery.isEmpty {
+                            pasteOwnRow
                             if hasMyWritings {
                                 myWritingsCard
                             }
-                            pasteOwnRow
                             ForEach(PrayerLibrary.collections) { collection in
                                 collectionCard(collection)
                             }
@@ -120,84 +120,49 @@ struct PrayerBrowseView: View {
                 initiallyExpanded: true
             ) {
                 if !store.savedWritings.isEmpty {
-                    savedNode
+                    writingsRow(
+                        title: "Saved",
+                        count: store.savedWritings.count,
+                        route: .savedWritings
+                    )
                 }
                 if !store.recentlyReadPrayers.isEmpty {
-                    recentlyReadNode
+                    writingsRow(
+                        title: "Recently read",
+                        count: store.recentlyReadPrayers.count,
+                        route: .recentlyRead
+                    )
                 }
             }
         }
         .cardSurface(cornerRadius: Radius.group)
     }
 
-    private var savedNode: some View {
-        writingsNode(title: "Saved", count: store.savedWritings.count, initiallyExpanded: true) {
-            ForEach(Array(store.savedWritings.enumerated()), id: \.element.id) { index, writing in
-                BrowseLink(route(for: writing)) {
-                    PassageCard(
-                        title: writing.title,
-                        author: writing.author,
-                        section: writing.section,
-                        detail: "\(writing.wordCount) words"
-                    )
-                }
-                .buttonStyle(.haptic)
-
-                if index < store.savedWritings.count - 1 {
-                    rowDivider
-                }
-            }
-        }
-    }
-
-    private var recentlyReadNode: some View {
-        let prayers = store.recentlyReadPrayers
-        return writingsNode(title: "Recently read", count: prayers.count, initiallyExpanded: false) {
-            ForEach(Array(prayers.enumerated()), id: \.element.id) { index, prayer in
-                BrowseLink(.prayer(prayer)) {
-                    PrayerRow(prayer: prayer, showSection: true)
-                }
-                .buttonStyle(.haptic)
-
-                if index < prayers.count - 1 {
-                    rowDivider
-                }
-            }
-        }
-    }
-
-    private func writingsNode<Content: View>(
-        title: String,
-        count: Int,
-        initiallyExpanded: Bool,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
+    private func writingsRow(title: String, count: Int, route: BrowseRoute) -> some View {
         VStack(spacing: 0) {
             Divider().overlay(Theme.hairline)
-            DisclosureNode(
-                title: title,
-                subtitle: "\(count)",
-                font: Typography.caption,
-                color: Theme.muted,
-                tracking: 0.3,
-                indent: 4,
-                initiallyExpanded: initiallyExpanded,
-                content: content
-            )
+            BrowseLink(route) {
+                HStack(spacing: 10) {
+                    Text(title)
+                        .appFont(Typography.caption)
+                        .foregroundStyle(Theme.muted)
+                        .tracking(0.3)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Text("\(count)")
+                        .appFont(Typography.footnote)
+                        .foregroundStyle(Theme.faint)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(Theme.muted)
+                }
+                .padding(.leading, 20)
+                .padding(.trailing, 16)
+                .padding(.vertical, 14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.haptic)
         }
-    }
-
-    private var rowDivider: some View {
-        Divider()
-            .overlay(Theme.hairline)
-            .padding(.horizontal, 16)
-    }
-
-    private func route(for writing: SavedWriting) -> BrowseRoute {
-        if let prayerID = writing.prayerID {
-            return .prayer(prayerID)
-        }
-        return .savedWriting(writing.id)
     }
 
     private func collectionCard(_ collection: PrayerLibrary.Collection) -> some View {
