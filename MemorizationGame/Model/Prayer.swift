@@ -99,10 +99,25 @@ enum PrayerLibrary {
     }
 
     static func prayer(matchingTitle title: String, author: String?) -> Prayer? {
-        all.first { candidate in
-            candidate.title.compare(title, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
-                && (author == nil || candidate.author == author)
+        let target = matchKey(title)
+        let authorKey = author.map(matchKey)
+        let candidates = all.filter { authorKey == nil || matchKey($0.author) == authorKey }
+
+        if let byTitle = candidates.first(where: { matchKey($0.title) == target }) {
+            return byTitle
         }
+
+        let byTag = candidates.filter { candidate in
+            matchKey(candidate.primaryTag) == target || candidate.tags.contains { matchKey($0) == target }
+        }
+        return byTag.count == 1 ? byTag.first : nil
+    }
+
+    private static func matchKey(_ value: String) -> String {
+        let folded = value.folding(options: [.diacriticInsensitive, .caseInsensitive, .widthInsensitive], locale: nil)
+        return folded
+            .split(whereSeparator: { !$0.isLetter && !$0.isNumber })
+            .joined(separator: " ")
     }
 
     private static let byID: [Int: Prayer] = Dictionary(
