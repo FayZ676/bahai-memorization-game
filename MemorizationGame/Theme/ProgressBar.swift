@@ -3,7 +3,7 @@ import SwiftUI
 /// The progress spine: one flat segment per chunk, each filled with the accent
 /// in proportion to how deeply that chunk is hidden. A single-hue ramp — no
 /// animation, no glow.
-struct HeatStrip: View {
+struct ProgressBar: View {
     let heats: [Double]
     var weights: [Int]? = nil
     var animated = true          // retained for call-site compatibility

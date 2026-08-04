@@ -188,7 +188,7 @@ struct SessionView: View {
         GeometryReader { geo in
             let heats = vm.sectionHeats
             let weights = vm.sectionWeights
-            HeatStrip(heats: heats, weights: weights, animated: false, highlight: vm.step)
+            ProgressBar(heats: heats, weights: weights, animated: false, highlight: vm.step)
                 .frame(height: scrubbing ? 12 : 6)
                 .frame(maxHeight: .infinity)
                 .contentShape(Rectangle())
@@ -212,7 +212,7 @@ struct SessionView: View {
     }
 
     private static func segmentIndex(at x: CGFloat, width: CGFloat, weights: [Int]) -> Int {
-        let fractions = HeatStrip.displayFractions(weights: weights, count: weights.count)
+        let fractions = ProgressBar.displayFractions(weights: weights, count: weights.count)
         var edge: CGFloat = 0
         for (i, fraction) in fractions.enumerated() {
             edge += width * CGFloat(fraction)

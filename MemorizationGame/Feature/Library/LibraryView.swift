@@ -111,7 +111,7 @@ struct LibraryView: View {
                             section: passage.section,
                             detail: passage.dateAdded.elapsedDuration
                         ) {
-                            HeatStrip(
+                            ProgressBar(
                                 heats: store.sectionHeats(for: passage),
                                 weights: store.sectionWeights(for: passage),
                                 completion: store.hiddenFraction(for: passage),
