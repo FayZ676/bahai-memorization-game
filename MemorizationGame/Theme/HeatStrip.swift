@@ -8,10 +8,27 @@ struct HeatStrip: View {
     var weights: [Int]? = nil
     var animated = true          // retained for call-site compatibility
     var highlight: Int? = nil
+    var completion: Double? = nil
+    var barHeight: CGFloat? = nil
 
     private static let spacing: CGFloat = 3
 
     var body: some View {
+        HStack(spacing: Spacing.md) {
+            bar
+                .frame(height: barHeight)
+
+            if let completion {
+                Text(Self.percentLabel(completion))
+                    .appFont(Typography.footnote)
+                    .monospacedDigit()
+                    .foregroundStyle(Theme.muted)
+                    .frame(width: 34, alignment: .trailing)
+            }
+        }
+    }
+
+    private var bar: some View {
         GeometryReader { geo in
             let fractions = normalizedWeights
             let available = geo.size.width - Self.spacing * CGFloat(max(heats.count - 1, 0))
@@ -22,6 +39,17 @@ struct HeatStrip: View {
                 }
             }
         }
+    }
+
+    static func percentLabel(_ fraction: Double) -> String {
+        let clamped = min(max(fraction, 0), 1)
+        let percent: Int
+        switch clamped {
+        case 0: percent = 0
+        case 1: percent = 100
+        default: percent = min(max(Int((clamped * 100).rounded()), 1), 99)
+        }
+        return "\(percent)%"
     }
 
     private static let minShareOfEqual = 0.5

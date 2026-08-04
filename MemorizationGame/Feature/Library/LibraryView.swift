@@ -113,9 +113,10 @@ struct LibraryView: View {
                         ) {
                             HeatStrip(
                                 heats: store.sectionHeats(for: passage),
-                                weights: store.sectionWeights(for: passage)
+                                weights: store.sectionWeights(for: passage),
+                                completion: store.hiddenFraction(for: passage),
+                                barHeight: 6
                             )
-                            .frame(height: 6)
                         }
                     }
                     .buttonStyle(.plain)

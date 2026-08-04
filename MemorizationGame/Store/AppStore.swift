@@ -90,6 +90,14 @@ final class AppStore {
         queue(for: passage).map(\.wordCount)
     }
 
+    func hiddenFraction(for passage: Passage) -> Double {
+        let cards = queue(for: passage)
+        let total = cards.reduce(0) { $0 + $1.wordCount }
+        guard total > 0 else { return 0 }
+        let hidden = cards.reduce(0) { $0 + $1.hiddenWords.count }
+        return Double(hidden) / Double(total)
+    }
+
     var practicedToday: Bool {
         practiceLog.practiced(on: Date())
     }
