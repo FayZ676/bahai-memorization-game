@@ -143,7 +143,7 @@ private struct AchievementRow: View {
                     Image(systemName: earned ? "\(achievement.symbol).fill" : achievement.symbol)
                         .font(.system(size: 15, weight: .light))
                         .symbolRenderingMode(.monochrome)
-                        .foregroundStyle(earned ? Theme.gold : Theme.faint)
+                        .foregroundStyle(earned ? Theme.gold : Theme.accent)
 
                     Text(achievement.title)
                         .appFont(Typography.passageTitle)
@@ -208,7 +208,7 @@ private struct AchievementRing: View {
         } else {
             Text("—")
                 .appFont(Typography.label)
-                .foregroundStyle(Theme.faint)
+                .foregroundStyle(Theme.accent)
         }
     }
 }
