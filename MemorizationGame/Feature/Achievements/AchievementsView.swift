@@ -136,12 +136,19 @@ private struct AchievementRow: View {
 
     var body: some View {
         HStack(spacing: Spacing.lg) {
-            AchievementBadge(symbol: achievement.symbol, earned: earned)
+            AchievementRing(progress: progress, earned: earned)
 
             VStack(alignment: .leading, spacing: Spacing.xxs) {
-                Text(achievement.title)
-                    .appFont(Typography.passageTitle)
-                    .foregroundStyle(earned ? Theme.ink : Theme.muted)
+                HStack(spacing: Spacing.xs) {
+                    Image(systemName: earned ? "\(achievement.symbol).fill" : achievement.symbol)
+                        .font(.system(size: 15, weight: .light))
+                        .symbolRenderingMode(.monochrome)
+                        .foregroundStyle(earned ? Theme.gold : Theme.faint)
+
+                    Text(achievement.title)
+                        .appFont(Typography.passageTitle)
+                        .foregroundStyle(earned ? Theme.ink : Theme.muted)
+                }
 
                 Text(achievement.condition)
                     .appFont(Typography.caption)
@@ -150,14 +157,6 @@ private struct AchievementRow: View {
             }
 
             Spacer(minLength: Spacing.sm)
-
-            if let progress, !earned {
-                Text(ProgressBar.percentLabel(progress))
-                    .appFont(Typography.footnote)
-                    .monospacedDigit()
-                    .foregroundStyle(Theme.accent)
-                    .fixedSize()
-            }
 
             Image(systemName: "chevron.right")
                 .font(.system(size: 13, weight: .semibold))
@@ -169,24 +168,47 @@ private struct AchievementRow: View {
     }
 }
 
-private struct AchievementBadge: View {
-    let symbol: String
+private struct AchievementRing: View {
+    let progress: Double?
     let earned: Bool
-    var size: CGFloat = 56
+    var size: CGFloat = 52
+
+    private var lineWidth: CGFloat { 4 }
 
     var body: some View {
         ZStack {
             Circle()
-                .fill(earned ? Theme.gold.opacity(0.14) : Theme.bg)
-                .overlay(
-                    Circle().stroke(earned ? Theme.gold.opacity(0.55) : Theme.hairline, lineWidth: 1)
-                )
+                .stroke(Theme.ink.opacity(0.1), lineWidth: lineWidth)
 
-            Image(systemName: earned ? "\(symbol).fill" : symbol)
-                .font(.system(size: size * 0.36, weight: .light))
-                .foregroundStyle(earned ? Theme.gold : Theme.faint)
-                .symbolRenderingMode(.monochrome)
+            Circle()
+                .trim(from: 0, to: earned ? 1 : min(max(progress ?? 0, 0), 1))
+                .stroke(
+                    earned ? Theme.gold : Theme.accent,
+                    style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
+                )
+                .rotationEffect(.degrees(-90))
+
+            center
         }
         .frame(width: size, height: size)
+        .animation(Motion.standard, value: progress)
+    }
+
+    @ViewBuilder
+    private var center: some View {
+        if earned {
+            Image(systemName: "checkmark")
+                .font(.system(size: size * 0.32, weight: .semibold))
+                .foregroundStyle(Theme.gold)
+        } else if let progress {
+            Text("\(ProgressBar.percentValue(progress))")
+                .appFont(Typography.label)
+                .monospacedDigit()
+                .foregroundStyle(Theme.accent)
+        } else {
+            Text("—")
+                .appFont(Typography.label)
+                .foregroundStyle(Theme.faint)
+        }
     }
 }

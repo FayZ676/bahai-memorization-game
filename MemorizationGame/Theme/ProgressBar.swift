@@ -43,14 +43,16 @@ struct ProgressBar: View {
     }
 
     static func percentLabel(_ fraction: Double) -> String {
+        "\(percentValue(fraction))%"
+    }
+
+    static func percentValue(_ fraction: Double) -> Int {
         let clamped = min(max(fraction, 0), 1)
-        let percent: Int
         switch clamped {
-        case 0: percent = 0
-        case 1: percent = 100
-        default: percent = min(max(Int((clamped * 100).rounded()), 1), 99)
+        case 0: return 0
+        case 1: return 100
+        default: return min(max(Int((clamped * 100).rounded()), 1), 99)
         }
-        return "\(percent)%"
     }
 
     private static let minShareOfEqual = 0.5
