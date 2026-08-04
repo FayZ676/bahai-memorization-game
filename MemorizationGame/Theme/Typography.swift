@@ -45,6 +45,14 @@ enum TextFace {
     case sans
     case display
     case scripture
+
+    var opticalScale: CGFloat {
+        switch self {
+        case .sans: return 1
+        case .display: return 1.22
+        case .scripture: return 0.93
+        }
+    }
 }
 
 struct AppTextToken {
@@ -59,7 +67,7 @@ struct AppTextToken {
     }
 
     func font(scale: CGFloat) -> Font {
-        let scaled = size * scale
+        let scaled = size * scale * face.opticalScale
         switch face {
         case .sans:
             return .system(size: scaled, weight: weight)
@@ -84,13 +92,13 @@ enum Typography {
 
     // Headings and titles — Cormorant Garamond.
     static let heading      = AppTextToken(28, weight: .bold, face: .display)
-    static let passageTitle = AppTextToken(21, weight: .bold, face: .display)
-    static let numeral      = AppTextToken(40, weight: .semibold, face: .display)
+    static let passageTitle = AppTextToken(19, weight: .bold, face: .display)
 
     // Reading copy — Merriweather.
-    static let recite       = AppTextToken(24, face: .scripture)
-    static let prayer       = AppTextToken(23, weight: .medium, face: .scripture)
-    static let verse        = AppTextToken(19, face: .scripture)
+    static let numeral      = AppTextToken(34, weight: .semibold, face: .scripture)
+    static let recite       = AppTextToken(26, face: .scripture)
+    static let prayer       = AppTextToken(25, weight: .medium, face: .scripture)
+    static let verse        = AppTextToken(20, face: .scripture)
 }
 
 private struct FontScaleKey: EnvironmentKey {
