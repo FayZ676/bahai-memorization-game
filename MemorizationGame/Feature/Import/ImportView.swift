@@ -77,7 +77,7 @@ struct ImportView: View {
             ScreenHeader(
                 title: editing == nil ? "Import" : "Edit",
                 onBack: { dismiss() },
-                slotWidth: canSaveToWritings ? 76 : 38
+                slotWidth: canSaveToWritings ? 84 : 38
             ) {
                 HStack(spacing: Spacing.sm) {
                     if canSaveToWritings {
@@ -107,11 +107,10 @@ struct ImportView: View {
                             popToLibrary()
                         }
                     } label: {
-                        Text(editing == nil ? "Add" : "Save")
-                            .appFont(Typography.body)
+                        Image(systemName: editing == nil ? "plus" : "checkmark")
                             .foregroundStyle(isValid ? Theme.accent : Theme.disabled)
                     }
-                    .buttonStyle(.haptic)
+                    .buttonStyle(.icon)
                     .disabled(!isValid)
                 }
             }
