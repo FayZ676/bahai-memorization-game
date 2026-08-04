@@ -155,8 +155,7 @@ private struct AchievementRow: View {
                     .foregroundStyle(Theme.muted)
                     .fixedSize(horizontal: false, vertical: true)
             }
-
-            Spacer(minLength: Spacing.sm)
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             Image(systemName: "chevron.right")
                 .font(.system(size: 13, weight: .semibold))
