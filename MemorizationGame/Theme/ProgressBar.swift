@@ -14,7 +14,7 @@ struct ProgressBar: View {
     private static let spacing: CGFloat = 3
 
     var body: some View {
-        HStack(spacing: Self.spacing) {
+        HStack(spacing: Self.spacing * 2) {
             bar
                 .frame(height: barHeight)
 
