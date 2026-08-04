@@ -7,7 +7,7 @@ struct PrayerDetailView: View {
 
     var body: some View {
         Screen {
-            ScreenHeader(title: "Preview", onBack: { dismiss() }, slotWidth: 96) {
+            ScreenHeader(title: "Preview", onBack: { dismiss() }, slotWidth: 84) {
                 HStack(spacing: Spacing.sm) {
                     Button {
                         Feedback.tap()
@@ -19,13 +19,10 @@ struct PrayerDetailView: View {
                     .buttonStyle(.icon)
 
                     BrowseLink(.importPrayer(prayer.id)) {
-                        Text("Memorize")
-                            .appFont(Typography.body)
+                        Image(systemName: "text.word.spacing")
                             .foregroundStyle(Theme.accent)
-                            .lineLimit(1)
-                            .fixedSize()
                     }
-                    .buttonStyle(.haptic)
+                    .buttonStyle(.icon)
                 }
             }
         } content: {

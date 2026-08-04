@@ -7,7 +7,7 @@ struct SavedWritingDetailView: View {
 
     var body: some View {
         Screen {
-            ScreenHeader(title: "Saved", onBack: { dismiss() }, slotWidth: 96) {
+            ScreenHeader(title: "Saved", onBack: { dismiss() }, slotWidth: 84) {
                 if let writing {
                     HStack(spacing: Spacing.sm) {
                         Button {
@@ -21,13 +21,10 @@ struct SavedWritingDetailView: View {
                         .buttonStyle(.icon)
 
                         BrowseLink(.importText(title: writing.title, content: writing.text)) {
-                            Text("Memorize")
-                                .appFont(Typography.body)
+                            Image(systemName: "text.word.spacing")
                                 .foregroundStyle(Theme.accent)
-                                .lineLimit(1)
-                                .fixedSize()
                         }
-                        .buttonStyle(.haptic)
+                        .buttonStyle(.icon)
                     }
                 }
             }
