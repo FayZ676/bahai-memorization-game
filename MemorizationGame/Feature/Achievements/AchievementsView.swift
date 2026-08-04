@@ -112,22 +112,27 @@ private struct AchievementLink: View {
 
     var body: some View {
         if let passage = store.passage(forPrayerID: achievement.prayerID) {
-            NavigationLink(value: passage) { row }
-                .buttonStyle(.haptic)
+            NavigationLink(value: passage) {
+                AchievementRow(
+                    achievement: achievement,
+                    earned: earned,
+                    progress: store.hiddenFraction(for: passage)
+                )
+            }
+            .buttonStyle(.haptic)
         } else {
-            BrowseLink(.prayer(achievement.prayerID)) { row }
-                .buttonStyle(.haptic)
+            BrowseLink(.prayer(achievement.prayerID)) {
+                AchievementRow(achievement: achievement, earned: earned, progress: nil)
+            }
+            .buttonStyle(.haptic)
         }
-    }
-
-    private var row: some View {
-        AchievementRow(achievement: achievement, earned: earned)
     }
 }
 
 private struct AchievementRow: View {
     let achievement: Achievement
     let earned: Bool
+    let progress: Double?
 
     var body: some View {
         HStack(spacing: Spacing.lg) {
@@ -144,7 +149,15 @@ private struct AchievementRow: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            Spacer(minLength: 0)
+            Spacer(minLength: Spacing.sm)
+
+            if let progress, !earned {
+                Text(ProgressBar.percentLabel(progress))
+                    .appFont(Typography.footnote)
+                    .monospacedDigit()
+                    .foregroundStyle(Theme.accent)
+                    .fixedSize()
+            }
 
             Image(systemName: "chevron.right")
                 .font(.system(size: 13, weight: .semibold))
