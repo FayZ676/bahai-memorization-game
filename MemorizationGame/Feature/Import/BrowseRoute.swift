@@ -8,6 +8,7 @@ enum BrowseRoute: Hashable {
     case section(String)
     case category(section: String, name: String)
     case prayer(Int)
+    case prayerExcerpt(id: Int, start: Int, end: Int)
     case pasteOwn
     case importPrayer(Int)
     case savedWriting(UUID)
@@ -41,6 +42,12 @@ extension BrowseRoute {
         case .prayer(let id):
             if let prayer = PrayerLibrary.prayer(id: id) {
                 PrayerDetailView(prayer: prayer)
+            } else {
+                PrayerBrowseView()
+            }
+        case .prayerExcerpt(let id, let start, let end):
+            if let prayer = PrayerLibrary.prayer(id: id) {
+                PrayerDetailView(prayer: prayer, highlight: start..<end)
             } else {
                 PrayerBrowseView()
             }

@@ -10,20 +10,33 @@ struct Prayer: Decodable, Identifiable, Hashable {
     let collection: String
     let section: String
     let source: String?
+    let title: String
+    let wordCount: Int
 
-    var firstLine: String {
+    private enum CodingKeys: String, CodingKey {
+        case id, author, heading, text, tags, primaryTag, collection, section, source
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        author = try container.decode(String.self, forKey: .author)
+        heading = try container.decode(String.self, forKey: .heading)
+        text = try container.decode(String.self, forKey: .text)
+        tags = try container.decode([String].self, forKey: .tags)
+        primaryTag = try container.decode(String.self, forKey: .primaryTag)
+        collection = try container.decode(String.self, forKey: .collection)
+        section = try container.decode(String.self, forKey: .section)
+        source = try container.decodeIfPresent(String.self, forKey: .source)
+        title = heading.isEmpty ? Prayer.firstLine(of: text) : heading
+        wordCount = text.split(whereSeparator: { $0 == " " || $0 == "\n" }).count
+    }
+
+    private static func firstLine(of text: String) -> String {
         text
             .split(separator: "\n", omittingEmptySubsequences: true)
             .first
             .map { $0.trimmingCharacters(in: .whitespaces) } ?? ""
-    }
-
-    var title: String {
-        heading.isEmpty ? firstLine : heading
-    }
-
-    var wordCount: Int {
-        text.split(whereSeparator: { $0 == " " || $0 == "\n" }).count
     }
 }
 

@@ -4,6 +4,7 @@ struct PrayerDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppStore.self) private var store
     let prayer: Prayer
+    var highlight: Range<Int>? = nil
 
     var body: some View {
         Screen {
@@ -30,7 +31,8 @@ struct PrayerDetailView: View {
                 heading: prayer.heading,
                 author: prayer.author,
                 attribution: prayer.source ?? prayer.primaryTag,
-                text: prayer.text
+                text: prayer.text,
+                highlight: highlight
             )
         }
         .completesTourStep(.pickPrayer)

@@ -99,6 +99,7 @@ enum Typography {
     static let recite       = AppTextToken(26, face: .scripture)
     static let prayer       = AppTextToken(25, weight: .medium, face: .scripture)
     static let verse        = AppTextToken(20, face: .scripture)
+    static let excerpt      = AppTextToken(15, face: .scripture)
 }
 
 private struct FontScaleKey: EnvironmentKey {

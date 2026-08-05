@@ -6,7 +6,7 @@ struct PrayerBrowseView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppStore.self) private var store
     @State private var query = ""
-    @State private var searchResults: [Prayer] = []
+    @State private var searchResults: [SearchHit] = []
     @State private var isSearching = false
     @State private var searchTask: Task<Void, Never>?
 
@@ -64,7 +64,7 @@ struct PrayerBrowseView: View {
             }
             isSearching = true
             searchTask = Task {
-                try? await Task.sleep(for: .milliseconds(250))
+                try? await Task.sleep(for: .milliseconds(120))
                 if Task.isCancelled { return }
                 let results = await FuzzySearch.rank(query: pending)
                 if Task.isCancelled || pending != trimmedQuery { return }
@@ -74,7 +74,7 @@ struct PrayerBrowseView: View {
         }
         .task {
             await Task.detached(priority: .userInitiated) {
-                _ = PrayerLibrary.all
+                FuzzySearch.prewarm()
             }.value
         }
     }
@@ -230,10 +230,10 @@ struct PrayerBrowseView: View {
     }
 
     private var searchRows: some View {
-        LazyVStack(alignment: .leading, spacing: 0) {
-            ForEach(Array(searchResults.enumerated()), id: \.element.id) { index, prayer in
-                BrowseLink(.prayer(prayer)) {
-                    PrayerRow(prayer: prayer, showSection: true)
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(Array(searchResults.enumerated()), id: \.element.id) { index, hit in
+                BrowseLink(route(for: hit)) {
+                    SearchHitRow(hit: hit)
                 }
                 .buttonStyle(.haptic)
 
@@ -245,6 +245,15 @@ struct PrayerBrowseView: View {
             }
         }
         .cardSurface(cornerRadius: Radius.group)
+    }
+
+    private func route(for hit: SearchHit) -> BrowseRoute {
+        guard let excerpt = hit.excerpt else { return .prayer(hit.prayer) }
+        return .prayerExcerpt(
+            id: hit.prayer.id,
+            start: excerpt.rangeInText.lowerBound,
+            end: excerpt.rangeInText.upperBound
+        )
     }
 
     private var loadingRow: some View {
