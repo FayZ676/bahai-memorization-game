@@ -2,18 +2,25 @@ import SwiftUI
 
 struct OptionSection<Content: View>: View {
     var label: String? = nil
+    var icon: String? = nil
     var footer: String? = nil
     @ViewBuilder let content: Content
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if let label {
-                Text(label)
-                    .appFont(Typography.footnote)
-                    .tracking(0.3)
-                    .foregroundStyle(Theme.faint)
-                    .padding(.horizontal, 6)
-                    .padding(.bottom, 8)
+                HStack(spacing: 6) {
+                    if let icon {
+                        Image(systemName: icon)
+                            .font(.system(size: 11, weight: .semibold))
+                    }
+                    Text(label)
+                        .appFont(Typography.footnote)
+                        .tracking(0.3)
+                }
+                .foregroundStyle(Theme.faint)
+                .padding(.horizontal, 6)
+                .padding(.bottom, 8)
             }
 
             VStack(alignment: .leading, spacing: 0) {

@@ -14,16 +14,17 @@ struct SettingsView: View {
         } content: {
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
-                    OptionSection(label: "Appearance") {
+                    OptionSection(label: "Appearance", icon: "circle.lefthalf.filled") {
                         themePicker
                     }
 
-                    OptionSection(label: "Text Size") {
+                    OptionSection(label: "Text Size", icon: "textformat.size") {
                         fontSizePicker
                     }
 
                     OptionSection(
                         label: "Reminders",
+                        icon: "bell",
                         footer: permissionDenied
                             ? "Notifications are turned off for this app. Enable them in the Settings app to get reminders."
                             : nil
@@ -104,7 +105,7 @@ struct SettingsView: View {
                     }
 
                     if tour == nil {
-                        OptionSection(label: "Help") {
+                        OptionSection(label: "Help", icon: "questionmark.circle") {
                             Button {
                                 replayOnboarding = true
                             } label: {
