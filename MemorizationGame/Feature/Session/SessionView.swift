@@ -427,11 +427,18 @@ struct SessionView: View {
     private var optionsMenu: some View {
         Menu {
             Button("Edit", systemImage: "pencil") { showingEdit = true }
-            Button(vm.isPeeking ? "Unpeek" : "Peek", systemImage: "eyeglasses") { vm.togglePeek() }
-            Button("Hide All Words", systemImage: "eye.slash") {
-                vm.setAllWords(hidden: true)
+            Section("Just for Now") {
+                Button(
+                    vm.isPeeking ? "Stop Peeking" : "Peek at Hidden Words",
+                    systemImage: "eyeglasses"
+                ) { vm.togglePeek() }
             }
-            Button("Show All Words", systemImage: "eye") { vm.setAllWords(hidden: false) }
+            Section("Change What's Hidden") {
+                Button("Hide Every Word", systemImage: "eye.slash") {
+                    vm.setAllWords(hidden: true)
+                }
+                Button("Show Every Word", systemImage: "eye") { vm.setAllWords(hidden: false) }
+            }
         } label: {
             Image(systemName: "ellipsis")
                 .font(.system(size: 15, weight: .semibold))
