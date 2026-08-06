@@ -142,24 +142,7 @@ struct PrayerBrowseView: View {
         VStack(spacing: 0) {
             Divider().overlay(Theme.hairline)
             BrowseLink(route) {
-                HStack(spacing: 10) {
-                    Text(title)
-                        .appFont(Typography.caption)
-                        .foregroundStyle(Theme.muted)
-                        .tracking(0.3)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    Text("\(count)")
-                        .appFont(Typography.footnote)
-                        .foregroundStyle(Theme.faint)
-                    Image(systemName: "chevron.right")
-                        .appIcon(12, weight: .semibold)
-                        .foregroundStyle(Theme.muted)
-                }
-                .padding(.leading, 20)
-                .padding(.trailing, 16)
-                .padding(.vertical, 14)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .contentShape(Rectangle())
+                SectionLinkRow(title: title, count: count)
             }
             .buttonStyle(.haptic)
         }
@@ -181,7 +164,23 @@ struct PrayerBrowseView: View {
         .cardSurface(cornerRadius: Radius.group)
     }
 
+    @ViewBuilder
     private func sectionNode(_ section: PrayerLibrary.Section) -> some View {
+        if let onlyCategory = section.categories.count == 1 ? section.categories[0] : nil {
+            VStack(spacing: 0) {
+                Divider().overlay(Theme.hairline)
+                BrowseLink(.category(onlyCategory, in: section)) {
+                    SectionLinkRow(title: section.name, count: section.prayerCount)
+                }
+                .buttonStyle(.haptic)
+            }
+            .id(section.name)
+        } else {
+            expandableSectionNode(section)
+        }
+    }
+
+    private func expandableSectionNode(_ section: PrayerLibrary.Section) -> some View {
         VStack(spacing: 0) {
             Divider().overlay(Theme.hairline)
             DisclosureNode(
@@ -269,6 +268,32 @@ struct PrayerBrowseView: View {
             .foregroundStyle(Theme.muted)
             .frame(maxWidth: .infinity)
             .padding(.top, 40)
+    }
+}
+
+private struct SectionLinkRow: View {
+    let title: String
+    let count: Int
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Text(title)
+                .appFont(Typography.caption)
+                .foregroundStyle(Theme.muted)
+                .tracking(0.3)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Text("\(count)")
+                .appFont(Typography.footnote)
+                .foregroundStyle(Theme.faint)
+            Image(systemName: "chevron.right")
+                .appIcon(12, weight: .semibold)
+                .foregroundStyle(Theme.muted)
+        }
+        .padding(.leading, 20)
+        .padding(.trailing, 16)
+        .padding(.vertical, 14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
     }
 }
 
