@@ -122,14 +122,16 @@ struct ImportView: View {
                         .padding(12)
                         .cardSurface(cornerRadius: Radius.control)
 
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Each line becomes one card.")
-                            .appFont(Typography.label)
-                            .foregroundStyle(Theme.ink)
+                    InfoNote(Typography.label) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Each line becomes one card.")
+                                .appFont(Typography.label)
+                                .foregroundStyle(Theme.ink)
 
-                        Text("Paste your text with one verse per line.")
-                            .appFont(Typography.caption)
-                            .foregroundStyle(Theme.muted)
+                            Text("Paste your text with one verse per line.")
+                                .appFont(Typography.caption)
+                                .foregroundStyle(Theme.muted)
+                        }
                     }
 
                     ZStack(alignment: .topLeading) {

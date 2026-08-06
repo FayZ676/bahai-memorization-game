@@ -90,9 +90,11 @@ struct SettingsView: View {
                                     Text("Streak alerts")
                                         .appFont(Typography.body)
                                         .foregroundStyle(Theme.ink)
-                                    Text("A nudge in the evening when your streak is about to end.")
-                                        .appFont(Typography.label)
-                                        .foregroundStyle(Theme.muted)
+                                    InfoNote(Typography.label) {
+                                        Text("A nudge in the evening when your streak is about to end.")
+                                            .appFont(Typography.label)
+                                            .foregroundStyle(Theme.muted)
+                                    }
                                 }
                             }
                             .tint(Theme.accent)

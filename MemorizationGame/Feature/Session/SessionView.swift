@@ -235,10 +235,12 @@ struct SessionView: View {
                     if let card = vm.current {
                         scripture(for: card)
                     }
-                    Text("Tap and glide over words to show or hide them")
-                        .appFont(Typography.micro)
-                        .foregroundStyle(Theme.faint)
-                        .padding(.top, 20)
+                    InfoNote(Typography.micro, color: Theme.faint) {
+                        Text("Tap and glide over words to show or hide them")
+                            .appFont(Typography.micro)
+                            .foregroundStyle(Theme.faint)
+                    }
+                    .padding(.top, 20)
                     Spacer(minLength: 0)
                 }
                 .frame(maxWidth: .infinity, minHeight: geo.size.height - 44, alignment: .topLeading)
