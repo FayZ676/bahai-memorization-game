@@ -20,9 +20,11 @@ enum SearchText {
 
 private struct SearchDocument {
     let title: String
-    let tags: String
+    let labels: String
     let body: String
     let terms: Set<String>
+    let pairs: Set<String>
+    let fragments: Set<String>
 }
 
 enum FuzzySearch {
@@ -45,15 +47,18 @@ enum FuzzySearch {
 
     private static let documents: [SearchDocument] = PrayerLibrary.all.map { prayer in
         let title = SearchText.normalized(String(prayer.title.prefix(titleLimit)))
-        let tags = SearchText.normalized(prayer.tags.joined(separator: " "))
+        let labels = SearchText.normalized(
+            ([prayer.collection, prayer.section, prayer.author] + prayer.tags).joined(separator: " ")
+        )
         let body = SearchText.normalized(prayer.text)
+        let words = (title + " " + labels + " " + body).split(separator: " ").map(String.init)
         return SearchDocument(
             title: title,
-            tags: tags,
+            labels: labels,
             body: body,
-            terms: Set(title.split(separator: " ").map(String.init))
-                .union(tags.split(separator: " ").map(String.init))
-                .union(body.split(separator: " ").map(String.init))
+            terms: Set(words),
+            pairs: Set(zip(words, words.dropFirst()).map { $0 + " " + $1 }),
+            fragments: fragments(of: title + " " + labels, length: fragmentLength)
         )
     }
 
@@ -61,40 +66,59 @@ enum FuzzySearch {
         $0.formUnion($1.terms)
     }
 
-    private static let vocabulary: [String] = Array(knownTerms)
+    private static let termsBySpellingKey: [String: [String]] = {
+        var index: [String: [String]] = [:]
+        for term in knownTerms {
+            for key in fragments(of: term, length: spellingKeyLength) {
+                index[key, default: []].append(term)
+            }
+        }
+        return index
+    }()
 
     static func prewarm() {
-        _ = vocabulary
+        _ = termsBySpellingKey
     }
 
     nonisolated static func rank(query: String) async -> [SearchHit] {
-        let terms = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        let queryTokens = SearchText.tokens(terms)
+        let queryTokens = SearchText.tokens(query.trimmingCharacters(in: .whitespacesAndNewlines))
         guard !queryTokens.isEmpty else { return [] }
 
         let spellings = queryTokens.map(variants(of:))
-        let spelledOut = spellings.allSatisfy { !$0.isEmpty }
-
-        let corrected = spellings.compactMap(\.first?.term).joined(separator: " ")
+        let corrected = zip(queryTokens, spellings)
+            .map { token, options in options.first?.term ?? token }
+            .joined(separator: " ")
+        let queryCarriesMeaning = queryTokens.contains(where: WordIndex.carriesMeaning)
+        let weights = queryTokens.map { WordIndex.carriesMeaning($0) ? 1.0 : connectiveWeight }
         let normalized = String(queryTokens.joined(separator: " ").prefix(patternLimit))
+        let queryFragments = fragments(of: normalized, length: fragmentLength)
         let pattern = fuse.createPattern(from: normalized)
 
         var scored: [(index: Int, score: Double, matchedBody: Bool)] = []
         for (index, document) in documents.enumerated() {
             if index.isMultiple(of: cancellationStride), Task.isCancelled { return [] }
 
-            let closeness = termCloseness(of: spellings, in: document)
-            if spelledOut && closeness == nil { continue }
+            let found = matches(of: spellings, in: document)
+            let coverage = coverage(of: found, weights: weights)
+            let anchors = found.compactMap { $0 }
+                .filter { !queryCarriesMeaning || WordIndex.carriesMeaning($0.term) }
+            guard !anchors.isEmpty || !document.fragments.isDisjoint(with: queryFragments) else { continue }
 
             let title = relevance(of: pattern, in: document.title)
-            let tags = relevance(of: pattern, in: document.tags)
-            let body = (closeness ?? 0) * prominence(of: spellings, in: document.body)
+            let labels = relevance(of: pattern, in: document.labels)
+            let placement = anchors.isEmpty ? nil : placement(of: anchors, in: document.body)
+            let body = coverage * (placement?.prominence ?? 0)
+            let phrase = adjacency(of: spellings, in: document)
 
-            var score = title * titleWeight + tags * tagWeight + body * bodyWeight
+            var score = title * titleWeight
+                + labels * labelWeight
+                + body * bodyWeight
+                + phrase * phraseWeight
             if contains(normalized, in: document.title) { score += exactTitleBonus }
-            if contains(normalized, in: document.tags) { score += exactTagBonus }
+            if contains(normalized, in: document.labels) { score += exactLabelBonus }
+            score *= pow(max(coverage, faintCoverage), coverageExponent)
             guard score > 0 else { continue }
-            scored.append((index, score, body > 0))
+            scored.append((index, score, placement?.inBody == true))
         }
 
         let top = scored
@@ -115,9 +139,16 @@ enum FuzzySearch {
         let similarity: Double
     }
 
+    private struct Placement {
+        let prominence: Double
+        let inBody: Bool
+    }
+
     private static func variants(of token: String) -> [Spelling] {
         if knownTerms.contains(token) {
-            return [Spelling(term: token, similarity: 1)] + neighbours(of: token, excluding: token)
+            let exact = Spelling(term: token, similarity: 1)
+            guard WordIndex.carriesMeaning(token) else { return [exact] }
+            return [exact] + neighbours(of: token, excluding: token)
         }
         let swaps = transpositions(of: token)
             .filter(knownTerms.contains)
@@ -139,8 +170,14 @@ enum FuzzySearch {
         guard token.count >= shortestFuzzyTerm, let pattern = wordFuse.createPattern(from: token) else {
             return []
         }
+
+        var candidates: Set<String> = []
+        for key in fragments(of: token, length: spellingKeyLength) {
+            candidates.formUnion(termsBySpellingKey[key] ?? [])
+        }
+
         var found: [Spelling] = []
-        for term in vocabulary where term != exact && plausibleLength(term, for: token) {
+        for term in candidates where term != exact && plausibleLength(term, for: token) {
             guard let result = wordFuse.search(pattern, in: term) else { continue }
             found.append(Spelling(term: term, similarity: 1 - result.score))
         }
@@ -154,28 +191,62 @@ enum FuzzySearch {
         term.count + maxMissingCharacters >= token.count && term.count <= token.count + maxExtraCharacters
     }
 
-    private static func termCloseness(of spellings: [[Spelling]], in document: SearchDocument) -> Double? {
-        var total = 0.0
-        for options in spellings {
-            guard let best = options.first(where: { document.terms.contains($0.term) }) else {
-                return nil
+    private static func fragments(of value: String, length: Int) -> Set<String> {
+        var found: Set<String> = []
+        for word in value.split(separator: " ") {
+            let letters = Array(word)
+            guard letters.count > length else {
+                found.insert(String(letters))
+                continue
             }
-            total += best.similarity
+            for start in 0...(letters.count - length) {
+                found.insert(String(letters[start..<(start + length)]))
+            }
         }
-        return total / Double(spellings.count)
+        return found
     }
 
-    private static func prominence(of spellings: [[Spelling]], in body: String) -> Double {
-        guard !body.isEmpty else { return 0 }
-        var earliest = Int.max
-        for options in spellings {
-            guard let match = options.lazy.compactMap({ body.range(of: $0.term, options: .literal) }).first
-            else { continue }
-            earliest = min(earliest, body.utf8.distance(from: body.utf8.startIndex, to: match.lowerBound))
+    private static func matches(of spellings: [[Spelling]], in document: SearchDocument) -> [Spelling?] {
+        spellings.map { options in options.first { document.terms.contains($0.term) } }
+    }
+
+    private static func coverage(of found: [Spelling?], weights: [Double]) -> Double {
+        var total = 0.0
+        var possible = 0.0
+        for (match, weight) in zip(found, weights) {
+            possible += weight
+            total += (match?.similarity ?? 0) * weight
         }
-        guard earliest != Int.max else { return 1 - depthPenalty }
+        guard possible > 0 else { return 0 }
+        return total / possible
+    }
+
+    private static func adjacency(of spellings: [[Spelling]], in document: SearchDocument) -> Double {
+        guard spellings.count > 1 else { return 0 }
+        var joined = 0
+        for offset in 0..<(spellings.count - 1) {
+            let leading = spellings[offset].prefix(pairVariantLimit)
+            let trailing = spellings[offset + 1].prefix(pairVariantLimit)
+            let linked = leading.contains { first in
+                trailing.contains { document.pairs.contains(first.term + " " + $0.term) }
+            }
+            if linked { joined += 1 }
+        }
+        return Double(joined) / Double(spellings.count - 1)
+    }
+
+    private static func placement(of anchors: [Spelling], in body: String) -> Placement? {
+        guard !body.isEmpty else { return nil }
+        var earliest = Int.max
+        var meaningful = false
+        for match in anchors {
+            guard let range = body.range(of: match.term, options: .literal) else { continue }
+            if WordIndex.carriesMeaning(match.term) { meaningful = true }
+            earliest = min(earliest, body.utf8.distance(from: body.utf8.startIndex, to: range.lowerBound))
+        }
+        guard earliest != Int.max else { return Placement(prominence: 1 - depthPenalty, inBody: false) }
         let depth = min(1, Double(earliest) / Double(prominenceSpan))
-        return 1 - depth * depthPenalty
+        return Placement(prominence: 1 - depth * depthPenalty, inBody: meaningful)
     }
 
     private static func contains(_ query: String, in value: String) -> Bool {
@@ -188,15 +259,22 @@ enum FuzzySearch {
     }
 
     private static let titleWeight = 1.0
-    private static let tagWeight = 0.6
-    private static let exactTitleBonus = 0.5
-    private static let exactTagBonus = 0.5
+    private static let labelWeight = 0.6
     private static let bodyWeight = 0.35
+    private static let phraseWeight = 0.5
+    private static let exactTitleBonus = 0.5
+    private static let exactLabelBonus = 0.5
+    private static let connectiveWeight = 0.35
+    private static let coverageExponent = 1.5
+    private static let faintCoverage = 0.08
+    private static let fragmentLength = 3
+    private static let spellingKeyLength = 2
     private static let phraseThreshold = 0.45
     private static let termThreshold = 0.3
     private static let transposedSimilarity = 0.9
     private static let shortestFuzzyTerm = 3
     private static let variantLimit = 6
+    private static let pairVariantLimit = 3
     private static let maxMissingCharacters = 2
     private static let maxExtraCharacters = 10
     private static let titleLimit = 120
