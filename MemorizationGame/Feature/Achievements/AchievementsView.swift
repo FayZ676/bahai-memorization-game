@@ -74,7 +74,7 @@ private struct EntryCard: View {
         HStack(spacing: Spacing.sm) {
             if case .group(let group) = entry {
                 Image(systemName: group.symbol)
-                    .font(.system(size: 13))
+                    .appIcon(13)
                     .foregroundStyle(Theme.faint)
                 Text(group.title)
                     .appFont(Typography.label)
@@ -97,7 +97,7 @@ private struct EntryCard: View {
             }
 
             Image(systemName: "chevron.right")
-                .font(.system(size: 11, weight: .semibold))
+                .appIcon(11, weight: .semibold)
                 .foregroundStyle(Theme.faint)
         }
         .padding(.horizontal, Spacing.xs)
@@ -141,7 +141,7 @@ private struct AchievementRow: View {
             VStack(alignment: .leading, spacing: Spacing.xxs) {
                 HStack(spacing: Spacing.xs) {
                     Image(systemName: earned ? "\(achievement.symbol).fill" : achievement.symbol)
-                        .font(.system(size: 15, weight: .light))
+                        .appIcon(15, weight: .light)
                         .symbolRenderingMode(.monochrome)
                         .foregroundStyle(earned ? Theme.gold : Theme.accent)
 
@@ -158,7 +158,7 @@ private struct AchievementRow: View {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             Image(systemName: "chevron.right")
-                .font(.system(size: 13, weight: .semibold))
+                .appIcon(13, weight: .semibold)
                 .foregroundStyle(Theme.faint)
         }
         .padding(Spacing.lg)

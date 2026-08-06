@@ -12,7 +12,7 @@ struct OptionSection<Content: View>: View {
                 HStack(spacing: 6) {
                     if let icon {
                         Image(systemName: icon)
-                            .font(.system(size: 11, weight: .semibold))
+                            .appIcon(11, weight: .semibold)
                     }
                     Text(label)
                         .appFont(Typography.footnote)

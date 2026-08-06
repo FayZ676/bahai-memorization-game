@@ -152,7 +152,7 @@ struct PrayerBrowseView: View {
                         .appFont(Typography.footnote)
                         .foregroundStyle(Theme.faint)
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .semibold))
+                        .appIcon(12, weight: .semibold)
                         .foregroundStyle(Theme.muted)
                 }
                 .padding(.leading, 20)
@@ -287,7 +287,7 @@ private struct CategoryRow: View {
                 .appFont(Typography.footnote)
                 .foregroundStyle(Theme.faint)
             Image(systemName: "chevron.right")
-                .font(.system(size: 13, weight: .semibold))
+                .appIcon(13, weight: .semibold)
                 .foregroundStyle(Theme.muted)
         }
         .padding(.leading, 32)

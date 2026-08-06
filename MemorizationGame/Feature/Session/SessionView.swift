@@ -540,7 +540,7 @@ private struct AchievementToast: View {
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: "\(achievement.symbol).fill")
-                .font(.system(size: 16, weight: .semibold))
+                .appIcon(16, weight: .semibold)
                 .foregroundStyle(Theme.gold)
             VStack(alignment: .leading, spacing: 2) {
                 Text("Achievement earned")
@@ -565,7 +565,7 @@ private struct DailyGoalToast: View {
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: "sparkles")
-                .font(.system(size: 16, weight: .semibold))
+                .appIcon(16, weight: .semibold)
                 .foregroundStyle(Theme.gold)
             VStack(alignment: .leading, spacing: 2) {
                 Text("Daily goal complete")

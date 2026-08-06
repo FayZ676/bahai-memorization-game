@@ -123,8 +123,22 @@ private struct AppFontModifier: ViewModifier {
     }
 }
 
+private struct AppIconModifier: ViewModifier {
+    @Environment(\.fontScale) private var scale
+    let size: CGFloat
+    let weight: Font.Weight
+
+    func body(content: Content) -> some View {
+        content.font(.system(size: size * scale, weight: weight))
+    }
+}
+
 extension View {
     func appFont(_ token: AppTextToken) -> some View {
         modifier(AppFontModifier(token: token))
+    }
+
+    func appIcon(_ size: CGFloat, weight: Font.Weight = .regular) -> some View {
+        modifier(AppIconModifier(size: size, weight: weight))
     }
 }

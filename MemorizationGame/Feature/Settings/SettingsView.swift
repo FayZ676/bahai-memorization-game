@@ -41,7 +41,7 @@ struct SettingsView: View {
                                     .appFont(Typography.body)
                                     .foregroundStyle(Theme.muted)
                                 Image(systemName: "chevron.down")
-                                    .font(.system(size: 13, weight: .semibold))
+                                    .appIcon(13, weight: .semibold)
                                     .foregroundStyle(Theme.faint)
                                     .rotationEffect(.degrees(remindersExpanded ? 180 : 0))
                             }
@@ -72,7 +72,7 @@ struct SettingsView: View {
                                 Button(action: addReminder) {
                                     HStack(spacing: 6) {
                                         Image(systemName: "plus")
-                                            .font(.system(size: 13, weight: .semibold))
+                                            .appIcon(13, weight: .semibold)
                                         Text("Add reminder")
                                             .appFont(Typography.body)
                                     }
@@ -115,7 +115,7 @@ struct SettingsView: View {
                                         .foregroundStyle(Theme.ink)
                                     Spacer()
                                     Image(systemName: "chevron.right")
-                                        .font(.system(size: 13, weight: .semibold))
+                                        .appIcon(13, weight: .semibold)
                                         .foregroundStyle(Theme.faint)
                                 }
                                 .padding(.vertical, 12)
@@ -230,7 +230,7 @@ struct SettingsView: View {
                         removeReminder(reminder.id)
                     } label: {
                         Image(systemName: "trash")
-                            .font(.system(size: 15))
+                            .appIcon(15)
                             .foregroundStyle(Theme.muted)
                             .padding(.leading, 12)
                             .contentShape(Rectangle())
