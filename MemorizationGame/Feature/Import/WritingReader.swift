@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct WritingReader: View {
+    @Environment(\.fontScale) private var fontScale
     let heading: String
     var author: String? = nil
     var attribution: String? = nil
@@ -75,16 +76,28 @@ struct WritingReader: View {
     }
 
     private func blockText(_ block: TextBlock) -> Text {
-        guard let highlight, let local = block.localRange(of: highlight) else {
-            return Text(block.text)
-        }
         var attributed = AttributedString(block.text)
+        applyHighlight(to: &attributed, in: block)
+        if block.id == blocks.first?.id {
+            applyInitial(to: &attributed)
+        }
+        return Text(attributed)
+    }
+
+    private func applyHighlight(to attributed: inout AttributedString, in block: TextBlock) {
+        guard let highlight, let local = block.localRange(of: highlight) else { return }
         let characters = attributed.characters
-        guard local.upperBound <= characters.count else { return Text(block.text) }
+        guard local.upperBound <= characters.count else { return }
         let start = characters.index(characters.startIndex, offsetBy: local.lowerBound)
         let end = characters.index(start, offsetBy: local.count)
         attributed[start..<end].backgroundColor = Theme.accent.opacity(0.22)
-        return Text(attributed)
+    }
+
+    private func applyInitial(to attributed: inout AttributedString) {
+        let characters = attributed.characters
+        guard let index = characters.prefix(initialSearchLimit).firstIndex(where: \.isLetter) else { return }
+        let next = characters.index(after: index)
+        attributed[index..<next].font = Typography.verseInitial.font(scale: fontScale)
     }
 
     private var highlightedBlock: Int? {
@@ -95,6 +108,7 @@ struct WritingReader: View {
     private var hasAttribution: Bool { author != nil || attribution != nil }
 
     private let lineGap: CGFloat = 4
+    private let initialSearchLimit = 3
 }
 
 struct TextBlock: Identifiable {
