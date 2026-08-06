@@ -111,28 +111,6 @@ enum PrayerLibrary {
         section(named: sectionName)?.categories.first { $0.name == name }
     }
 
-    static func prayer(matchingTitle title: String, author: String?) -> Prayer? {
-        let target = matchKey(title)
-        let authorKey = author.map(matchKey)
-        let candidates = all.filter { authorKey == nil || matchKey($0.author) == authorKey }
-
-        if let byTitle = candidates.first(where: { matchKey($0.title) == target }) {
-            return byTitle
-        }
-
-        let byTag = candidates.filter { candidate in
-            matchKey(candidate.primaryTag) == target || candidate.tags.contains { matchKey($0) == target }
-        }
-        return byTag.count == 1 ? byTag.first : nil
-    }
-
-    private static func matchKey(_ value: String) -> String {
-        let folded = value.folding(options: [.diacriticInsensitive, .caseInsensitive, .widthInsensitive], locale: nil)
-        return folded
-            .split(whereSeparator: { !$0.isLetter && !$0.isNumber })
-            .joined(separator: " ")
-    }
-
     private static let byID: [Int: Prayer] = Dictionary(
         all.map { ($0.id, $0) },
         uniquingKeysWith: { first, _ in first }

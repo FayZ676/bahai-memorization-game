@@ -25,7 +25,6 @@ final class AppStore {
     }
 
     private let storeURL: URL?
-    private var linkedLegacyPassages: Bool
 
     init(filename: String = "store.json") {
         let url = AppStore.documentsDirectory.appendingPathComponent(filename)
@@ -35,11 +34,10 @@ final class AppStore {
            let snapshot = try? JSONDecoder().decode(Snapshot.self, from: data) {
             self.passages = snapshot.passages
             self.reviewables = snapshot.reviewables
-            self.practiceLog = snapshot.practiceLog ?? PracticeLog()
+            self.practiceLog = snapshot.practiceLog
             self.settings = snapshot.settings
-            self.savedWritings = snapshot.savedWritings ?? []
-            self.recentPrayerIDs = snapshot.recentPrayerIDs ?? []
-            self.linkedLegacyPassages = snapshot.linkedLegacyPassages ?? false
+            self.savedWritings = snapshot.savedWritings
+            self.recentPrayerIDs = snapshot.recentPrayerIDs
         } else {
             self.passages = []
             self.reviewables = []
@@ -47,13 +45,6 @@ final class AppStore {
             self.settings = .default
             self.savedWritings = []
             self.recentPrayerIDs = []
-            self.linkedLegacyPassages = true
-        }
-
-        if !linkedLegacyPassages {
-            linkPassagesToLibrary()
-            linkedLegacyPassages = true
-            persist()
         }
     }
 
@@ -65,7 +56,6 @@ final class AppStore {
         self.settings = settings
         self.savedWritings = []
         self.recentPrayerIDs = []
-        self.linkedLegacyPassages = true
     }
 
     static func sandbox(inheriting settings: AppSettings) -> AppStore {
@@ -193,16 +183,6 @@ final class AppStore {
     var earnedAchievementCount: Int {
         let memorized = memorizedPrayerIDs
         return AchievementCatalog.all.count { $0.isEarned(in: memorized) }
-    }
-
-    private func linkPassagesToLibrary() {
-        for index in passages.indices where passages[index].sourceID == nil {
-            guard let match = PrayerLibrary.prayer(
-                matchingTitle: passages[index].title,
-                author: passages[index].author
-            ) else { continue }
-            passages[index].sourceID = match.id
-        }
     }
 
     func merge(_ card: Reviewable, with next: Reviewable) {
@@ -341,11 +321,10 @@ final class AppStore {
     private struct Snapshot: Codable {
         var passages: [Passage]
         var reviewables: [Reviewable]
-        var practiceLog: PracticeLog?
+        var practiceLog: PracticeLog
         var settings: AppSettings
-        var savedWritings: [SavedWriting]?
-        var recentPrayerIDs: [Int]?
-        var linkedLegacyPassages: Bool?
+        var savedWritings: [SavedWriting]
+        var recentPrayerIDs: [Int]
     }
 
     private func persist() {
@@ -356,8 +335,7 @@ final class AppStore {
             practiceLog: practiceLog,
             settings: settings,
             savedWritings: savedWritings,
-            recentPrayerIDs: recentPrayerIDs,
-            linkedLegacyPassages: linkedLegacyPassages
+            recentPrayerIDs: recentPrayerIDs
         )
         guard let data = try? JSONEncoder().encode(snapshot) else { return }
         try? data.write(to: storeURL, options: .atomic)

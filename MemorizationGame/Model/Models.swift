@@ -77,32 +77,6 @@ struct Reviewable: Codable, Identifiable, Hashable {
         hiddenWords = hidden ? Set(0..<wordCount) : []
     }
 
-    private enum CodingKeys: String, CodingKey {
-        case id, passageRef, span, expectedText, hiddenWords, hiddenWordCount
-    }
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        id = try container.decode(UUID.self, forKey: .id)
-        passageRef = try container.decode(UUID.self, forKey: .passageRef)
-        span = try container.decode(Span.self, forKey: .span)
-        expectedText = try container.decode(String.self, forKey: .expectedText)
-        if let words = try container.decodeIfPresent(Set<Int>.self, forKey: .hiddenWords) {
-            hiddenWords = words
-        } else {
-            let legacyPrefix = try container.decodeIfPresent(Int.self, forKey: .hiddenWordCount) ?? 0
-            hiddenWords = Set(0..<legacyPrefix)
-        }
-    }
-
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(id, forKey: .id)
-        try container.encode(passageRef, forKey: .passageRef)
-        try container.encode(span, forKey: .span)
-        try container.encode(expectedText, forKey: .expectedText)
-        try container.encode(hiddenWords, forKey: .hiddenWords)
-    }
 }
 
 struct Passage: Codable, Identifiable, Hashable {
@@ -127,19 +101,5 @@ struct Passage: Codable, Identifiable, Hashable {
         self.author = author
         self.section = section
         self.sourceID = sourceID
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case id, title, dateAdded, author, section, sourceID
-    }
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        id = try container.decode(UUID.self, forKey: .id)
-        title = try container.decode(String.self, forKey: .title)
-        dateAdded = try container.decodeIfPresent(Date.self, forKey: .dateAdded) ?? Date()
-        author = try container.decodeIfPresent(String.self, forKey: .author)
-        section = try container.decodeIfPresent(String.self, forKey: .section)
-        sourceID = try container.decodeIfPresent(Int.self, forKey: .sourceID)
     }
 }

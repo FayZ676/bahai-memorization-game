@@ -66,21 +66,21 @@ enum AchievementCatalog {
                         title: "Short",
                         condition: "Memorize the Short Obligatory Prayer.",
                         symbol: "sun.max",
-                        prayerID: 391
+                        prayerID: 2736273951
                     ),
                     Achievement(
                         id: "obligatory-medium",
                         title: "Medium",
                         condition: "Memorize the Medium Obligatory Prayer.",
                         symbol: "sun.horizon",
-                        prayerID: 392
+                        prayerID: 1302853761
                     ),
                     Achievement(
                         id: "obligatory-long",
                         title: "Long",
                         condition: "Memorize the Long Obligatory Prayer.",
                         symbol: "moon.stars",
-                        prayerID: 393
+                        prayerID: 3611881516
                     )
                 ]
             )
@@ -91,7 +91,7 @@ enum AchievementCatalog {
                 title: "Tablet of Ahmad",
                 condition: "Memorize the Tablet of Ahmad, all 652 words.",
                 symbol: "bird",
-                prayerID: 386
+                prayerID: 537423151
             )
         )
     ]
