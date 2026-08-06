@@ -426,12 +426,12 @@ struct SessionView: View {
 
     private var optionsMenu: some View {
         Menu {
-            Button("Edit") { showingEdit = true }
-            Button(vm.isPeeking ? "Unpeek" : "Peek") { vm.togglePeek() }
-            Button("Hide All Words") {
+            Button("Edit", systemImage: "pencil") { showingEdit = true }
+            Button(vm.isPeeking ? "Unpeek" : "Peek", systemImage: "eyeglasses") { vm.togglePeek() }
+            Button("Hide All Words", systemImage: "eye.slash") {
                 vm.setAllWords(hidden: true)
             }
-            Button("Show All Words") { vm.setAllWords(hidden: false) }
+            Button("Show All Words", systemImage: "eye") { vm.setAllWords(hidden: false) }
         } label: {
             Image(systemName: "ellipsis")
                 .font(.system(size: 15, weight: .semibold))
