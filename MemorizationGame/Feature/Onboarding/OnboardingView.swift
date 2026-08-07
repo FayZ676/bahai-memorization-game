@@ -26,7 +26,7 @@ struct OnboardingView: View {
                 )
             }
             .onChange(of: sandbox.passages.count) { _, count in
-                if count > 0 { tour.complete(.addPrayer) }
+                if count > 0 { tour.complete(.importPrayer) }
             }
             .onChange(of: hiddenWordCount) { _, count in
                 if count > 0 { tour.complete(.hideWord) }

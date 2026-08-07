@@ -159,6 +159,7 @@ struct ImportView: View {
         }
         .onChange(of: title) { _, _ in syncSavedWriting() }
         .onChange(of: content) { _, _ in syncSavedWriting() }
+        .completesTourStep(.addPrayer)
     }
 
     private static let placeholder =
