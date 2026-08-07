@@ -128,16 +128,10 @@ struct ImportView: View {
                             .cardSurface(cornerRadius: Radius.control)
                     }
 
-                    InfoNote(Typography.label) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Split up the text as you need.")
-                                .appFont(Typography.label)
-                                .foregroundStyle(Theme.ink)
-
-                            Text("Every line of text becomes one chunk for memorization.")
-                                .appFont(Typography.caption)
-                                .foregroundStyle(Theme.muted)
-                        }
+                    InfoNote(Typography.caption) {
+                        Text("Every line of text becomes one chunk for memorization.")
+                            .appFont(Typography.caption)
+                            .foregroundStyle(Theme.muted)
                     }
 
                     ZStack(alignment: .topLeading) {

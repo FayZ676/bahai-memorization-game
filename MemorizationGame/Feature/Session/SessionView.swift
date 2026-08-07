@@ -131,6 +131,7 @@ struct SessionView: View {
     private func registerRecited(_ indices: [Int]) {
         recitedWords.formUnion(indices)
         Feedback.wordMatched()
+        tour?.complete(.recite)
     }
 
     private func completeChunk() {
@@ -146,6 +147,7 @@ struct SessionView: View {
         if movedOn { missedWords.insert(index) }
         missFlashIndex = index
         Feedback.recitationMiss()
+        tour?.complete(.recite)
         Task {
             try? await Task.sleep(for: .milliseconds(600))
             withAnimation(.easeOut(duration: 0.3)) {
@@ -389,7 +391,6 @@ struct SessionView: View {
 
     private var micButton: some View {
         Button {
-            tour?.complete(.recite)
             switch voice.state {
             case .listening:
                 voice.stop()
