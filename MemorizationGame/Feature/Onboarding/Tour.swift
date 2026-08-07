@@ -22,7 +22,7 @@ enum TourStep: Int, CaseIterable {
         case .hideWord: "Hiding words"
         case .recite: "Reciting out loud"
         case .merge: "Join what you know"
-        case .finished: "That was the real thing"
+        case .finished: "That's it"
         }
     }
 
@@ -36,7 +36,7 @@ enum TourStep: Int, CaseIterable {
         case .hideWord: "Tap a word to hide it, and tap again to bring it back. Press and glide over words to hide or reveal multiple words at once."
         case .recite: "Tap the mic button at the bottom of the screen and say the hidden word out loud."
         case .merge: "The section is yours. Merge it with the next one and recite longer and longer stretches."
-        case .finished: "Every screen you just used was the real app. Nothing here was saved — your library is empty and waiting for the prayer you actually want."
+        case .finished: "You're ready to start memorizing for real. Nothing here was saved — your library is empty and waiting for the prayer you actually want."
         }
     }
 
