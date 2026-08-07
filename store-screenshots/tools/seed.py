@@ -3,13 +3,15 @@ import json, uuid, sys, datetime, subprocess, os, random
 REPO = "/Users/faizififita/workspace/memorization-game"
 DEV = os.environ.get("SIM_UDID", "1E8D6700-3D51-4887-9A14-92E48D59B4B7")
 BUNDLE = "com.faizififita.MemorizationGame"
+HERO_GROUP = int(os.environ.get("HERO_GROUP", "2"))
 
 entries = json.load(open(f"{REPO}/MemorizationGame/Resources/library.json"))["entries"]
 
 
 def find(sub, sec=None):
     for e in entries:
-        if sub.lower() in e["text"].lower() and (sec is None or e.get("section") == sec):
+        haystack = e["text"] + "\n" + (e.get("heading") or "")
+        if sub.lower() in haystack.lower() and (sec is None or e.get("section") == sec):
             return e
     raise SystemExit("not found: " + sub)
 
@@ -60,14 +62,14 @@ def ramp(n, hi=1.0, lo=0.0, solid=0):
 
 # (needle, section, lines-per-chunk, per-chunk fill fractions)
 PICKS = [
-    # session hero: 4 meaty chunks, lands on the 55%-hidden one
-    ("O Lord so rich in bounty", None,               4, [1.0, 1.0, 0.55, 0.0]),
+    # session hero: lands on the 40%-hidden chunk; HERO_GROUP=4 fills the wider iPad page
+    ("I have turned in repentance unto Thee", None,  HERO_GROUP, [1.0, 0.4, 0.0, 0.0]),
     # library hero: 9 short chunks, a clean descending ramp
-    ("Blessed is the spot", None,                    1, ramp(9, hi=0.95, lo=0.0, solid=3)),
-    ("O my God!  This is Thy servant", None,         2, ramp(4, hi=0.85, lo=0.0, solid=1)),
-    ("I bear witness, O my God", "Obligatory Prayers", 1, [1.0]),
+    ("Prayer for the Dead", "General Prayers",       1, ramp(9, hi=0.95, lo=0.0, solid=3)),
+    ("I bear witness, O my God", "Obligatory Prayers", 1, [1.0, 1.0]),
+    ("Blessed is the spot", None,                    1, [1.0]),
     ("Is there any Remover", None,                   1, [1.0]),
-    ("My first counsel is this", "The Hidden Words", 1, [0.45]),
+    ("My first counsel is this", "From the Arabic",  1, [0.45]),
 ]
 
 passages, reviewables = [], []
@@ -84,6 +86,7 @@ for n, (needle, sec, group, fills) in enumerate(PICKS):
         "dateAdded": (added - REF).total_seconds(),
         "author": e.get("author"),
         "section": e.get("section"),
+        "sourceID": e["id"],
     })
     units = units_of(e, group)
     for i, unit in enumerate(units):
@@ -120,16 +123,46 @@ earlier = {15: 12, 16: 19, 18: 9, 19: 22, 21: 15, 22: 8, 24: 17}
 for back, w in earlier.items():
     words_by_day[(today - datetime.timedelta(days=back)).strftime("%Y-%m-%d")] = w
 
+SAVED = [
+    ("Blessed is the spot", None),
+    ("Thy heart is My home", None),
+    ("Tablet of A", "Special Tablets"),
+]
+
+saved_writings = []
+for n, (needle, sec) in enumerate(SAVED):
+    e = find(needle, sec)
+    saved_writings.append({
+        "id": str(uuid.uuid4()).upper(),
+        "prayerID": e["id"],
+        "title": title_of(e),
+        "text": e["text"],
+        "author": e.get("author"),
+        "section": e.get("section"),
+        "savedAt": ((now - datetime.timedelta(days=n * 2 + 1)) - REF).total_seconds(),
+    })
+
+recent_prayer_ids = [find(needle, sec)["id"] for needle, sec in [
+    ("Is there any Remover", None),
+    ("I have turned in repentance unto Thee", None),
+    ("Prayer for the Dead", "General Prayers"),
+    ("Blessed is the spot", None),
+]]
+
 snapshot = {
     "passages": passages,
     "reviewables": reviewables,
     "practiceLog": {"wordsByDay": words_by_day},
+    "savedWritings": saved_writings,
+    "recentPrayerIDs": recent_prayer_ids,
     "settings": {
         "reminderEnabled": False,
         "reminders": [{"id": str(uuid.uuid4()).upper(), "minuteOfDay": 540,
                        "message": "A few minutes with your passages keeps them fresh."}],
+        "streakReminderEnabled": True,
         "appTheme": sys.argv[1] if len(sys.argv) > 1 else "light",
         "fontSize": "medium",
+        "hasSeenWelcomeTour": True,
     },
 }
 
