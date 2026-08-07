@@ -29,7 +29,7 @@ enum TourStep: Int, CaseIterable {
     var body: String {
         switch self {
         case .openBrowse: "Tap the Book icon to browse Prayers and Writings."
-        case .pickPrayer: "Under Prayers, tap Opening Words, then tap the first prayer in the list."
+        case .pickPrayer: "Under 'Prayers' tap 'Opening Words' and choose the first prayer in the list."
         case .addPrayer: "Tap the memorization button at the top right to import the prayer for memorization."
         case .importPrayer: "Tap the plus at the top right to add it to your library. Each line becomes a section you practise on its own."
         case .openPassage: "Tap it to begin. The bar underneath fills in as more of it lives in memory."
