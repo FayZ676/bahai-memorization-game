@@ -117,18 +117,24 @@ struct ImportView: View {
         } content: {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    TextField("Title", text: $title)
-                        .textInputAutocapitalization(.words)
-                        .padding(12)
-                        .cardSurface(cornerRadius: Radius.control)
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
+                        Text("Title")
+                            .appFont(Typography.label)
+                            .foregroundStyle(Theme.muted)
+
+                        TextField("Title", text: $title)
+                            .textInputAutocapitalization(.words)
+                            .padding(12)
+                            .cardSurface(cornerRadius: Radius.control)
+                    }
 
                     InfoNote(Typography.label) {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Each line becomes one card.")
+                            Text("Split up the text as you need.")
                                 .appFont(Typography.label)
                                 .foregroundStyle(Theme.ink)
 
-                            Text("Paste your text with one verse per line.")
+                            Text("Every line of text becomes one chunk for memorization.")
                                 .appFont(Typography.caption)
                                 .foregroundStyle(Theme.muted)
                         }
