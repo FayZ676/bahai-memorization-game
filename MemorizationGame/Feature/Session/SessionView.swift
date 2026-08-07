@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SessionView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.tour) private var tour
     @State private var vm: SessionViewModel
     @State private var voice = VoiceRecitationController()
     @State private var started = false
@@ -388,6 +389,7 @@ struct SessionView: View {
 
     private var micButton: some View {
         Button {
+            tour?.complete(.recite)
             switch voice.state {
             case .listening:
                 voice.stop()
