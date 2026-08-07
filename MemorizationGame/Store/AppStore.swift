@@ -48,24 +48,6 @@ final class AppStore {
         }
     }
 
-    private init(inheriting settings: AppSettings) {
-        self.storeURL = nil
-        self.passages = []
-        self.reviewables = []
-        self.practiceLog = PracticeLog()
-        self.settings = settings
-        self.savedWritings = []
-        self.recentPrayerIDs = []
-    }
-
-    static func sandbox(inheriting settings: AppSettings) -> AppStore {
-        var seeded = settings
-        seeded.hasCompletedOnboarding = true
-        seeded.reminderEnabled = false
-        seeded.streakReminderEnabled = false
-        return AppStore(inheriting: seeded)
-    }
-
     func cards(for passage: Passage) -> [Reviewable] {
         reviewables.filter { $0.passageRef == passage.id }
     }

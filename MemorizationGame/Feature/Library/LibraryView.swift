@@ -60,8 +60,8 @@ struct LibraryView: View {
             .browseDestinations()
         }
         .environment(\.popToLibrary) { path = NavigationPath() }
-        .fullScreenCover(isPresented: showOnboarding) {
-            OnboardingView(settings: store.settings) { store.settings.hasCompletedOnboarding = true }
+        .guidedTour(isActive: !store.settings.hasCompletedOnboarding) {
+            store.settings.hasCompletedOnboarding = true
         }
         .confirmationDialog(
             "Delete this passage?",
@@ -80,15 +80,6 @@ struct LibraryView: View {
     }
 
     private var hasAchievements: Bool { store.earnedAchievementCount > 0 }
-
-    private var showOnboarding: Binding<Bool> {
-        Binding(
-            get: { !store.settings.hasCompletedOnboarding },
-            set: { presented in
-                if !presented { store.settings.hasCompletedOnboarding = true }
-            }
-        )
-    }
 
     private var list: some View {
         List {

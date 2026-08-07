@@ -6,7 +6,6 @@ struct SettingsView: View {
     @Environment(\.tour) private var tour
     @State private var permissionDenied = false
     @State private var remindersExpanded = false
-    @State private var replayOnboarding = false
 
     var body: some View {
         Screen {
@@ -107,7 +106,8 @@ struct SettingsView: View {
                     if tour == nil {
                         OptionSection(label: "Help", icon: "questionmark.circle") {
                             Button {
-                                replayOnboarding = true
+                                store.settings.hasCompletedOnboarding = false
+                                dismiss()
                             } label: {
                                 HStack(spacing: 8) {
                                     Text("Show welcome tour")
@@ -129,9 +129,6 @@ struct SettingsView: View {
                 .padding(.horizontal, 18)
                 .padding(.bottom, 24)
             }
-        }
-        .fullScreenCover(isPresented: $replayOnboarding) {
-            OnboardingView(settings: store.settings) { replayOnboarding = false }
         }
     }
 
