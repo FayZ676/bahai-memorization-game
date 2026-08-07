@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct TourOverlay: View {
+    @Environment(\.fontScale) private var fontScale
     let step: TourStep
     let isPromptVisible: Bool
     let onSkip: () -> Void
@@ -35,7 +36,7 @@ struct TourOverlay: View {
                 .appFont(Typography.passageTitle)
                 .foregroundStyle(Theme.inkBright)
 
-            step.body
+            step.body(scale: fontScale)
                 .appFont(Typography.callout)
                 .foregroundStyle(Theme.muted)
                 .lineSpacing(3)
