@@ -31,9 +31,6 @@ struct OnboardingView: View {
             .onChange(of: hiddenWordCount) { _, count in
                 if count > 0 { tour.complete(.hideWord) }
             }
-            .onChange(of: hasCompletedSection) { _, complete in
-                if complete { tour.complete(.hideSection) }
-            }
             .onChange(of: sandbox.reviewables.count) { old, new in
                 if new < old { tour.complete(.merge) }
             }
@@ -44,10 +41,6 @@ struct OnboardingView: View {
 
     private var hiddenWordCount: Int {
         sandbox.reviewables.reduce(0) { $0 + $1.hiddenWords.count }
-    }
-
-    private var hasCompletedSection: Bool {
-        sandbox.reviewables.contains { sandbox.isComplete($0) }
     }
 
     private func finish() {
