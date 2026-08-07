@@ -36,7 +36,7 @@ enum TourStep: Int, CaseIterable {
         let symbol = { Self.symbol($0, scale: scale) }
         return switch self {
         case .openBrowse: Text("Tap the \(symbol("book")) button to browse Prayers and Writings.")
-        case .pickPrayer: Text("Under **Prayers** > **Opening Words** choose the first prayer in the list.")
+        case .pickPrayer: Text("Choose the first prayer under **Prayers** > **Opening Words**.")
         case .addPrayer:
             Text("Tap the \(symbol("bookmark")) button to save the prayer for later, or tap the \(symbol("text.word.spacing")) button to memorize the prayer. Try tapping the \(symbol("text.word.spacing")) button.")
         case .importPrayer: Text("Tap the \(symbol("plus")) button at the top right to add it to your library. Each line becomes a section you practise on its own.")
