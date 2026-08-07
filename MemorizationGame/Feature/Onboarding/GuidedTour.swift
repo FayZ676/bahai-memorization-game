@@ -47,12 +47,6 @@ private struct GuidedTourModifier: ViewModifier {
             .onChange(of: hiddenWordCount) { _, count in
                 if isActive, count > 0 { tour.complete(.hideWord) }
             }
-            .onChange(of: store.reviewables.count) { old, new in
-                if isActive, new < old { tour.complete(.merge) }
-            }
-            .onChange(of: tour.step) { _, step in
-                if isActive, step == .merge, store.reviewables.count < 2 { tour.complete(.merge) }
-            }
     }
 
     private var hiddenWordCount: Int {

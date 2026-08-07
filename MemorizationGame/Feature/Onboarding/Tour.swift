@@ -9,7 +9,6 @@ enum TourStep: Int, CaseIterable {
     case openPassage
     case hideWord
     case recite
-    case merge
     case finished
 
     var title: String {
@@ -21,7 +20,6 @@ enum TourStep: Int, CaseIterable {
         case .openPassage: "Open your passage"
         case .hideWord: "Hiding Words"
         case .recite: "Reciting Words"
-        case .merge: "Join what you know"
         case .finished: "That's it"
         }
     }
@@ -43,7 +41,6 @@ enum TourStep: Int, CaseIterable {
         case .openPassage: Text("Tap the prayer to start memorizing it.")
         case .hideWord: Text("Tap a word to hide it. Tap it again to bring it back. Press and glide over words to hide or reveal multiple words at once.")
         case .recite: Text("Tap the \(symbol("mic")) button to practice saying hidden words aloud.")
-        case .merge: Text("The section is yours. Merge it with the next one and recite longer and longer stretches.")
         case .finished: Text("You're ready to start memorizing.")
         }
     }
