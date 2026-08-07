@@ -48,20 +48,32 @@ final class Tour {
     private(set) var step: TourStep = .openBrowse
     private(set) var isPromptVisible = true
 
+    private var pendingPrompt: Task<Void, Never>?
+
+    private static let promptDelay = Duration.seconds(2)
+
     func complete(_ completed: TourStep) {
         guard completed.rawValue >= step.rawValue,
               let next = TourStep(rawValue: completed.rawValue + 1) else { return }
+        pendingPrompt?.cancel()
         withAnimation(Motion.standard) {
             step = next
-            isPromptVisible = true
+            isPromptVisible = false
+        }
+        pendingPrompt = Task {
+            try? await Task.sleep(for: Self.promptDelay)
+            guard !Task.isCancelled else { return }
+            showPrompt()
         }
     }
 
     func dismissPrompt() {
+        pendingPrompt?.cancel()
         withAnimation(Motion.standard) { isPromptVisible = false }
     }
 
     func showPrompt() {
+        pendingPrompt?.cancel()
         withAnimation(Motion.standard) { isPromptVisible = true }
     }
 }

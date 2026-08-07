@@ -8,7 +8,7 @@ struct TourOverlay: View {
     let onShowPrompt: () -> Void
     let onFinish: () -> Void
 
-    private var isPrompting: Bool { isPromptVisible || step == .finished }
+    private var isPrompting: Bool { isPromptVisible }
 
     var body: some View {
         ZStack {
