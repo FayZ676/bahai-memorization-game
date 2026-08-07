@@ -37,6 +37,11 @@ struct WritingReader: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .id(block.id)
                     }
+
+                    if let author {
+                        Colophon(author: author)
+                            .padding(.top, 16 - lineGap)
+                    }
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 16)
@@ -57,20 +62,10 @@ struct WritingReader: View {
                     .appFont(Typography.heading)
                     .foregroundStyle(Theme.ink)
             }
-            if hasAttribution {
-                HStack(spacing: 6) {
-                    if let author {
-                        Text(author).italic()
-                    }
-                    if author != nil && attribution != nil {
-                        Text("·")
-                    }
-                    if let attribution {
-                        Text(attribution)
-                    }
-                }
-                .appFont(Typography.footnote)
-                .foregroundStyle(Theme.faint)
+            if let attribution {
+                Text(attribution)
+                    .appFont(Typography.footnote)
+                    .foregroundStyle(Theme.faint)
             }
         }
     }
@@ -104,8 +99,6 @@ struct WritingReader: View {
         guard let highlight else { return nil }
         return blocks.first { $0.localRange(of: highlight) != nil }?.id
     }
-
-    private var hasAttribution: Bool { author != nil || attribution != nil }
 
     private let lineGap: CGFloat = 4
     private let initialSearchLimit = 3

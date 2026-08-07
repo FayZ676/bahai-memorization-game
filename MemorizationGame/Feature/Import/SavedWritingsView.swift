@@ -19,7 +19,7 @@ struct SavedWritingsView: View {
                                     PassageCard(
                                         title: writing.title,
                                         author: writing.author,
-                                        section: writing.section,
+                                        section: writing.sourceLabel,
                                         detail: "\(writing.wordCount) words"
                                     )
                                 }

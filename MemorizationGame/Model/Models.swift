@@ -102,4 +102,10 @@ struct Passage: Codable, Identifiable, Hashable {
         self.section = section
         self.sourceID = sourceID
     }
+
+    var sourcePath: String? {
+        if let sourceID, let prayer = PrayerLibrary.prayer(id: sourceID) { return prayer.path }
+        guard let section, !section.lowercased().hasPrefix("http") else { return nil }
+        return section
+    }
 }

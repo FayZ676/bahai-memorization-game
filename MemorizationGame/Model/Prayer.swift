@@ -32,6 +32,15 @@ struct Prayer: Decodable, Identifiable, Hashable {
         wordCount = text.split(whereSeparator: { $0 == " " || $0 == "\n" }).count
     }
 
+    var path: String {
+        [collection, section, primaryTag]
+            .filter { !$0.isEmpty }
+            .reduce(into: [String]()) { components, part in
+                if components.last != part { components.append(part) }
+            }
+            .joined(separator: " / ")
+    }
+
     private static func firstLine(of text: String) -> String {
         text
             .split(separator: "\n", omittingEmptySubsequences: true)

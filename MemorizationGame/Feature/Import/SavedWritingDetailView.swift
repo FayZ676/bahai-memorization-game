@@ -33,7 +33,7 @@ struct SavedWritingDetailView: View {
                 WritingReader(
                     heading: writing.title,
                     author: writing.author,
-                    attribution: writing.section,
+                    attribution: writing.sourcePath,
                     text: writing.text
                 )
             } else {

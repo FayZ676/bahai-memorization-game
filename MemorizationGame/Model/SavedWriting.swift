@@ -33,11 +33,21 @@ struct SavedWriting: Codable, Hashable, Identifiable {
             title: prayer.title,
             text: prayer.text,
             author: prayer.author,
-            section: prayer.source ?? prayer.section
+            section: prayer.section
         )
     }
 
     var isFromLibrary: Bool { prayerID != nil }
+
+    var sourcePath: String? {
+        if let prayerID, let prayer = PrayerLibrary.prayer(id: prayerID) { return prayer.path }
+        guard let section, !section.lowercased().hasPrefix("http") else { return nil }
+        return section
+    }
+
+    var sourceLabel: String? {
+        sourcePath?.components(separatedBy: " / ").last
+    }
 
     var wordCount: Int {
         text.split(whereSeparator: { $0 == " " || $0 == "\n" }).count

@@ -15,21 +15,10 @@ struct PassageTextView: View {
         } content: {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    if passage.author != nil || passage.section != nil {
-                        HStack(spacing: 6) {
-                            if let author = passage.author {
-                                Text(author)
-                                    .italic()
-                            }
-                            if passage.author != nil, passage.section != nil {
-                                Text("·")
-                            }
-                            if let section = passage.section {
-                                Text(section)
-                            }
-                        }
-                        .appFont(Typography.footnote)
-                        .foregroundStyle(Theme.faint)
+                    if let path = passage.sourcePath {
+                        Text(path)
+                            .appFont(Typography.footnote)
+                            .foregroundStyle(Theme.faint)
                     }
 
                     Text(fullText)
@@ -37,6 +26,10 @@ struct PassageTextView: View {
                         .foregroundStyle(Theme.ink)
                         .lineSpacing(4)
                         .frame(maxWidth: .infinity, alignment: .leading)
+
+                    if let author = passage.author {
+                        Colophon(author: author)
+                    }
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 16)

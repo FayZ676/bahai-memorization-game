@@ -30,7 +30,7 @@ struct PrayerDetailView: View {
             WritingReader(
                 heading: prayer.heading,
                 author: prayer.author,
-                attribution: prayer.source ?? prayer.primaryTag,
+                attribution: prayer.path,
                 text: prayer.text,
                 highlight: highlight
             )
