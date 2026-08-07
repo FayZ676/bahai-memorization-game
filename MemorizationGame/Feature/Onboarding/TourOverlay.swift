@@ -81,7 +81,7 @@ struct TourOverlay: View {
             dots
             Spacer(minLength: Spacing.md)
             Button(action: onSkip) {
-                Text("Skip")
+                Text("Skip Walkthrough")
                     .appFont(Typography.label)
                     .tracking(0.5)
                     .foregroundStyle(Theme.muted)
