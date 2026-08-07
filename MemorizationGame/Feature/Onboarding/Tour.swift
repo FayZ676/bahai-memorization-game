@@ -15,7 +15,7 @@ enum TourStep: Int, CaseIterable {
         switch self {
         case .openBrowse: "Start with a prayer"
         case .pickPrayer: "Choose a prayer"
-        case .addPrayer: "Add it to your library"
+        case .addPrayer: "Click the Memorize Button"
         case .openPassage: "Open your passage"
         case .hideWord: "Hide a word, then recall it"
         case .hideSection: "Hide the whole section"
@@ -28,7 +28,7 @@ enum TourStep: Int, CaseIterable {
         switch self {
         case .openBrowse: "Tap the book to read hundreds of prayers and writings by category, or search for one by name."
         case .pickPrayer: "Under Prayers, tap Opening Words, then tap the first prayer in the list."
-        case .addPrayer: "Read it over, then add it. Each line becomes a section you practise on its own."
+        case .addPrayer: "Click the memorization button at the top right to import the prayer for memorization."
         case .openPassage: "Tap it to begin. The bar underneath fills in as more of it lives in memory."
         case .hideWord: "Tap a word to hide it, and tap again to bring it back. Press and glide to hide a whole run at once."
         case .hideSection: "Keep hiding until nothing is left, reciting the line from memory as the gaps grow."
