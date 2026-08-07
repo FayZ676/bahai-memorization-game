@@ -14,7 +14,7 @@ enum TourStep: Int, CaseIterable {
 
     var title: String {
         switch self {
-        case .openBrowse: "Start with a prayer"
+        case .openBrowse: "Browse Prayers"
         case .pickPrayer: "Choose a prayer"
         case .addPrayer: "Tap the Memorize Button"
         case .importPrayer: "Tap the Plus Button"
@@ -28,7 +28,7 @@ enum TourStep: Int, CaseIterable {
 
     var body: String {
         switch self {
-        case .openBrowse: "Tap the book to read hundreds of prayers and writings by category, or search for one by name."
+        case .openBrowse: "Tap the Book icon to browse Prayers and Writings."
         case .pickPrayer: "Under Prayers, tap Opening Words, then tap the first prayer in the list."
         case .addPrayer: "Tap the memorization button at the top right to import the prayer for memorization."
         case .importPrayer: "Tap the plus at the top right to add it to your library. Each line becomes a section you practise on its own."
