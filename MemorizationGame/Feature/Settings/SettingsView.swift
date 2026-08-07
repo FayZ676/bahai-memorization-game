@@ -4,6 +4,7 @@ struct SettingsView: View {
     @Environment(AppStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     @Environment(\.tour) private var tour
+    @Environment(\.restartWelcomeTour) private var restartWelcomeTour
     @State private var permissionDenied = false
     @State private var remindersExpanded = false
 
@@ -103,27 +104,25 @@ struct SettingsView: View {
                         }
                     }
 
-                    if tour == nil {
-                        OptionSection(label: "Help", icon: "questionmark.circle") {
-                            Button {
-                                store.settings.hasCompletedOnboarding = false
-                                dismiss()
-                            } label: {
-                                HStack(spacing: 8) {
-                                    Text("Show welcome tour")
-                                        .appFont(Typography.body)
-                                        .foregroundStyle(Theme.ink)
-                                    Spacer()
-                                    Image(systemName: "chevron.right")
-                                        .appIcon(13, weight: .semibold)
-                                        .foregroundStyle(Theme.faint)
-                                }
-                                .padding(.vertical, 12)
-                                .padding(.horizontal, 16)
-                                .contentShape(Rectangle())
+                    OptionSection(label: "Help", icon: "questionmark.circle") {
+                        Button {
+                            restartWelcomeTour()
+                            dismiss()
+                        } label: {
+                            HStack(spacing: 8) {
+                                Text(tour == nil ? "Show welcome tour" : "Restart welcome tour")
+                                    .appFont(Typography.body)
+                                    .foregroundStyle(Theme.ink)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .appIcon(13, weight: .semibold)
+                                    .foregroundStyle(Theme.faint)
                             }
-                            .buttonStyle(.haptic)
+                            .padding(.vertical, 12)
+                            .padding(.horizontal, 16)
+                            .contentShape(Rectangle())
                         }
+                        .buttonStyle(.haptic)
                     }
                 }
                 .padding(.horizontal, 18)

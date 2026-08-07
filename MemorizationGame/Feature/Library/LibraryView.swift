@@ -8,10 +8,13 @@ extension EnvironmentValues {
     @Entry var popToLibrary: () -> Void = {}
 }
 
+private let deleteTitleWordLimit = 6
+
 struct LibraryView: View {
     @Environment(AppStore.self) private var store
     @State private var pendingDelete: Passage?
     @State private var path = NavigationPath()
+    @State private var isTourPresented = false
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -60,8 +63,15 @@ struct LibraryView: View {
             .browseDestinations()
         }
         .environment(\.popToLibrary) { path = NavigationPath() }
-        .guidedTour(isActive: !store.settings.hasCompletedOnboarding) {
-            store.settings.hasCompletedOnboarding = true
+        .guidedTour(
+            isActive: isTourPresented,
+            onRestart: { isTourPresented = true },
+            onFinish: { isTourPresented = false }
+        )
+        .onAppear {
+            guard !store.settings.hasSeenWelcomeTour else { return }
+            store.settings.hasSeenWelcomeTour = true
+            isTourPresented = true
         }
         .confirmationDialog(
             "Delete this passage?",
@@ -75,8 +85,14 @@ struct LibraryView: View {
             Button("Delete", role: .destructive) { store.deletePassage(passage) }
             Button("Cancel", role: .cancel) { pendingDelete = nil }
         } message: { passage in
-            Text("“\(passage.title)” and all its progress will be removed. This can't be undone.")
+            Text("“\(shortened(passage.title))” and all its progress will be removed. This can't be undone.")
         }
+    }
+
+    private func shortened(_ title: String) -> String {
+        let words = title.split(separator: " ")
+        guard words.count > deleteTitleWordLimit else { return title }
+        return words.prefix(deleteTitleWordLimit).joined(separator: " ") + "…"
     }
 
     private var hasAchievements: Bool { store.earnedAchievementCount > 0 }

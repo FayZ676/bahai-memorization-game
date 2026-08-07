@@ -53,14 +53,14 @@ struct Reminder: Codable, Equatable, Identifiable {
 
 struct AppSettings: Codable, Equatable {
     static let defaultReminderMessage = "A few minutes with your passages keeps them fresh."
-    static let onboardedWhenSnapshotPredatesOnboarding = true
+    static let seenWhenSnapshotPredatesWelcomeTour = true
 
     var reminderEnabled: Bool = false
     var reminders: [Reminder] = [Reminder()]
     var streakReminderEnabled: Bool = true
     var appTheme: AppTheme = .light
     var fontSize: FontSize = .medium
-    var hasCompletedOnboarding: Bool = false
+    var hasSeenWelcomeTour: Bool = false
 
     static let `default` = AppSettings()
 
@@ -68,7 +68,7 @@ struct AppSettings: Codable, Equatable {
         case reminderEnabled, reminders, appTheme, fontSize
         case streakReminderEnabled
         case reminderMinuteOfDay, reminderMessage
-        case hasCompletedOnboarding
+        case hasSeenWelcomeTour, hasCompletedOnboarding
     }
 
     init() {}
@@ -80,8 +80,9 @@ struct AppSettings: Codable, Equatable {
         appTheme = try container.decodeIfPresent(AppTheme.self, forKey: .appTheme) ?? d.appTheme
         fontSize = try container.decodeIfPresent(FontSize.self, forKey: .fontSize) ?? d.fontSize
         streakReminderEnabled = try container.decodeIfPresent(Bool.self, forKey: .streakReminderEnabled) ?? d.streakReminderEnabled
-        hasCompletedOnboarding = try container.decodeIfPresent(Bool.self, forKey: .hasCompletedOnboarding)
-            ?? AppSettings.onboardedWhenSnapshotPredatesOnboarding
+        hasSeenWelcomeTour = try container.decodeIfPresent(Bool.self, forKey: .hasSeenWelcomeTour)
+            ?? container.decodeIfPresent(Bool.self, forKey: .hasCompletedOnboarding)
+            ?? AppSettings.seenWhenSnapshotPredatesWelcomeTour
         if let stored = try container.decodeIfPresent([Reminder].self, forKey: .reminders) {
             reminders = stored
         } else {
@@ -98,6 +99,6 @@ struct AppSettings: Codable, Equatable {
         try container.encode(streakReminderEnabled, forKey: .streakReminderEnabled)
         try container.encode(appTheme, forKey: .appTheme)
         try container.encode(fontSize, forKey: .fontSize)
-        try container.encode(hasCompletedOnboarding, forKey: .hasCompletedOnboarding)
+        try container.encode(hasSeenWelcomeTour, forKey: .hasSeenWelcomeTour)
     }
 }

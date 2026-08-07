@@ -26,14 +26,14 @@ enum TourStep: Int, CaseIterable {
         }
     }
 
-    private static func symbol(_ name: String, scale: CGFloat) -> Text {
+    private static func symbol(_ name: String, size: CGFloat, scale: CGFloat) -> Text {
         Text(Image(systemName: name))
-            .font(.system(size: Typography.callout.size * scale, weight: .ultraLight))
+            .font(.system(size: size * scale, weight: .ultraLight))
             .foregroundStyle(Theme.accent)
     }
 
     func body(scale: CGFloat) -> Text {
-        let symbol = { Self.symbol($0, scale: scale) }
+        let symbol = { Self.symbol($0, size: Typography.callout.size, scale: scale) }
         return switch self {
         case .openBrowse: Text("Tap the \(symbol("book")) button to browse Prayers and Writings.")
         case .pickPrayer: Text("Choose the first prayer under **Prayers** > **Opening Words**.")
