@@ -16,7 +16,7 @@ enum TourStep: Int, CaseIterable {
         switch self {
         case .openBrowse: "Browse Prayers"
         case .pickPrayer: "Choose a prayer"
-        case .addPrayer: "Tap the Memorize Button"
+        case .addPrayer: "Saving and Memorizing"
         case .importPrayer: "Tap the Plus Button"
         case .openPassage: "Open your passage"
         case .hideWord: "Hiding words"
@@ -26,17 +26,18 @@ enum TourStep: Int, CaseIterable {
         }
     }
 
-    var body: String {
+    var body: Text {
         switch self {
-        case .openBrowse: "Tap the Book icon to browse Prayers and Writings."
-        case .pickPrayer: "Under 'Prayers' tap 'Opening Words' and choose the first prayer in the list."
-        case .addPrayer: "Tap the memorization button at the top right to import the prayer for memorization."
-        case .importPrayer: "Tap the plus at the top right to add it to your library. Each line becomes a section you practise on its own."
-        case .openPassage: "Tap it to begin. The bar underneath fills in as more of it lives in memory."
-        case .hideWord: "Tap a word to hide it, and tap again to bring it back. Press and glide over words to hide or reveal multiple words at once."
-        case .recite: "Tap the mic button at the bottom of the screen and say the hidden word out loud."
-        case .merge: "The section is yours. Merge it with the next one and recite longer and longer stretches."
-        case .finished: "You're ready to start memorizing for real. The prayer you just added is in your library, right where you left it."
+        case .openBrowse: Text("Tap the \(Image(systemName: "book")) button to browse Prayers and Writings.")
+        case .pickPrayer: Text("Under 'Prayers' tap 'Opening Words' and choose the first prayer in the list.")
+        case .addPrayer:
+            Text("Tap the \(Image(systemName: "bookmark")) button to save the prayer for later, or tap the \(Image(systemName: "text.word.spacing")) button to memorize the prayer. Try tapping the \(Image(systemName: "text.word.spacing")) button.")
+        case .importPrayer: Text("Tap the \(Image(systemName: "plus")) button at the top right to add it to your library. Each line becomes a section you practise on its own.")
+        case .openPassage: Text("Tap it to begin. The bar underneath fills in as more of it lives in memory.")
+        case .hideWord: Text("Tap a word to hide it, and tap again to bring it back. Press and glide over words to hide or reveal multiple words at once.")
+        case .recite: Text("Tap the \(Image(systemName: "mic")) button at the bottom of the screen and say the hidden word out loud.")
+        case .merge: Text("The section is yours. Merge it with the next one and recite longer and longer stretches.")
+        case .finished: Text("You're ready to start memorizing for real. The prayer you just added is in your library, right where you left it.")
         }
     }
 

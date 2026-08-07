@@ -35,7 +35,7 @@ struct TourOverlay: View {
                 .appFont(Typography.passageTitle)
                 .foregroundStyle(Theme.inkBright)
 
-            Text(step.body)
+            step.body
                 .appFont(Typography.callout)
                 .foregroundStyle(Theme.muted)
                 .lineSpacing(3)
