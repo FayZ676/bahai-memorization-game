@@ -42,6 +42,15 @@ struct TourOverlay: View {
                 .lineSpacing(3)
                 .fixedSize(horizontal: false, vertical: true)
 
+            if let note = step.note(scale: fontScale) {
+                InfoNote(Typography.footnote, color: Theme.faint) {
+                    note
+                        .appFont(Typography.footnote)
+                        .foregroundStyle(Theme.faint)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
             footer
                 .padding(.top, Spacing.xs)
         }

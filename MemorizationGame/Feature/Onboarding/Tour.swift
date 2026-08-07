@@ -48,6 +48,16 @@ enum TourStep: Int, CaseIterable {
         }
     }
 
+    func note(scale: CGFloat) -> Text? {
+        let symbol = { Self.symbol($0, size: Typography.footnote.size, scale: scale) }
+        return switch self {
+        case .finished:
+            Text("To see these instructions again, open ").italic()
+                + symbol("gearshape")
+                + Text(" Settings and tap Show welcome tour.").italic()
+        default: nil
+        }
+    }
 }
 
 @MainActor
