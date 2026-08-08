@@ -1,5 +1,4 @@
 import Foundation
-import UIKit
 
 enum FeedbackForm {
     private static let formID = "1FAIpQLSe3wZs_Ya_cS4kcqYBTX-fOsLi9MpvD9S90RwKAfWqBt5uEiA"
@@ -10,17 +9,13 @@ enum FeedbackForm {
         static let email = "entry.1243171085"
     }
 
-    static var diagnostics: String {
-        "\(appName) \(version) (\(build)) · \(deviceIdentifier) · iOS \(UIDevice.current.systemVersion)"
-    }
-
     static func submit(kind: String, message: String, email: String) async -> Bool {
         var request = URLRequest(url: endpoint)
         request.httpMethod = "POST"
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         request.httpBody = encode([
             Field.kind: kind,
-            Field.message: "\(message)\n\n———\n\(diagnostics)",
+            Field.message: "\(message)\n\n———\n\(AppInfo.diagnostics)",
             Field.email: email
         ])
 
@@ -40,27 +35,5 @@ enum FeedbackForm {
             .filter { !$0.value.isEmpty }
             .map { URLQueryItem(name: $0.key, value: $0.value) }
         return components.percentEncodedQuery?.data(using: .utf8)
-    }
-
-    private static var appName: String {
-        Bundle.main.infoDictionary?["CFBundleDisplayName"] as? String
-            ?? Bundle.main.infoDictionary?["CFBundleName"] as? String
-            ?? "Verses"
-    }
-
-    private static var version: String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
-    }
-
-    private static var build: String {
-        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
-    }
-
-    private static var deviceIdentifier: String {
-        var info = utsname()
-        uname(&info)
-        return withUnsafePointer(to: &info.machine) { pointer in
-            pointer.withMemoryRebound(to: CChar.self, capacity: Int(_SYS_NAMELEN)) { String(cString: $0) }
-        }
     }
 }

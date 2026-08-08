@@ -5,6 +5,7 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.tour) private var tour
     @Environment(\.restartWelcomeTour) private var restartWelcomeTour
+    @Environment(\.openURL) private var openURL
     @State private var permissionDenied = false
     @State private var remindersExpanded = false
 
@@ -144,11 +145,35 @@ struct SettingsView: View {
                         }
                         .buttonStyle(.haptic)
                     }
+
+                    footer
                 }
                 .padding(.horizontal, 18)
                 .padding(.bottom, 24)
             }
         }
+    }
+
+    private var footer: some View {
+        VStack(spacing: 6) {
+            Text(AppInfo.releaseSummary)
+                .appFont(Typography.micro)
+                .foregroundStyle(Theme.faint)
+
+            Button {
+                openURL(AppInfo.privacyPolicy)
+            } label: {
+                Text("Privacy Policy")
+                    .appFont(Typography.micro)
+                    .foregroundStyle(Theme.muted)
+                    .underline(pattern: .dot)
+                    .padding(.vertical, 4)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.haptic)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 10)
     }
 
     private var themePicker: some View {
