@@ -9,6 +9,7 @@ enum TourStep: Int, CaseIterable {
     case openPassage
     case hideWord
     case recite
+    case achievements
     case finished
 
     var title: String {
@@ -20,6 +21,7 @@ enum TourStep: Int, CaseIterable {
         case .openPassage: "Open your passage"
         case .hideWord: "Hiding Words"
         case .recite: "Reciting Words"
+        case .achievements: "Earning Achievements"
         case .finished: "That's it"
         }
     }
@@ -41,6 +43,8 @@ enum TourStep: Int, CaseIterable {
         case .openPassage: Text("Tap the prayer to start memorizing it.")
         case .hideWord: Text("Tap a word to hide it. Tap it again to bring it back. Press and glide over words to hide or reveal multiple words at once.")
         case .recite: Text("Tap the \(symbol("mic")) button to practice saying hidden words aloud.")
+        case .achievements:
+            Text("Certain prayers earn an achievement once every word is hidden. Tap the \(symbol("chevron.left")) button to return to your Library, then tap the \(symbol("trophy")) button to see them all.")
         case .finished: Text("You're ready to start memorizing.")
         }
     }
@@ -67,8 +71,9 @@ final class Tour {
 
     private static let promptDelay = Duration.seconds(1)
 
-    func complete(_ completed: TourStep) {
+    func complete(_ completed: TourStep, onlyIfCurrent: Bool = false) {
         guard completed.rawValue >= step.rawValue,
+              !onlyIfCurrent || completed == step,
               let next = TourStep(rawValue: completed.rawValue + 1) else { return }
         pendingPrompt?.cancel()
         withAnimation(Motion.standard) {
@@ -98,16 +103,19 @@ extension EnvironmentValues {
 }
 
 extension View {
-    func completesTourStep(_ step: TourStep) -> some View {
-        modifier(TourStepReporter(step: step))
+    /// `onlyIfCurrent` is for screens the tour does not gate: reaching one out of
+    /// order is ordinary curiosity, not progress, and must not skip the steps between.
+    func completesTourStep(_ step: TourStep, onlyIfCurrent: Bool = false) -> some View {
+        modifier(TourStepReporter(step: step, onlyIfCurrent: onlyIfCurrent))
     }
 }
 
 private struct TourStepReporter: ViewModifier {
     @Environment(\.tour) private var tour
     let step: TourStep
+    let onlyIfCurrent: Bool
 
     func body(content: Content) -> some View {
-        content.onAppear { tour?.complete(step) }
+        content.onAppear { tour?.complete(step, onlyIfCurrent: onlyIfCurrent) }
     }
 }

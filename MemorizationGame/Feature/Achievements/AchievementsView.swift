@@ -29,6 +29,7 @@ struct AchievementsView: View {
             }
             .fadeEdge(color: Theme.bg)
         }
+        .completesTourStep(.achievements, onlyIfCurrent: true)
     }
 
     private func tally(memorized: Set<Int>) -> some View {
