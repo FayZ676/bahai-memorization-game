@@ -60,5 +60,9 @@ recognition can't reach its listening state in a simulator.
 ## Notes / decisions still open
 - **Pricing** — description says "no ads, no sign-in" but deliberately does NOT claim "free" or "no subscription", since pricing isn't decided. Add if free.
 - **On-device speech** — SpeechAnalyzer (iOS 26) processes on device; verify before shipping since it's a privacy claim.
-- **Privacy nutrition label** — should be "Data Not Collected" if nothing leaves the device.
+- **Privacy nutrition label** — no longer "Data Not Collected": the Settings feedback screen posts to a
+  Google Form. Declare, all with purpose "App Functionality", linked to the user, not used for tracking:
+  Contact Info → Email Address (optional); User Content → Customer Support (the message);
+  Diagnostics → Other Diagnostic Data (app version, device model, iOS version).
+  Nothing else is collected — passages, progress and audio stay on device.
 - **Revisit keywords** after ~1 month of App Store Connect search-term data.
