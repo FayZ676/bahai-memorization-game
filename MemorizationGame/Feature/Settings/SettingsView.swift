@@ -166,7 +166,7 @@ struct SettingsView: View {
                 Text("Privacy Policy")
                     .appFont(Typography.micro)
                     .foregroundStyle(Theme.muted)
-                    .underline(pattern: .dot)
+                    .underline()
                     .padding(.vertical, 4)
                     .contentShape(Rectangle())
             }
