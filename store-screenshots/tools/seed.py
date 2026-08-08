@@ -72,6 +72,18 @@ PICKS = [
     ("My first counsel is this", "From the Arabic",  1, [0.45]),
 ]
 
+# extra passages that only the achievements shot needs: one more earned badge and
+# two rings part-way round, so the screen is not a column of untouched dashes
+ACHIEVEMENT_PICKS = [
+    ("Thy name is my healing", "General Prayers",   1, [1.0]),
+    ("I have wakened in Thy shelter", "General Prayers", 1, [0.55]),
+    ("I have detached myself from my kindred", "General Prayers", 1, [0.2]),
+    ("Love Me, that I may love thee", "From the Arabic", 1, [1.0, 1.0]),
+]
+
+if os.environ.get("ACHIEVEMENTS"):
+    PICKS += ACHIEVEMENT_PICKS
+
 passages, reviewables = [], []
 now = datetime.datetime.now(datetime.timezone.utc)
 REF = datetime.datetime(2001, 1, 1, tzinfo=datetime.timezone.utc)

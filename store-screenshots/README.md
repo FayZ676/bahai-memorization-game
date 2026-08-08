@@ -18,6 +18,7 @@ Upload order matters — the first two are what people see in search results.
 4. `4-preview.png` — reading a Hidden Word before memorizing it
 5. `5-dark.png` — the same passage in dark
 6. `6-library-dark.png`, `7-hidden-words.png`, `8-achievements.png` — spares
+   (`8-achievements.png` needs the `ACHIEVEMENTS=1` seed — see below)
 
 If you drop the iPad build (`TARGETED_DEVICE_FAMILY = 1`), `ipad-13/` is no longer needed.
 
@@ -40,6 +41,10 @@ show, and sets `hasSeenWelcomeTour` so the guided tour does not cover the first 
 `PICKS` names passages by a substring of their text or heading. The library is rebuilt
 from bahai.org from time to time and passages do disappear — if `seed.py` exits with
 `not found:`, pick a replacement of a similar shape rather than forcing the old one back.
+
+`ACHIEVEMENTS=1` appends four more passages that only `8-achievements.png` needs — a
+second earned badge and three rings part-way round, so the screen is not a column of
+untouched dashes. Leave it unset for every other shot; it adds rows to the library.
 
 `HERO_GROUP` sets how many source lines make up one chunk of the session hero passage.
 Leave it at the default `2` for iPhone; use `3` for iPad, where a smaller chunk floats in
