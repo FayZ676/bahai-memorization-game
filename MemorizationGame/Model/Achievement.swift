@@ -1,14 +1,14 @@
-import Foundation
+import UIKit
 
 enum AchievementRequirement: Hashable {
     case section(String)
-    case category(section: String, name: String)
-    case collection(name: String, count: Int)
+    case category(String, in: String)
+    case count(Int, from: String)
 
     var count: Int {
         switch self {
         case .section, .category: return 1
-        case .collection(_, let count): return count
+        case .count(let count, _): return count
         }
     }
 
@@ -16,18 +16,18 @@ enum AchievementRequirement: Hashable {
         switch self {
         case .section(let name):
             return ids { $0.section == name }
-        case .category(let section, let name):
+        case .category(let name, let section):
             return ids { $0.section == section && $0.primaryTag == name }
-        case .collection(let name, _):
-            return ids { $0.collection == name }
+        case .count(_, let collection):
+            return ids { $0.collection == collection }
         }
     }
 
     var route: BrowseRoute {
         switch self {
         case .section(let name): return .section(name)
-        case .category(let section, let name): return .category(section: section, name: name)
-        case .collection(let name, _): return .collection(name)
+        case .category(let name, let section): return .category(section: section, name: name)
+        case .count(_, let collection): return .collection(collection)
         }
     }
 
@@ -39,9 +39,17 @@ enum AchievementRequirement: Hashable {
 struct Achievement: Identifiable, Hashable {
     let id: String
     let title: String
-    let condition: String
     let symbol: String
+    let condition: String
     let requirement: AchievementRequirement
+
+    init(_ title: String, symbol: String, condition: String, requires requirement: AchievementRequirement) {
+        self.id = Achievement.slug(title)
+        self.title = title
+        self.symbol = symbol
+        self.condition = condition
+        self.requirement = requirement
+    }
 
     func matchedCount(in memorizedPrayerIDs: Set<Int>) -> Int {
         memorizedPrayerIDs.intersection(requirement.prayerIDs).count
@@ -50,58 +58,90 @@ struct Achievement: Identifiable, Hashable {
     func isEarned(in memorizedPrayerIDs: Set<Int>) -> Bool {
         matchedCount(in: memorizedPrayerIDs) >= requirement.count
     }
+
+    private static func slug(_ title: String) -> String {
+        title
+            .lowercased()
+            .split { !$0.isLetter && !$0.isNumber }
+            .joined(separator: "-")
+    }
 }
 
+/// The one place achievements are defined. Every requirement names a section,
+/// category or collection exactly as `library.json` spells it, and every symbol
+/// needs a `.fill` counterpart for its earned state -- `problems` checks both,
+/// and a debug launch trips an assertion rather than shipping an achievement
+/// that can never be earned.
 enum AchievementCatalog {
     static let all: [Achievement] = [
         Achievement(
-            id: "obligatory-prayer",
-            title: "Obligatory Prayer",
-            condition: "Memorize the Short, Medium, or Long Obligatory Prayer.",
+            "Obligatory Prayer",
             symbol: "hands.and.sparkles",
-            requirement: .section("Obligatory Prayers")
+            condition: "Memorize the Short, Medium, or Long Obligatory Prayer.",
+            requires: .section("Obligatory Prayers")
         ),
         Achievement(
-            id: "morning-prayer",
-            title: "Morning Prayer",
-            condition: "Memorize a prayer for the morning.",
+            "Morning Prayer",
             symbol: "sunrise",
-            requirement: .category(section: "General Prayers", name: "Morning")
+            condition: "Memorize a prayer for the morning.",
+            requires: .category("Morning", in: "General Prayers")
         ),
         Achievement(
-            id: "healing-prayer",
-            title: "Healing Prayer",
-            condition: "Memorize a prayer for healing.",
+            "Healing Prayer",
             symbol: "heart",
-            requirement: .category(section: "General Prayers", name: "Healing")
+            condition: "Memorize a prayer for healing.",
+            requires: .category("Healing", in: "General Prayers")
         ),
         Achievement(
-            id: "aid-and-assistance-prayer",
-            title: "Aid & Assistance Prayer",
-            condition: "Memorize a prayer for aid and assistance.",
+            "Aid & Assistance Prayer",
             symbol: "hand.raised",
-            requirement: .category(section: "General Prayers", name: "Aid and Assistance")
+            condition: "Memorize a prayer for aid and assistance.",
+            requires: .category("Aid and Assistance", in: "General Prayers")
         ),
         Achievement(
-            id: "family-prayer",
-            title: "Family Prayer",
-            condition: "Memorize a prayer for the family.",
+            "Family Prayer",
             symbol: "house",
-            requirement: .category(section: "General Prayers", name: "Families")
+            condition: "Memorize a prayer for the family.",
+            requires: .category("Families", in: "General Prayers")
         ),
         Achievement(
-            id: "fasting-prayer",
-            title: "Fasting Prayer",
-            condition: "Memorize a prayer for the Fast.",
+            "Fasting Prayer",
             symbol: "moon",
-            requirement: .category(section: "Occasional Prayers", name: "The Fast")
+            condition: "Memorize a prayer for the Fast.",
+            requires: .category("The Fast", in: "Occasional Prayers")
         ),
         Achievement(
-            id: "five-hidden-words",
-            title: "5 Hidden Words",
-            condition: "Memorize five of the Hidden Words.",
+            "5 Hidden Words",
             symbol: "book.closed",
-            requirement: .collection(name: "The Hidden Words", count: 5)
+            condition: "Memorize five of the Hidden Words.",
+            requires: .count(5, from: "The Hidden Words")
         )
     ]
+
+    static var problems: [String] {
+        var problems: [String] = []
+        var seen: Set<String> = []
+
+        for achievement in all {
+            let label = "“\(achievement.title)”"
+
+            if !seen.insert(achievement.id).inserted {
+                problems.append("\(label) collides with another achievement’s title.")
+            }
+
+            let matches = achievement.requirement.prayerIDs.count
+            let needed = achievement.requirement.count
+            if needed < 1 {
+                problems.append("\(label) requires \(needed) prayers.")
+            } else if matches < needed {
+                problems.append("\(label) needs \(needed) prayers but its requirement matches \(matches) in library.json.")
+            }
+
+            for symbol in [achievement.symbol, "\(achievement.symbol).fill"] where UIImage(systemName: symbol) == nil {
+                problems.append("\(label) names a symbol that does not exist: \(symbol).")
+            }
+        }
+
+        return problems
+    }
 }

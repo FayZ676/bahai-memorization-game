@@ -7,6 +7,10 @@ struct MemorizationGameApp: App {
 
     init() {
         AppFont.register()
+        #if DEBUG
+        let problems = AchievementCatalog.problems
+        assert(problems.isEmpty, "Broken achievements:\n" + problems.joined(separator: "\n"))
+        #endif
     }
 
     var body: some Scene {
