@@ -5,6 +5,7 @@ import SwiftUI
 /// without holding the library in hand.
 enum BrowseRoute: Hashable {
     case browse
+    case collection(String)
     case section(String)
     case category(section: String, name: String)
     case prayer(Int)
@@ -31,6 +32,8 @@ extension BrowseRoute {
         switch self {
         case .browse:
             PrayerBrowseView()
+        case .collection(let name):
+            PrayerBrowseView(focusSection: name)
         case .section(let name):
             PrayerBrowseView(focusSection: name)
         case .category(let section, let name):

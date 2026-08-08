@@ -1,107 +1,107 @@
 import Foundation
 
+enum AchievementRequirement: Hashable {
+    case section(String)
+    case category(section: String, name: String)
+    case collection(name: String, count: Int)
+
+    var count: Int {
+        switch self {
+        case .section, .category: return 1
+        case .collection(_, let count): return count
+        }
+    }
+
+    var prayerIDs: Set<Int> {
+        switch self {
+        case .section(let name):
+            return ids { $0.section == name }
+        case .category(let section, let name):
+            return ids { $0.section == section && $0.primaryTag == name }
+        case .collection(let name, _):
+            return ids { $0.collection == name }
+        }
+    }
+
+    var route: BrowseRoute {
+        switch self {
+        case .section(let name): return .section(name)
+        case .category(let section, let name): return .category(section: section, name: name)
+        case .collection(let name, _): return .collection(name)
+        }
+    }
+
+    private func ids(matching predicate: (Prayer) -> Bool) -> Set<Int> {
+        Set(PrayerLibrary.all.lazy.filter(predicate).map(\.id))
+    }
+}
+
 struct Achievement: Identifiable, Hashable {
     let id: String
     let title: String
     let condition: String
     let symbol: String
-    let prayerID: Int
+    let requirement: AchievementRequirement
 
-    var librarySection: String? {
-        PrayerLibrary.prayer(id: prayerID)?.section
+    func matchedCount(in memorizedPrayerIDs: Set<Int>) -> Int {
+        memorizedPrayerIDs.intersection(requirement.prayerIDs).count
     }
 
     func isEarned(in memorizedPrayerIDs: Set<Int>) -> Bool {
-        memorizedPrayerIDs.contains(prayerID)
-    }
-}
-
-struct AchievementGroup: Identifiable, Hashable {
-    let id: String
-    let title: String
-    let symbol: String
-    let achievements: [Achievement]
-
-    var librarySection: String? {
-        achievements.first?.librarySection
+        matchedCount(in: memorizedPrayerIDs) >= requirement.count
     }
 }
 
 enum AchievementCatalog {
-    enum Entry: Identifiable, Hashable {
-        case group(AchievementGroup)
-        case standalone(Achievement)
-
-        var id: String {
-            switch self {
-            case .group(let group): return group.id
-            case .standalone(let achievement): return achievement.id
-            }
-        }
-
-        var achievements: [Achievement] {
-            switch self {
-            case .group(let group): return group.achievements
-            case .standalone(let achievement): return [achievement]
-            }
-        }
-
-        var librarySection: String? {
-            switch self {
-            case .group(let group): return group.librarySection
-            case .standalone(let achievement): return achievement.librarySection
-            }
-        }
-    }
-
-    static let entries: [Entry] = [
-        .group(
-            AchievementGroup(
-                id: "obligatory-prayer",
-                title: "Obligatory Prayer",
-                symbol: "hands.and.sparkles",
-                achievements: [
-                    Achievement(
-                        id: "obligatory-short",
-                        title: "Short",
-                        condition: "Memorize the Short Obligatory Prayer.",
-                        symbol: "sun.max",
-                        prayerID: 2736273951
-                    ),
-                    Achievement(
-                        id: "obligatory-medium",
-                        title: "Medium",
-                        condition: "Memorize the Medium Obligatory Prayer.",
-                        symbol: "sun.horizon",
-                        prayerID: 1302853761
-                    ),
-                    Achievement(
-                        id: "obligatory-long",
-                        title: "Long",
-                        condition: "Memorize the Long Obligatory Prayer.",
-                        symbol: "moon.stars",
-                        prayerID: 3611881516
-                    )
-                ]
-            )
+    static let all: [Achievement] = [
+        Achievement(
+            id: "obligatory-prayer",
+            title: "Obligatory Prayer",
+            condition: "Memorize the Short, Medium, or Long Obligatory Prayer.",
+            symbol: "hands.and.sparkles",
+            requirement: .section("Obligatory Prayers")
         ),
-        .standalone(
-            Achievement(
-                id: "tablet-of-ahmad",
-                title: "Tablet of Ahmad",
-                condition: "Memorize the Tablet of Ahmad, all 652 words.",
-                symbol: "bird",
-                prayerID: 537423151
-            )
+        Achievement(
+            id: "morning-prayer",
+            title: "Morning Prayer",
+            condition: "Memorize a prayer for the morning.",
+            symbol: "sunrise",
+            requirement: .category(section: "General Prayers", name: "Morning")
+        ),
+        Achievement(
+            id: "healing-prayer",
+            title: "Healing Prayer",
+            condition: "Memorize a prayer for healing.",
+            symbol: "heart",
+            requirement: .category(section: "General Prayers", name: "Healing")
+        ),
+        Achievement(
+            id: "aid-and-assistance-prayer",
+            title: "Aid & Assistance Prayer",
+            condition: "Memorize a prayer for aid and assistance.",
+            symbol: "hand.raised",
+            requirement: .category(section: "General Prayers", name: "Aid and Assistance")
+        ),
+        Achievement(
+            id: "family-prayer",
+            title: "Family Prayer",
+            condition: "Memorize a prayer for the family.",
+            symbol: "house",
+            requirement: .category(section: "General Prayers", name: "Families")
+        ),
+        Achievement(
+            id: "fasting-prayer",
+            title: "Fasting Prayer",
+            condition: "Memorize a prayer for the Fast.",
+            symbol: "moon",
+            requirement: .category(section: "Occasional Prayers", name: "The Fast")
+        ),
+        Achievement(
+            id: "five-hidden-words",
+            title: "5 Hidden Words",
+            condition: "Memorize five of the Hidden Words.",
+            symbol: "book.closed",
+            requirement: .collection(name: "The Hidden Words", count: 5)
         )
     ]
-
-    static let all: [Achievement] = entries.flatMap(\.achievements)
-
-    static func group(containing achievement: Achievement) -> AchievementGroup? {
-        for case .group(let group) in entries where group.achievements.contains(achievement) {
-            return group
-        }
-        return nil
-    }
 }

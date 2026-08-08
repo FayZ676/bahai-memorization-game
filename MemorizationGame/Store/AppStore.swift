@@ -167,6 +167,25 @@ final class AppStore {
         return AchievementCatalog.all.count { $0.isEarned(in: memorized) }
     }
 
+    func progress(for achievement: Achievement) -> Double? {
+        let qualifying = achievement.requirement.prayerIDs
+        let fractions = passages
+            .filter { $0.sourceID.map(qualifying.contains) ?? false }
+            .map(hiddenFraction(for:))
+            .sorted(by: >)
+        guard !fractions.isEmpty else { return nil }
+        let credited = fractions.prefix(achievement.requirement.count).reduce(0, +)
+        return min(credited / Double(achievement.requirement.count), 1)
+    }
+
+    func leadingPassage(for achievement: Achievement) -> Passage? {
+        let qualifying = achievement.requirement.prayerIDs
+        return passages
+            .filter { $0.sourceID.map(qualifying.contains) ?? false }
+            .filter { !isMemorized($0) }
+            .max { hiddenFraction(for: $0) < hiddenFraction(for: $1) }
+    }
+
     func merge(_ card: Reviewable, with next: Reviewable) {
         guard let index = reviewables.firstIndex(where: { $0.id == card.id }),
               let nextIndex = reviewables.firstIndex(where: { $0.id == next.id }) else { return }
@@ -279,9 +298,11 @@ final class AppStore {
     /// the mutation that changes it -- there is no stored flag to compare against
     /// on a later launch.
     private func announceAchievements(memorizedBefore: Set<Int>) {
-        let gained = memorizedPrayerIDs.subtracting(memorizedBefore)
-        guard !gained.isEmpty else { return }
-        justEarned = AchievementCatalog.all.first { gained.contains($0.prayerID) }
+        let memorizedNow = memorizedPrayerIDs
+        guard memorizedNow != memorizedBefore else { return }
+        justEarned = AchievementCatalog.all.first {
+            $0.isEarned(in: memorizedNow) && !$0.isEarned(in: memorizedBefore)
+        }
     }
 
     private func recordPractice(from old: Reviewable, to updated: Reviewable) {

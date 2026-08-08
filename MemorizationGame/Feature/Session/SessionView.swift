@@ -533,12 +533,7 @@ private struct ShakeEffect: GeometryEffect {
 private struct AchievementToast: View {
     let achievement: Achievement
 
-    private var detail: String {
-        guard let group = AchievementCatalog.group(containing: achievement) else {
-            return achievement.title
-        }
-        return "\(achievement.title) · \(group.title)"
-    }
+    private var detail: String { achievement.title }
 
     var body: some View {
         HStack(spacing: 10) {

@@ -162,6 +162,7 @@ struct PrayerBrowseView: View {
             }
         }
         .cardSurface(cornerRadius: Radius.group)
+        .id(collection.name)
     }
 
     @ViewBuilder
