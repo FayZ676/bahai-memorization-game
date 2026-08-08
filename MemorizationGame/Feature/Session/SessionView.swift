@@ -1,8 +1,10 @@
+import StoreKit
 import SwiftUI
 
 struct SessionView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.tour) private var tour
+    @Environment(\.requestReview) private var requestReview
     @State private var vm: SessionViewModel
     @State private var voice = VoiceRecitationController()
     @State private var started = false
@@ -114,6 +116,19 @@ struct SessionView: View {
             Task {
                 try? await Task.sleep(for: .seconds(3))
                 store.justEarned = nil
+            }
+        }
+        .onChange(of: store.passageJustMemorized) { _, memorized in
+            guard memorized else { return }
+            store.passageJustMemorized = false
+            guard ReviewPrompt.shouldAsk(
+                memorizedPassageCount: store.memorizedPassageIDs.count,
+                settings: store.settings
+            ) else { return }
+            Task {
+                try? await Task.sleep(for: ReviewPrompt.delayAfterCelebration)
+                store.markReviewRequested()
+                requestReview()
             }
         }
     }

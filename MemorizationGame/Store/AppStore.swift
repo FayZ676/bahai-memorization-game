@@ -10,6 +10,7 @@ final class AppStore {
     private(set) var recentPrayerIDs: [Int]
     var dailyGoalReached = false
     var justEarned: Achievement?
+    var passageJustMemorized = false
     var settings: AppSettings {
         didSet {
             guard storeURL != nil else { return }
@@ -162,6 +163,10 @@ final class AppStore {
         Set(passages.filter(isMemorized).compactMap(\.sourceID))
     }
 
+    var memorizedPassageIDs: Set<UUID> {
+        Set(passages.filter(isMemorized).map(\.id))
+    }
+
     var earnedAchievementCount: Int {
         let memorized = memorizedPrayerIDs
         return AchievementCatalog.all.count { $0.isEarned(in: memorized) }
@@ -288,10 +293,21 @@ final class AppStore {
         var updated = old
         change(&updated)
         let memorizedBefore = memorizedPrayerIDs
+        let memorizedPassagesBefore = memorizedPassageIDs
         recordPractice(from: old, to: updated)
         reviewables[index] = updated
         announceAchievements(memorizedBefore: memorizedBefore)
+        notePassagesMemorized(before: memorizedPassagesBefore)
         persist()
+    }
+
+    private func notePassagesMemorized(before: Set<UUID>) {
+        guard !memorizedPassageIDs.subtracting(before).isEmpty else { return }
+        passageJustMemorized = true
+    }
+
+    func markReviewRequested() {
+        settings.lastReviewRequestVersion = ReviewPrompt.currentVersion
     }
 
     /// Earned state is derived, so the only moment it can be observed changing is

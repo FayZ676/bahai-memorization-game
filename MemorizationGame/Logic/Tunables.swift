@@ -61,6 +61,7 @@ struct AppSettings: Codable, Equatable {
     var appTheme: AppTheme = .light
     var fontSize: FontSize = .medium
     var hasSeenWelcomeTour: Bool = false
+    var lastReviewRequestVersion: String?
 
     static let `default` = AppSettings()
 
@@ -69,6 +70,7 @@ struct AppSettings: Codable, Equatable {
         case streakReminderEnabled
         case reminderMinuteOfDay, reminderMessage
         case hasSeenWelcomeTour, hasCompletedOnboarding
+        case lastReviewRequestVersion
     }
 
     init() {}
@@ -83,6 +85,7 @@ struct AppSettings: Codable, Equatable {
         hasSeenWelcomeTour = try container.decodeIfPresent(Bool.self, forKey: .hasSeenWelcomeTour)
             ?? container.decodeIfPresent(Bool.self, forKey: .hasCompletedOnboarding)
             ?? AppSettings.seenWhenSnapshotPredatesWelcomeTour
+        lastReviewRequestVersion = try container.decodeIfPresent(String.self, forKey: .lastReviewRequestVersion)
         if let stored = try container.decodeIfPresent([Reminder].self, forKey: .reminders) {
             reminders = stored
         } else {
@@ -100,5 +103,6 @@ struct AppSettings: Codable, Equatable {
         try container.encode(appTheme, forKey: .appTheme)
         try container.encode(fontSize, forKey: .fontSize)
         try container.encode(hasSeenWelcomeTour, forKey: .hasSeenWelcomeTour)
+        try container.encodeIfPresent(lastReviewRequestVersion, forKey: .lastReviewRequestVersion)
     }
 }
