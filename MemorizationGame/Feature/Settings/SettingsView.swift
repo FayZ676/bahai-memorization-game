@@ -123,6 +123,26 @@ struct SettingsView: View {
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.haptic)
+
+                        HairlineDivider()
+
+                        NavigationLink {
+                            FeedbackView()
+                        } label: {
+                            HStack(spacing: 8) {
+                                Text("Send feedback")
+                                    .appFont(Typography.body)
+                                    .foregroundStyle(Theme.ink)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .appIcon(13, weight: .semibold)
+                                    .foregroundStyle(Theme.faint)
+                            }
+                            .padding(.vertical, 12)
+                            .padding(.horizontal, 16)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.haptic)
                     }
                 }
                 .padding(.horizontal, 18)
