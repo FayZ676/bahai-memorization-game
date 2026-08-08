@@ -77,43 +77,43 @@ enum AchievementCatalog {
         Achievement(
             "Obligatory Prayer",
             symbol: "hands.and.sparkles",
-            condition: "Memorize the Short, Medium, or Long Obligatory Prayer.",
+            condition: "Memorize one Obligatory Prayer.",
             requires: .section("Obligatory Prayers")
         ),
         Achievement(
             "Morning Prayer",
             symbol: "sunrise",
-            condition: "Memorize a prayer for the morning.",
+            condition: "Memorize one prayer for the morning.",
             requires: .category("Morning", in: "General Prayers")
         ),
         Achievement(
             "Healing Prayer",
             symbol: "heart",
-            condition: "Memorize a prayer for healing.",
+            condition: "Memorize one prayer for healing.",
             requires: .category("Healing", in: "General Prayers")
         ),
         Achievement(
             "Aid & Assistance Prayer",
             symbol: "hand.raised",
-            condition: "Memorize a prayer for aid and assistance.",
+            condition: "Memorize one prayer for aid and assistance.",
             requires: .category("Aid and Assistance", in: "General Prayers")
         ),
         Achievement(
             "Family Prayer",
             symbol: "house",
-            condition: "Memorize a prayer for the family.",
+            condition: "Memorize one prayer for the family.",
             requires: .category("Families", in: "General Prayers")
         ),
         Achievement(
             "Fasting Prayer",
             symbol: "moon",
-            condition: "Memorize a prayer for the Fast.",
+            condition: "Memorize one prayer for the Fast.",
             requires: .category("The Fast", in: "Occasional Prayers")
         ),
         Achievement(
             "5 Hidden Words",
             symbol: "book.closed",
-            condition: "Memorize five of the Hidden Words.",
+            condition: "Memorize five Hidden Words.",
             requires: .count(5, from: "The Hidden Words")
         )
     ]
