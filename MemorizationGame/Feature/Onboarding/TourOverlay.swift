@@ -42,12 +42,17 @@ struct TourOverlay: View {
                 .lineSpacing(3)
                 .fixedSize(horizontal: false, vertical: true)
 
-            if let note = step.note(scale: fontScale) {
-                InfoNote(Typography.footnote, color: Theme.faint) {
-                    note
-                        .appFont(Typography.footnote)
-                        .foregroundStyle(Theme.faint)
-                        .fixedSize(horizontal: false, vertical: true)
+            if !step.notes.isEmpty {
+                VStack(alignment: .leading, spacing: Spacing.xs) {
+                    ForEach(step.notes) { note in
+                        InfoNote(Typography.footnote, color: Theme.faint, symbol: note.symbol) {
+                            Text(note.text)
+                                .italic()
+                                .appFont(Typography.footnote)
+                                .foregroundStyle(Theme.faint)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
                 }
             }
 
