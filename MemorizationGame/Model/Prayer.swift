@@ -9,12 +9,11 @@ struct Prayer: Decodable, Identifiable, Hashable {
     let primaryTag: String
     let collection: String
     let section: String
-    let source: String?
     let title: String
     let wordCount: Int
 
     private enum CodingKeys: String, CodingKey {
-        case id, author, heading, text, tags, primaryTag, collection, section, source
+        case id, author, heading, text, tags, primaryTag, collection, section
     }
 
     init(from decoder: Decoder) throws {
@@ -27,7 +26,6 @@ struct Prayer: Decodable, Identifiable, Hashable {
         primaryTag = try container.decode(String.self, forKey: .primaryTag)
         collection = try container.decode(String.self, forKey: .collection)
         section = try container.decode(String.self, forKey: .section)
-        source = try container.decodeIfPresent(String.self, forKey: .source)
         title = heading.isEmpty ? Prayer.firstLine(of: text) : heading
         wordCount = text.split(whereSeparator: { $0 == " " || $0 == "\n" }).count
     }

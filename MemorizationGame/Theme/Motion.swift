@@ -1,7 +1,6 @@
 import SwiftUI
 
 enum Motion {
-    static let micro    = Animation.easeInOut(duration: 0.12)
     static let toggle   = Animation.easeInOut(duration: 0.22)
     static let standard = Animation.easeInOut(duration: 0.28)
     static let fadeDuration = 0.35

@@ -94,7 +94,6 @@ enum Typography {
 
     static let numeral      = AppTextToken(34, weight: .semibold, face: .scripture)
     static let recite       = AppTextToken(26, face: .scripture)
-    static let prayer       = AppTextToken(25, weight: .medium, face: .scripture)
     static let verse        = AppTextToken(20, face: .scripture)
     static let verseInitial = AppTextToken(32, face: .scripture)
     static let excerpt      = AppTextToken(15, face: .scripture)
