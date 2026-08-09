@@ -39,3 +39,20 @@ the app target only (the test target's numbers are left alone).
 
 After upload, the build takes a few minutes to process before it can be attached to a
 version in App Store Connect.
+
+## Preparing the release
+
+```
+scripts/release-diff.sh          # commits + changed areas since the newest v* tag
+scripts/release-diff.sh <ref>    # or from an explicit base, before any tag exists
+scripts/check-listing.py         # numeric claims in store-listing.md vs library.json
+```
+
+`release-diff.sh` groups changed files by area so it's obvious at a glance whether a
+release contains anything user-facing at all. `check-listing.py` counts the bundled
+library by collection and compares it against the claims in `store-listing.md` — it exits
+non-zero when a number has drifted.
+
+Both feed the `release-notes` skill (`.claude/skills/release-notes/`), which drafts the
+App Store "What's New" text and flags which screenshots the release has invalidated. Ask
+for release notes and it runs them for you.
