@@ -194,7 +194,6 @@ def build_prayers(refresh):
                 "primaryTag": chain[0] if chain else path[0],
                 "collection": PRAYERS,
                 "section": path[0],
-                "source": PRAYERS_URL,
             }
         )
     return entries
@@ -230,7 +229,6 @@ def build_hidden_words(refresh):
                         "primaryTag": section,
                         "collection": HIDDEN_WORDS,
                         "section": section,
-                        "source": HIDDEN_WORDS_URL,
                     }
                 )
                 number = None
@@ -294,7 +292,7 @@ def main():
     return 0
 
 
-FIELDS = ["id", "author", "heading", "text", "tags", "primaryTag", "collection", "section", "source"]
+FIELDS = ["id", "author", "heading", "text", "tags", "primaryTag", "collection", "section"]
 
 
 if __name__ == "__main__":
