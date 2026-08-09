@@ -13,8 +13,8 @@ struct RecitationBar: View {
                     .padding(.top, Spacing.md)
                     .transition(.opacity.combined(with: .scale(scale: 0.85)))
             }
-            if voice.isListening {
-                heardRow
+            if let status = statusLabel {
+                statusRow(status)
             }
         }
         .padding(.bottom, Spacing.md)
@@ -26,14 +26,14 @@ struct RecitationBar: View {
         voice.isListening || hasHiddenWords
     }
 
-    private var heardRow: some View {
+    private func statusRow(_ label: String) -> some View {
         HStack(spacing: 7) {
             if voice.isSettling {
                 ProgressView()
                     .controlSize(.mini)
                     .tint(Theme.muted)
             }
-            Text(heardLabel)
+            Text(label)
                 .appFont(Typography.micro)
                 .foregroundStyle(Theme.faint)
                 .lineLimit(1)
@@ -45,9 +45,19 @@ struct RecitationBar: View {
         .animation(.easeInOut(duration: 0.15), value: voice.isSettling)
     }
 
-    private var heardLabel: String {
-        if voice.isSettling { return "Checking…" }
-        return voice.heardText.isEmpty ? "Listening…" : voice.heardText
+    private var statusLabel: String? {
+        switch voice.state {
+        case .preparingModel:
+            guard let progress = voice.downloadProgress else { return "Preparing…" }
+            return "Downloading speech model… \(Int(progress * 100))%"
+        case .failed:
+            return "Couldn't start listening. Tap to try again."
+        case .listening:
+            if voice.isSettling { return "Checking…" }
+            return voice.heardText.isEmpty ? "Listening…" : voice.heardText
+        case .idle, .micDenied:
+            return nil
+        }
     }
 
     private var micButton: some View {
@@ -83,7 +93,7 @@ struct RecitationBar: View {
                 .symbolEffect(.variableColor.iterative.dimInactiveLayers, options: .repeat(.continuous))
                 .transition(.symbolEffect(.drawOn))
         case .idle, .failed, .micDenied:
-            Image(systemName: denied ? "mic.slash" : "mic")
+            Image(systemName: idleSymbol)
                 .font(.system(size: 21, weight: .regular))
                 .foregroundStyle(denied ? Theme.muted.opacity(0.5) : Theme.navIcon)
                 .contentTransition(.symbolEffect(.replace.magic(fallback: .replace.offUp)))
@@ -93,6 +103,14 @@ struct RecitationBar: View {
 
     private var denied: Bool {
         voice.state == .micDenied
+    }
+
+    private var idleSymbol: String {
+        switch voice.state {
+        case .micDenied: "mic.slash"
+        case .failed: "arrow.clockwise"
+        default: "mic"
+        }
     }
 
     private var fill: Color {

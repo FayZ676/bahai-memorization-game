@@ -17,6 +17,7 @@ final class VoiceRecitationController {
     private(set) var nextExpectedIndex: Int?
     private(set) var heardText = ""
     private(set) var isSettling = false
+    private(set) var downloadProgress: Double?
     var onWordsMatched: (([Int]) -> Void)?
     var onMiss: ((Int, Bool) -> Void)?
     var onCompleted: (() -> Void)?
@@ -28,15 +29,17 @@ final class VoiceRecitationController {
     private var resultsTask: Task<Void, Never>?
     private var finalizeDebounce: Task<Void, Never>?
     private var prewarmTask: Task<Void, Never>?
+    private var disruptionObservers: [NSObjectProtocol] = []
     private var matcher = RecitationMatcher(words: [], hiddenIndices: [])
 
     var isListening: Bool { state == .listening }
 
     func prewarm() {
         guard prewarmTask == nil else { return }
-        prewarmTask = Task {
-            let transcriber = Self.makeTranscriber()
-            try? await Self.ensureModelInstalled(for: transcriber)
+        prewarmTask = Task { [weak self] in
+            guard let locale = await Self.resolveLocale() else { return }
+            let transcriber = Self.makeTranscriber(locale: locale)
+            try? await self?.installModelIfNeeded(for: transcriber)
             let analyzer = SpeechAnalyzer(modules: [transcriber], options: Self.analyzerOptions)
             let format = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber])
             try? await analyzer.prepareToAnalyze(in: format)
@@ -51,11 +54,20 @@ final class VoiceRecitationController {
             state = .micDenied
             return
         }
+        guard SpeechTranscriber.isAvailable else {
+            state = .failed
+            return
+        }
         state = .preparingModel
         do {
             await prewarmTask?.value
-            let transcriber = Self.makeTranscriber()
-            try await Self.ensureModelInstalled(for: transcriber)
+            guard let locale = await Self.resolveLocale() else {
+                state = .failed
+                return
+            }
+            let transcriber = Self.makeTranscriber(locale: locale)
+            try await installModelIfNeeded(for: transcriber)
+            _ = try? await AssetInventory.reserve(locale: locale)
             let analyzerFormat = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber])
             guard state == .preparingModel else { return }
             matcher = RecitationMatcher(words: words, hiddenIndices: hiddenIndices)
@@ -80,6 +92,7 @@ final class VoiceRecitationController {
             try startAudioEngine(feeding: inputBuilder, format: analyzerFormat)
             try await analyzer.start(inputSequence: inputSequence)
             state = .listening
+            observeAudioDisruptions()
             observeResults(from: transcriber)
         } catch {
             state = .failed
@@ -124,14 +137,13 @@ final class VoiceRecitationController {
 
     private func ingest(_ result: SpeechTranscriber.Result) {
         let text = String(result.text.characters)
-        let tokens = text
-            .split(whereSeparator: \.isWhitespace)
-            .map(String.init)
+        let tokens = Self.tokenize(text)
         heardText = text.trimmingCharacters(in: .whitespacesAndNewlines)
         isSettling = false
         finalizeDebounce?.cancel()
         if result.isFinal {
-            dispatch(matcher.finalizeSegment(tokens))
+            let alternatives = result.alternatives.map { Self.tokenize(String($0.characters)) }
+            dispatch(matcher.finalizeSegment(tokens, alternatives: alternatives))
         } else {
             dispatch(matcher.updateVolatile(tokens))
             scheduleIdleFinalize()
@@ -180,7 +192,56 @@ final class VoiceRecitationController {
         try audioEngine.start()
     }
 
+    private static func tokenize(_ text: String) -> [String] {
+        text
+            .split(whereSeparator: \.isWhitespace)
+            .map(String.init)
+    }
+
+    private func observeAudioDisruptions() {
+        let names: [Notification.Name] = [
+            AVAudioSession.interruptionNotification,
+            AVAudioSession.mediaServicesWereResetNotification,
+            .AVAudioEngineConfigurationChange,
+        ]
+        disruptionObservers = names.map { name in
+            NotificationCenter.default.addObserver(
+                forName: name,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor in self?.stop() }
+            }
+        }
+    }
+
+    private func removeDisruptionObservers() {
+        for observer in disruptionObservers {
+            NotificationCenter.default.removeObserver(observer)
+        }
+        disruptionObservers = []
+    }
+
+    private func installModelIfNeeded(for transcriber: SpeechTranscriber) async throws {
+        guard let request = try await AssetInventory.assetInstallationRequest(
+            supporting: [transcriber]
+        ) else { return }
+        let progress = request.progress
+        let poller = Task { @MainActor [weak self] in
+            while !Task.isCancelled {
+                self?.downloadProgress = progress.fractionCompleted
+                try? await Task.sleep(for: .milliseconds(200))
+            }
+        }
+        defer {
+            poller.cancel()
+            downloadProgress = nil
+        }
+        try await request.downloadAndInstall()
+    }
+
     private func teardown() {
+        removeDisruptionObservers()
         resultsTask?.cancel()
         resultsTask = nil
         finalizeDebounce?.cancel()
@@ -226,19 +287,17 @@ final class VoiceRecitationController {
         modelRetention: .processLifetime
     )
 
-    private static func makeTranscriber() -> SpeechTranscriber {
-        SpeechTranscriber(
-            locale: Locale(identifier: "en-US"),
-            transcriptionOptions: [],
-            reportingOptions: [.volatileResults, .fastResults],
-            attributeOptions: []
-        )
+    private static func resolveLocale() async -> Locale? {
+        await SpeechTranscriber.supportedLocale(equivalentTo: Locale(identifier: "en-US"))
     }
 
-    private static func ensureModelInstalled(for transcriber: SpeechTranscriber) async throws {
-        if let request = try await AssetInventory.assetInstallationRequest(supporting: [transcriber]) {
-            try await request.downloadAndInstall()
-        }
+    private static func makeTranscriber(locale: Locale) -> SpeechTranscriber {
+        SpeechTranscriber(
+            locale: locale,
+            transcriptionOptions: [],
+            reportingOptions: [.volatileResults, .fastResults, .alternativeTranscriptions],
+            attributeOptions: []
+        )
     }
 
     private static func micPermissionGranted() async -> Bool {
