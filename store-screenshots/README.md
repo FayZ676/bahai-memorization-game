@@ -2,6 +2,10 @@
 
 Captured from simulators at exactly the sizes App Store Connect requires.
 
+The `-framed/` folders hold what actually gets uploaded: the same shots composed with a
+headline and a phone bezel by `Design/StoreFrames/`. The bare folders are the source
+those are built from — reshoot here, then regenerate the tiles.
+
 | Folder | Device | Pixels | Required because |
 |---|---|---|---|
 | `iphone-6.9/` | iPhone 17 Pro Max (iOS 26) | 1320 × 2868 | the mandatory iPhone size |
