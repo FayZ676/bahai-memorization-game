@@ -15,9 +15,16 @@ to iterate on layout in a browser.
 
 ## What it makes
 
-A headline and the raw screenshot inside a bezelled phone that bleeds off the bottom edge.
-Input is `store-screenshots/<device>/`; a tile whose source is missing is skipped, which is
-why `--device ipad` produces three tiles and not eight.
+Five tiles that read in order as one pass through the app — pick a prayer, read it, hide a
+word, hide more, know it. Tiles 3 and 4 are the same chunk of the same passage at two
+stages, and tile 2 previews that same prayer, so the set demonstrates the loop instead of
+describing it. Reordering the list breaks that; the story is the point, not the coverage.
+
+Each tile names its own output file, so `TILES` order is the upload order and the raw
+capture it draws from can keep whatever name it was shot under. Input is
+`store-screenshots/<device>/`; a tile whose source is missing is skipped, which is why
+`--device ipad` produces three tiles — the iPad was never shot for the two session stages,
+and its three land as 1, 3 and 5, which is still the same story with beats missing.
 
 The headline is centred in the band above the phone rather than hung from a fixed top, so
 one-line and two-line headlines both sit right without a per-tile nudge. Line breaks are

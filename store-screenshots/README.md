@@ -14,15 +14,26 @@ those are built from — reshoot here, then regenerate the tiles.
 Both simulators must be on the **iOS 26** runtime — the app's deployment target refuses
 to install on the 18.6 iPad Pro that carries the same name.
 
-Upload order matters — the first two are what people see in search results.
+These are the raw captures. What gets uploaded is the five tiles in `-framed/`, which
+read in order as one pass through the app — see `Design/StoreFrames/README.md`.
 
-1. `1-library.png` — library with the streak and per-passage progress ramps
-2. `2-hide-words.png` — a passage part-hidden, the core mechanic
-3. `3-built-in-library.png` — the Writings surface: search, My Writings, the bundled collections with counts
-4. `4-preview.png` — reading a Hidden Word before memorizing it
-5. `5-dark.png` — the same passage in dark
-6. `6-library-dark.png`, `7-hidden-words.png`, `8-achievements.png` — spares
-   (`8-achievements.png` needs the `ACHIEVEMENTS=1` seed — see below)
+| Raw capture | Becomes | Shows |
+|---|---|---|
+| `3-built-in-library.png` | `1-choose.png` | the Writings surface: search, My Writings, bundled collections with counts |
+| `4-preview.png` | `2-read.png` | the hero prayer read straight through, before any of it is hidden |
+| `2-hide-words.png` | `3-hide.png` | that prayer's second section, 24% hidden |
+| `9-hide-more.png` | `4-hide-more.png` | the *same* section at 33%, which is what makes the set a sequence rather than a gallery |
+| `1-library.png` | `5-know.png` | the library, streak and progress ramps, several passages finished |
+
+Spares, captured but not uploaded: `5-dark.png`, `6-library-dark.png`, `7-hidden-words.png`,
+`8-achievements.png` (that last one needs the `ACHIEVEMENTS=1` seed — see below).
+
+Two captures are stage-dependent and must be reshot as a pair if the hero passage changes:
+`2-hide-words.png` from the default seed and `9-hide-more.png` from `HERO_LATE=1`, which
+hides 85% of the same chunk instead of 40%. `HERO_LATE` deliberately leaves the later
+chunks empty so the session still lands on section 2 in both, keeping the two tiles
+identical but for the blanks. `4-preview.png` must be the same prayer as those two —
+reach it via Writings → Recently read, which the seed populates.
 
 If you drop the iPad build (`TARGETED_DEVICE_FAMILY = 1`), `ipad-13/` is no longer needed.
 

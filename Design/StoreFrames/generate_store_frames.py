@@ -55,23 +55,20 @@ IPAD = dict(size=(2064, 2752), folder="ipad-13", geometry=dict(
     radius=0.0520,
 ))
 
+# One pass through the app, in order: pick a prayer, read it, hide a word, hide more,
+# know it. Tiles 3 and 4 are deliberately the same chunk of the same passage at two
+# stages, so the sequence shows the thing getting harder instead of describing it.
 TILES = [
-    dict(source="1-library.png",
-         headline="See everything\nyou’re memorizing."),
-    dict(source="2-hide-words.png",
+    dict(name="1-choose.png", source="3-built-in-library.png",
+         headline="Start with any\nof 225 prayers."),
+    dict(name="2-read.png", source="4-preview.png",
+         headline="Read it\nthrough first."),
+    dict(name="3-hide.png", source="2-hide-words.png",
          headline="Tap a word\nto hide it."),
-    dict(source="3-built-in-library.png",
-         headline="225 prayers,\nbuilt in."),
-    dict(source="4-preview.png",
-         headline="Read a prayer\nbefore you start."),
-    dict(source="5-dark.png", theme="dark",
-         headline="Works in dark mode."),
-    dict(source="6-library-dark.png", theme="dark",
-         headline="Everything stays\non your iPhone."),
-    dict(source="7-hidden-words.png",
-         headline="All 153\nHidden Words."),
-    dict(source="8-achievements.png",
-         headline="Seven achievements\nto earn."),
+    dict(name="4-hide-more.png", source="9-hide-more.png",
+         headline="Hide more\neach time you return."),
+    dict(name="5-know.png", source="1-library.png",
+         headline="Until you know it\nby heart."),
 ]
 
 PAGE = """<!doctype html>
@@ -200,7 +197,7 @@ def rasterise(chrome, page, out, size):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--device", choices=["iphone", "ipad", "both"], default="iphone")
-    parser.add_argument("--only", help="substring of a source filename")
+    parser.add_argument("--only", help="substring of a tile's name or source filename")
     parser.add_argument("--html-only", action="store_true")
     args = parser.parse_args()
 
@@ -212,16 +209,16 @@ def main():
         out_dir = SHOTS / f"{device['folder']}-framed"
         out_dir.mkdir(parents=True, exist_ok=True)
         for tile in TILES:
-            if args.only and args.only not in tile["source"]:
+            if args.only and args.only not in tile["name"] + tile["source"]:
                 continue
             if not (SHOTS / device["folder"] / tile["source"]).exists():
                 continue
-            page = work / f"{device['folder']}-{tile['source']}.html"
+            page = work / f"{device['folder']}-{tile['name']}.html"
             page.write_text(build_page(tile, device))
             if args.html_only:
                 print("html:", page)
                 continue
-            out = out_dir / tile["source"]
+            out = out_dir / tile["name"]
             rasterise(chrome, page, out, device["size"])
             got = png_size(out)
             if got != tuple(device["size"]):

@@ -60,10 +60,15 @@ def ramp(n, hi=1.0, lo=0.0, solid=0):
     return vals[:n]
 
 
+# the session hero, at two stages of the same chunk, so the store tiles can show
+# one passage getting harder rather than two unrelated screens
+HERO_FILLS = [1.0, 0.85, 0.0, 0.0] if os.environ.get("HERO_LATE") else [1.0, 0.4, 0.0, 0.0]
+
 # (needle, section, lines-per-chunk, per-chunk fill fractions)
 PICKS = [
-    # session hero: lands on the 40%-hidden chunk; HERO_GROUP=4 fills the wider iPad page
-    ("I have turned in repentance unto Thee", None,  HERO_GROUP, [1.0, 0.4, 0.0, 0.0]),
+    # session hero: lands on the last chunk with anything hidden, which HERO_FILLS keeps
+    # at index 1 either way; HERO_GROUP=3 fills the wider iPad page
+    ("I have turned in repentance unto Thee", None,  HERO_GROUP, HERO_FILLS),
     # library hero: 9 short chunks, a clean descending ramp
     ("Prayer for the Dead", "General Prayers",       1, ramp(9, hi=0.95, lo=0.0, solid=3)),
     ("I bear witness, O my God", "Obligatory Prayers", 1, [1.0, 1.0]),

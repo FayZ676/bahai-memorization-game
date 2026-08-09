@@ -53,9 +53,11 @@ Verses is built around one belief: memorization isn't a test to pass, it's a way
 - Privacy: https://fayz676.github.io/bahai-memorization-game/privacy.html
 
 ## Screenshots
-Upload the `-framed/` folders — 8 × iPhone 6.9" (1320×2868) and 3 × iPad 13" (2064×2752),
-each a screenshot composed under a headline by `Design/StoreFrames/`. The bare folders in
-`store-screenshots/` are the raw captures those are built from, with regeneration instructions. The recitation screen is not among them; speech
+Upload the `-framed/` folders in filename order — 5 × iPhone 6.9" (1320×2868) and
+3 × iPad 13" (2064×2752), each a screenshot composed under a headline by
+`Design/StoreFrames/`. They read as one pass through the app: choose a prayer, read it,
+hide a word, hide more, know it. The bare folders in `store-screenshots/` are the raw
+captures those are built from, with regeneration instructions. The recitation screen is not among them; speech
 recognition can't reach its listening state in a simulator.
 
 ## Notes / decisions still open
