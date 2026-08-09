@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compose App Store preview tiles: headline, subhead, and a bezelled phone.
+"""Compose App Store preview tiles: a headline over a bezelled phone.
 
 Reads the raw screenshots in store-screenshots/ and writes framed tiles beside
 them. Requires headless Chrome to rasterise; set CHROME to override the path.
@@ -35,13 +35,9 @@ DARK = dict(ground="#121212", ink="#EDEDED", muted="#9A9A9A",
 
 # Proportions lifted off the reference tile, as fractions of the canvas.
 GEOMETRY = dict(
-    headline_top=0.069,     # top of the headline's cap height
+    headline_lift=0.022,    # optical bias above dead centre of the band
     headline_size=0.089,    # em, as a fraction of canvas width
     headline_leading=1.06,
-    subhead_gap=0.0105,     # headline block to subhead
-    subhead_size=0.0365,
-    subhead_leading=1.37,
-    subhead_width=0.88,     # measure, as a fraction of canvas width
     phone_top=0.251,
     phone_width=0.852,
     bezel=0.0114,           # bezel thickness, fraction of canvas width
@@ -51,10 +47,8 @@ GEOMETRY = dict(
 IPHONE = dict(size=(1320, 2868), folder="iphone-6.9", geometry=GEOMETRY)
 IPAD = dict(size=(2064, 2752), folder="ipad-13", geometry=dict(
     GEOMETRY,
-    headline_top=0.055,
+    headline_lift=0.018,
     headline_size=0.062,
-    subhead_size=0.0255,
-    subhead_gap=0.021,
     phone_top=0.230,
     phone_width=0.780,
     bezel=0.0080,
@@ -63,29 +57,21 @@ IPAD = dict(size=(2064, 2752), folder="ipad-13", geometry=dict(
 
 TILES = [
     dict(source="1-library.png",
-         headline="See everything\nyou’re memorizing.",
-         subhead="Every passage you’ve added, and how much of it you know so far."),
+         headline="See everything\nyou’re memorizing."),
     dict(source="2-hide-words.png",
-         headline="Tap a word\nto hide it.",
-         subhead="Read what’s left out loud. Hide a few more each time you come back."),
+         headline="Tap a word\nto hide it."),
     dict(source="3-built-in-library.png",
-         headline="225 prayers,\nbuilt in.",
-         subhead="All 153 Hidden Words and 24 Ruhi passages too. Or paste your own text."),
+         headline="225 prayers,\nbuilt in."),
     dict(source="4-preview.png",
-         headline="Read a prayer\nbefore you start.",
-         subhead="Open anything in the library and read it through first."),
+         headline="Read a prayer\nbefore you start."),
     dict(source="5-dark.png", theme="dark",
-         headline="Works in dark mode.",
-         subhead="No account and no ads. Reminders only if you turn them on."),
+         headline="Works in dark mode."),
     dict(source="6-library-dark.png", theme="dark",
-         headline="Everything stays\non your iPhone.",
-         subhead="No sign-in, no sync, no tracking."),
+         headline="Everything stays\non your iPhone."),
     dict(source="7-hidden-words.png",
-         headline="All 153\nHidden Words.",
-         subhead="From the Arabic and from the Persian, complete and searchable."),
+         headline="All 153\nHidden Words."),
     dict(source="8-achievements.png",
-         headline="Seven achievements\nto earn.",
-         subhead="Memorize an obligatory prayer, a healing prayer, five Hidden Words, and more."),
+         headline="Seven achievements\nto earn."),
 ]
 
 PAGE = """<!doctype html>
@@ -107,9 +93,14 @@ PAGE = """<!doctype html>
   }}
   .copy {{
     position: absolute;
-    top: {headline_top}px;
+    top: 0;
     left: 0;
     width: {w}px;
+    height: {phone_top}px;
+    padding-bottom: {headline_lift}px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     text-align: center;
   }}
   h1 {{
@@ -120,16 +111,6 @@ PAGE = """<!doctype html>
     letter-spacing: -0.004em;
     color: {ink};
     white-space: pre-line;
-  }}
-  p {{
-    margin: {subhead_gap}px auto 0;
-    max-width: {subhead_width}px;
-    font-family: -apple-system, "Helvetica Neue", Helvetica, sans-serif;
-    font-weight: 400;
-    font-size: {subhead_size}px;
-    line-height: {subhead_leading};
-    letter-spacing: 0.002em;
-    color: {muted};
   }}
   .phone {{
     position: absolute;
@@ -151,10 +132,7 @@ PAGE = """<!doctype html>
   }}
   .screen img {{ display: block; width: 100%; }}
 </style>
-<div class="copy">
-  <h1>{headline}</h1>
-  {subhead_html}
-</div>
+<div class="copy"><h1>{headline}</h1></div>
 <div class="phone"><div class="screen"><img src="{shot}"></div></div>
 """
 
@@ -188,20 +166,15 @@ def build_page(tile, device):
     bezel = round(width * geo["bezel"])
     phone_top = round(height * geo["phone_top"])
 
-    subhead = tile.get("subhead")
     return PAGE.format(
         w=width, h=height,
         display_font=(FONTS / "CormorantGaramond-Bold.ttf").as_uri(),
         ground=theme["ground"], ink=theme["ink"], muted=theme["muted"],
         bezel=theme["bezel"], shadow=theme["shadow"], rim=theme["rim"],
         lift=0.022 if tile.get("theme") != "dark" else 0.0,
-        headline_top=round(height * geo["headline_top"]),
+        headline_lift=round(height * geo["headline_lift"]),
         headline_size=round(width * geo["headline_size"]),
         headline_leading=geo["headline_leading"],
-        subhead_gap=round(height * geo["subhead_gap"]),
-        subhead_size=round(width * geo["subhead_size"]),
-        subhead_leading=geo["subhead_leading"],
-        subhead_width=round(width * geo["subhead_width"]),
         phone_top=phone_top,
         phone_left=round((width - phone_width) / 2),
         phone_width=phone_width,
@@ -212,7 +185,6 @@ def build_page(tile, device):
         shadow_y=round(width * 0.010),
         shadow_blur=round(width * 0.034),
         headline=tile["headline"],
-        subhead_html=f"<p>{subhead}</p>" if subhead else "",
         shot=data_uri(source),
     )
 

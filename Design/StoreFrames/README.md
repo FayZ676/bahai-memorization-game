@@ -15,9 +15,13 @@ to iterate on layout in a browser.
 
 ## What it makes
 
-A headline, a one-line subhead, and the raw screenshot inside a bezelled phone that bleeds
-off the bottom edge. Input is `store-screenshots/<device>/`; a tile whose source is missing
-is skipped, which is why `--device ipad` produces three tiles and not eight.
+A headline and the raw screenshot inside a bezelled phone that bleeds off the bottom edge.
+Input is `store-screenshots/<device>/`; a tile whose source is missing is skipped, which is
+why `--device ipad` produces three tiles and not eight.
+
+The headline is centred in the band above the phone rather than hung from a fixed top, so
+one-line and two-line headlines both sit right without a per-tile nudge. Line breaks are
+explicit `\n` in the headline string — the measure is never the thing that decides them.
 
 Every output is asserted to be exactly the size App Store Connect demands — 1320×2868 for
 iPhone, 2064×2752 for iPad. Regenerate after any reshoot; the tiles embed the screenshot,
@@ -30,9 +34,10 @@ measured off the reference tile, so the same numbers compose both devices. Chang
 fraction and both sizes move together. `IPAD` overrides only the fractions that must
 differ — its canvas is far squarer, so headline and phone both have to shrink.
 
-**Headlines carry the whole message.** Only the first two or three tiles appear in search
-results, at roughly 150px wide, where the subhead is an illegible grey band. Keep the
-headline to five words or fewer and let it say what the screen does.
+**The headline carries the whole message — there is no subhead.** Only the first two or
+three tiles appear in search results, at roughly 150px wide, where body copy is an
+illegible grey band. Keep the headline to five words or fewer and let it say what the
+screen does.
 
 **Every claim in the copy has to hold against the build, not against the last listing.**
 The counts are hardcoded here, so re-derive them from `library.json` whenever it is rebuilt —
