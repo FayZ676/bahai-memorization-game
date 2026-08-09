@@ -53,6 +53,7 @@ release contains anything user-facing at all. `check-listing.py` counts the bund
 library by collection and compares it against the claims in `store-listing.md` — it exits
 non-zero when a number has drifted.
 
-Both feed the `release-notes` skill (`.claude/skills/release-notes/`), which drafts the
-App Store "What's New" text and flags which screenshots the release has invalidated. Ask
-for release notes and it runs them for you.
+Both feed the `release` skill (`.claude/skills/release/`), which is the front door for all
+of this: ask to ship a release and it diffs since the last tag, drafts the "What's New"
+copy, checks the listing claims, names any screenshots the release invalidated, recommends
+a version, and — only once you say yes — runs `push-build.sh` for you.
