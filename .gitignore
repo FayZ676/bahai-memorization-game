@@ -6,9 +6,10 @@ DerivedData/
 *.xcworkspace/xcuserdata/
 .swiftpm/
 
-# Claude Code local state, except shared project skills
+# Claude Code local state, except shared project skills and their permissions
 .claude/*
 !.claude/skills/
+!.claude/settings.json
 
 __pycache__/
 *.pyc

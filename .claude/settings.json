@@ -1,0 +1,28 @@
+{
+  "worktree": {
+    "bgIsolation": "none"
+  },
+  "permissions": {
+    "allow": [
+      "Skill(release)",
+      "Bash(scripts/release-diff.sh)",
+      "Bash(scripts/release-diff.sh *)",
+      "Bash(./scripts/release-diff.sh)",
+      "Bash(./scripts/release-diff.sh *)",
+      "Bash(python3 scripts/check-listing.py)",
+      "Bash(scripts/check-listing.py)",
+      "Bash(./scripts/check-listing.py)",
+      "Bash(python3 scripts/project_version.py *)",
+      "Bash(git status)",
+      "Bash(git status *)",
+      "Bash(git tag --list *)",
+      "Bash(git tag -l *)",
+      "Bash(git log *)",
+      "Bash(git rev-parse *)",
+      "Bash(git rev-list *)",
+      "Bash(git diff)",
+      "Bash(git diff *)",
+      "Bash(git show *)"
+    ]
+  }
+}
