@@ -10,7 +10,7 @@ Memorize Bahá'í prayers
 bahai,writings,hidden,words,ruhi,quotes,bahaullah,abdulbaha,obligatory,faith,scripture,recite
 
 ## Promotional text (170)
-473 prayers, all 153 Hidden Words, and Ruhi Book 1 — built in. Hide a word, recite what's left, and let the passage teach itself to you.
+225 prayers, all 153 Hidden Words, and Ruhi Book 1 — built in. Hide a word, recite what's left, and let the passage teach itself to you.
 
 ## Description (4000)
 Verses turns prayers you love into prayers you know by heart.
@@ -18,7 +18,7 @@ Verses turns prayers you love into prayers you know by heart.
 Tap a word to hide it. What's left is a prompt — read the passage aloud and your memory fills the gap. Hide a few more each time you return, until the page is empty and the prayer is yours.
 
 THE LIBRARY IS ALREADY THERE
-• 473 prayers — obligatory, general, occasional, and special tablets
+• 225 prayers — obligatory, general, occasional, and special tablets
 • The Hidden Words of Bahá'u'lláh, all 153
 • Quotations from Ruhi Book 1
 • Writings of Bahá'u'lláh, 'Abdu'l-Bahá, and the Báb

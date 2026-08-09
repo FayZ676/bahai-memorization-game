@@ -34,6 +34,12 @@ differ — its canvas is far squarer, so headline and phone both have to shrink.
 results, at roughly 150px wide, where the subhead is an illegible grey band. Keep the
 headline to five words or fewer and let it say what the screen does.
 
+**Every claim in the copy has to hold against the build, not against the last listing.**
+The counts are hardcoded here, so re-derive them from `library.json` whenever it is rebuilt —
+225 prayers, 153 Hidden Words, 24 Ruhi passages at the time of writing — and check that
+feature claims match the app (reminders exist, so "no notifications" is false; the
+achievement tile names a count that `AchievementCatalog.all` has to still agree with).
+
 **The phone bleeds off the bottom on purpose.** Fitting the whole device on the canvas
 would shrink the UI to the point where nothing in it can be read. The screenshot is scaled
 to the bezel's inner width and whatever runs past the bottom edge is cropped.

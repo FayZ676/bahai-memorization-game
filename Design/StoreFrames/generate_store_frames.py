@@ -69,14 +69,14 @@ TILES = [
          headline="Tap a word\nto hide it.",
          subhead="Read what’s left out loud. Hide a few more each time you come back."),
     dict(source="3-built-in-library.png",
-         headline="473 prayers,\nbuilt in.",
-         subhead="All 153 Hidden Words and Ruhi passages too. Or paste your own text."),
+         headline="225 prayers,\nbuilt in.",
+         subhead="All 153 Hidden Words and 24 Ruhi passages too. Or paste your own text."),
     dict(source="4-preview.png",
          headline="Read a prayer\nbefore you start.",
          subhead="Open anything in the library and read it through first."),
     dict(source="5-dark.png", theme="dark",
          headline="Works in dark mode.",
-         subhead="No account, no ads, and no notifications."),
+         subhead="No account and no ads. Reminders only if you turn them on."),
     dict(source="6-library-dark.png", theme="dark",
          headline="Everything stays\non your iPhone.",
          subhead="No sign-in, no sync, no tracking."),
@@ -84,8 +84,8 @@ TILES = [
          headline="All 153\nHidden Words.",
          subhead="From the Arabic and from the Persian, complete and searchable."),
     dict(source="8-achievements.png",
-         headline="Track what\nyou’ve memorized.",
-         subhead="A badge for each prayer you finish."),
+         headline="Seven achievements\nto earn.",
+         subhead="Memorize an obligatory prayer, a healing prayer, five Hidden Words, and more."),
 ]
 
 PAGE = """<!doctype html>
