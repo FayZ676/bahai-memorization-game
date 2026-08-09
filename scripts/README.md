@@ -1,0 +1,41 @@
+# Release scripts
+
+## One-time setup: App Store Connect API key
+
+`push-build.sh` uploads without Xcode's UI, which needs an API key rather than your Apple ID.
+
+1. App Store Connect → **Users and Access → Integrations → App Store Connect API**.
+2. Create a key with the **App Manager** role. Download the `.p8` — it downloads once only.
+3. Move it where the script looks for it:
+
+   ```
+   mkdir -p ~/.appstoreconnect/private_keys
+   mv ~/Downloads/AuthKey_XXXXXXXXXX.p8 ~/.appstoreconnect/private_keys/
+   ```
+
+4. Copy the **Key ID** (next to the key) and the **Issuer ID** (above the key list) into
+   `scripts/release.env`, which is gitignored:
+
+   ```
+   ASC_KEY_ID=XXXXXXXXXX
+   ASC_ISSUER_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+   ```
+
+## Pushing a build
+
+```
+scripts/push-build.sh                 # bump build number, archive, upload, commit + tag
+scripts/push-build.sh --version 1.2   # also set the marketing version
+scripts/push-build.sh --export-only   # signed .ipa in build/, no upload, no key needed
+```
+
+The script refuses to run on a dirty working tree, then archives Release for a generic iOS
+device, uploads via `xcodebuild -exportArchive` with `destination: upload`, and tags the
+release `v<version>-<build>`. Those tags are the anchor for diffing "everything since the
+last release" when writing release notes.
+
+Version numbers live in `project.pbxproj`; `project_version.py` reads and writes them for
+the app target only (the test target's numbers are left alone).
+
+After upload, the build takes a few minutes to process before it can be attached to a
+version in App Store Connect.
