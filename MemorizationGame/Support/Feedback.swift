@@ -24,8 +24,6 @@ enum Feedback {
     private static let matchGenerator = UIImpactFeedbackGenerator(style: .medium)
     private static let missGenerator = UINotificationFeedbackGenerator()
 
-    /// Re-primed after every firing: an unprepared generator waits for the Taptic Engine to spin
-    /// up, which reads as the match confirmation lagging the highlight it accompanies.
     static func prepareRecitation() {
         matchGenerator.prepare()
         missGenerator.prepare()
@@ -71,14 +69,6 @@ enum Feedback {
             let item = DispatchWorkItem { generator.impactOccurred(intensity: intensity) }
             rippleItems.append(item)
             DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: item)
-        }
-    }
-
-    static func burn() {
-        let generator = UIImpactFeedbackGenerator(style: .soft)
-        generator.impactOccurred(intensity: CGFloat.random(in: 0.5...0.8))
-        DispatchQueue.main.asyncAfter(deadline: .now() + Double.random(in: 0.03...0.06)) {
-            generator.impactOccurred(intensity: CGFloat.random(in: 0.25...0.45))
         }
     }
 }

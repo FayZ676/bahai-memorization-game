@@ -1,12 +1,9 @@
 import SwiftUI
 
-/// The progress spine: one flat segment per chunk, each filled with the accent
-/// in proportion to how deeply that chunk is hidden. A single-hue ramp — no
-/// animation, no glow.
 struct ProgressBar: View {
     let heats: [Double]
     var weights: [Int]? = nil
-    var animated = true          // retained for call-site compatibility
+    var animated = true
     var highlight: Int? = nil
     var completion: Double? = nil
     var barHeight: CGFloat? = nil
@@ -99,7 +96,6 @@ struct ProgressBar: View {
         t <= 0 ? 0 : 0.16 + 0.84 * t
     }
 
-    /// Eases mastery (0…1) so the ramp reads perceptually rather than linearly.
     private static func eased(_ heat: Double) -> Double {
         let x = min(max(heat, 0), 1)
         let k = 2.5

@@ -1,7 +1,5 @@
 import SwiftUI
 
-/// The practice streak: the count and its label inline on one baseline. Plain
-/// and quiet — no glow, no effects.
 struct StreakView: View {
     let count: Int
 

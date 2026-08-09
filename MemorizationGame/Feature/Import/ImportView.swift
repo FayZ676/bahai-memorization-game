@@ -82,7 +82,6 @@ struct ImportView: View {
                 HStack(spacing: Spacing.sm) {
                     if canSaveToWritings {
                         Button {
-                            Feedback.tap()
                             toggleSavedToWritings()
                         } label: {
                             Image(systemName: savedWritingID == nil ? "bookmark" : "bookmark.fill")

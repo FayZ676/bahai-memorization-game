@@ -38,8 +38,6 @@ struct RecitationMatcher {
         return events
     }
 
-    /// Volatile results resend the whole segment on every update, so this runs over the same
-    /// leading tokens repeatedly. Memoizing keeps that repetition off the Unicode-folding path.
     private mutating func normalized(_ token: String) -> String {
         if let cached = normalizedCache[token] { return cached }
         let value = Self.normalize(token)

@@ -48,9 +48,6 @@ enum RecitationContext {
         let tokens: Range<Int>
     }
 
-    /// `Reviewable.tokens` splits "All-Glorious" into "All" and "-Glorious", keeping the hyphen on
-    /// the trailing piece. Regrouping on that leading hyphen recovers the word as written, and with
-    /// it the mapping from a hidden index back to the orthography the recognizer should be biased on.
     private static func writtenWords(in text: String) -> [WrittenWord] {
         let tokens = Reviewable.tokens(in: text)
         var words: [WrittenWord] = []

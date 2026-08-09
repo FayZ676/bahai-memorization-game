@@ -11,7 +11,6 @@ struct PrayerDetailView: View {
             ScreenHeader(title: "Preview", onBack: { dismiss() }, slotWidth: 84) {
                 HStack(spacing: Spacing.sm) {
                     Button {
-                        Feedback.tap()
                         store.toggleSaved(prayer: prayer)
                     } label: {
                         Image(systemName: isSaved ? "bookmark.fill" : "bookmark")

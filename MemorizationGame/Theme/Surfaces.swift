@@ -1,10 +1,5 @@
 import SwiftUI
 
-/// Reusable surface and control styling, composed from the design tokens
-/// (`Theme` colors, `Radius`, `Spacing`). Kept separate from the palette so the
-/// two concerns — what the colors are, and how surfaces are built — evolve
-/// independently.
-
 struct CardSurface: ViewModifier {
     var cornerRadius: CGFloat = Radius.card
 

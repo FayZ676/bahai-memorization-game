@@ -67,11 +67,6 @@ struct Achievement: Identifiable, Hashable {
     }
 }
 
-/// The one place achievements are defined. Every requirement names a section,
-/// category or collection exactly as `library.json` spells it, and every symbol
-/// needs a `.fill` counterpart for its earned state -- `problems` checks both,
-/// and a debug launch trips an assertion rather than shipping an achievement
-/// that can never be earned.
 enum AchievementCatalog {
     static let all: [Achievement] = [
         Achievement(

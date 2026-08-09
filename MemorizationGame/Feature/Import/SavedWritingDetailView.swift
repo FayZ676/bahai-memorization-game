@@ -11,7 +11,6 @@ struct SavedWritingDetailView: View {
                 if let writing {
                     HStack(spacing: Spacing.sm) {
                         Button {
-                            Feedback.tap()
                             store.removeSavedWriting(id: writing.id)
                             dismiss()
                         } label: {

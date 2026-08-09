@@ -1,17 +1,12 @@
 import SwiftUI
 import UIKit
 
-/// The color palette — the single source of truth for every color in the app.
-/// Every token is adaptive (light/dark); the app's chosen appearance is set once
-/// via `Theme.preferredColorScheme`.
 enum Theme {
-    // Ground & surfaces
-    static let bg        = adaptive(0xECEEE8, 0x121212)   // paper
-    static let raised    = adaptive(0xFAFBF7, 0x1E1E1E)   // cards, rows
+    static let bg        = adaptive(0xECEEE8, 0x121212)
+    static let raised    = adaptive(0xFAFBF7, 0x1E1E1E)
     static let rowBg     = raised
     static let surface   = raised
 
-    // Text
     static let ink       = adaptive(0x1C2521, 0xEDEDED)
     static let inkBright  = ink
     static let muted     = adaptive(0x6A716B, 0x9A9A9A)
@@ -19,14 +14,12 @@ enum Theme {
     static let navIcon   = muted
     static let disabled  = faint
 
-    // Lines
     static let hairline  = adaptive(0xDFE2DB, 0x2E2E2E)
 
-    // Signature + semantics
-    static let accent      = adaptive(0x2F6E5B, 0xC89A5A)   // pine on paper, gilt on ink
+    static let accent      = adaptive(0x2F6E5B, 0xC89A5A)
     static let accentMuted = adaptive(0xB9BEBA, 0x4A3D28)
-    static let gold        = adaptive(0xB9863F, 0xF0CE8A)   // reward only
-    static let warn        = adaptive(0xB4443A, 0xD98A80)   // recitation miss
+    static let gold        = adaptive(0xB9863F, 0xF0CE8A)
+    static let warn        = adaptive(0xB4443A, 0xD98A80)
 
     private static func adaptive(_ light: UInt32, _ dark: UInt32) -> Color {
         Color(uiColor: UIColor { traits in

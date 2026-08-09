@@ -80,7 +80,6 @@ struct AppTextToken {
 }
 
 enum Typography {
-    // Interface chrome — system sans (SF Pro).
     static let button   = AppTextToken(17, weight: .semibold)
     static let subtitle = AppTextToken(17, weight: .semibold)
     static let body     = AppTextToken(16, weight: .regular)
@@ -90,11 +89,9 @@ enum Typography {
     static let footnote = AppTextToken(12, weight: .regular)
     static let micro    = AppTextToken(11, weight: .regular)
 
-    // Headings and titles — Cormorant Garamond.
     static let heading      = AppTextToken(28, weight: .bold, face: .display)
     static let passageTitle = AppTextToken(19, weight: .bold, face: .display)
 
-    // Reading copy — Merriweather.
     static let numeral      = AppTextToken(34, weight: .semibold, face: .scripture)
     static let recite       = AppTextToken(26, face: .scripture)
     static let prayer       = AppTextToken(25, weight: .medium, face: .scripture)

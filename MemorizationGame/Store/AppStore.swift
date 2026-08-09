@@ -13,7 +13,6 @@ final class AppStore {
     var passageJustMemorized = false
     var settings: AppSettings {
         didSet {
-            guard storeURL != nil else { return }
             persist()
             if oldValue.reminderEnabled != settings.reminderEnabled
                 || oldValue.reminders != settings.reminders {
@@ -25,7 +24,7 @@ final class AppStore {
         }
     }
 
-    private let storeURL: URL?
+    private let storeURL: URL
 
     init(filename: String = "store.json") {
         let url = AppStore.documentsDirectory.appendingPathComponent(filename)
@@ -77,10 +76,6 @@ final class AppStore {
         guard total > 0 else { return 0 }
         let hidden = cards.reduce(0) { $0 + $1.hiddenWords.count }
         return Double(hidden) / Double(total)
-    }
-
-    var practicedToday: Bool {
-        practiceLog.practiced(on: Date())
     }
 
     var streakCount: Int {
@@ -193,7 +188,7 @@ final class AppStore {
 
     func merge(_ card: Reviewable, with next: Reviewable) {
         guard let index = reviewables.firstIndex(where: { $0.id == card.id }),
-              let nextIndex = reviewables.firstIndex(where: { $0.id == next.id }) else { return }
+              reviewables.contains(where: { $0.id == next.id }) else { return }
         var merged = reviewables[index]
         let offset = merged.wordCount
         merged.span.end = next.span.end
@@ -310,9 +305,6 @@ final class AppStore {
         settings.lastReviewRequestVersion = ReviewPrompt.currentVersion
     }
 
-    /// Earned state is derived, so the only moment it can be observed changing is
-    /// the mutation that changes it -- there is no stored flag to compare against
-    /// on a later launch.
     private func announceAchievements(memorizedBefore: Set<Int>) {
         let memorizedNow = memorizedPrayerIDs
         guard memorizedNow != memorizedBefore else { return }
@@ -333,7 +325,6 @@ final class AppStore {
     }
 
     func syncStreakReminder() {
-        guard storeURL != nil else { return }
         ReminderScheduler.syncStreakReminder(settings, log: practiceLog)
     }
 
@@ -347,7 +338,6 @@ final class AppStore {
     }
 
     private func persist() {
-        guard let storeURL else { return }
         let snapshot = Snapshot(
             passages: passages,
             reviewables: reviewables,

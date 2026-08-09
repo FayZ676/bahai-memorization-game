@@ -37,8 +37,6 @@ struct SavedWriting: Codable, Hashable, Identifiable {
         )
     }
 
-    var isFromLibrary: Bool { prayerID != nil }
-
     var sourcePath: String? {
         if let prayerID, let prayer = PrayerLibrary.prayer(id: prayerID) { return prayer.path }
         guard let section, !section.lowercased().hasPrefix("http") else { return nil }

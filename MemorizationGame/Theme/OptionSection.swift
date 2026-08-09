@@ -40,3 +40,32 @@ struct OptionSection<Content: View>: View {
         }
     }
 }
+
+extension View {
+    func optionRow() -> some View {
+        padding(.vertical, Spacing.md)
+            .padding(.horizontal, Spacing.lg)
+    }
+}
+
+struct DisclosureRow: View {
+    private let title: String
+
+    init(_ title: String) {
+        self.title = title
+    }
+
+    var body: some View {
+        HStack(spacing: Spacing.sm) {
+            Text(title)
+                .appFont(Typography.body)
+                .foregroundStyle(Theme.ink)
+            Spacer()
+            Image(systemName: "chevron.right")
+                .appIcon(13, weight: .semibold)
+                .foregroundStyle(Theme.faint)
+        }
+        .optionRow()
+        .contentShape(Rectangle())
+    }
+}

@@ -193,18 +193,11 @@ struct PrayerBrowseView: View {
                 indent: 4,
                 initiallyExpanded: section.name == focusSection
             ) {
-                ForEach(Array(section.categories.enumerated()), id: \.element.id) { index, category in
+                DividedRows(items: section.categories, leadingInset: 32) { category in
                     BrowseLink(.category(category, in: section)) {
                         CategoryRow(category: category)
                     }
                     .buttonStyle(.haptic)
-
-                    if index < section.categories.count - 1 {
-                        Divider()
-                            .overlay(Theme.hairline)
-                            .padding(.leading, 32)
-                            .padding(.trailing, 16)
-                    }
                 }
             }
         }
@@ -231,17 +224,11 @@ struct PrayerBrowseView: View {
 
     private var searchRows: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ForEach(Array(searchResults.enumerated()), id: \.element.id) { index, hit in
+            DividedRows(items: searchResults) { hit in
                 BrowseLink(route(for: hit)) {
                     SearchHitRow(hit: hit)
                 }
                 .buttonStyle(.haptic)
-
-                if index < searchResults.count - 1 {
-                    Divider()
-                        .overlay(Theme.hairline)
-                        .padding(.horizontal, 16)
-                }
             }
         }
         .cardSurface(cornerRadius: Radius.group)
@@ -264,11 +251,7 @@ struct PrayerBrowseView: View {
     }
 
     private var noResults: some View {
-        Text("No prayers match “\(trimmedQuery)”.")
-            .appFont(Typography.body)
-            .foregroundStyle(Theme.muted)
-            .frame(maxWidth: .infinity)
-            .padding(.top, 40)
+        EmptyNote("No prayers match “\(trimmedQuery)”.")
     }
 }
 

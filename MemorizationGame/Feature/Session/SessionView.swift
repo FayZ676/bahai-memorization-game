@@ -11,13 +11,8 @@ struct SessionView: View {
     @State private var showingMicDenied = false
     @State private var scrubbing = false
     @State private var barWidth: CGFloat = 0
-    @State private var recitedWords: Set<Int> = []
-    @State private var missedWords: Set<Int> = []
-    @State private var missShakes = 0
-    @State private var missFlashIndex: Int?
-    @State private var wordFrames: [Int: CGRect] = [:]
-    @State private var paintTargetHidden: Bool?
-    @State private var painting = false
+    @State private var highlights = RecitationHighlights()
+    @State private var painting = WordPainting()
     @State private var showingFullText = false
     @State private var showingEdit = false
     let passage: Passage
@@ -39,7 +34,12 @@ struct SessionView: View {
                 if vm.current != nil {
                     progressRow
                     readingArea
-                    bottomBar
+                    RecitationBar(
+                        voice: voice,
+                        hasHiddenWords: !(vm.current?.hiddenWords.isEmpty ?? true),
+                        micDeniedAlert: $showingMicDenied,
+                        onStart: startRecitation
+                    )
                 } else {
                     Spacer()
                     emptyQueue
@@ -71,12 +71,11 @@ struct SessionView: View {
         }
         .onChange(of: vm.presentationEpoch) {
             voice.stop()
-            recitedWords = []
-            missedWords = []
+            highlights.clear()
         }
         .onChange(of: vm.current?.hiddenWords) {
             guard let card = vm.current else { return }
-            voice.updateHiddenIndices(remainingHiddenIndices(of: card))
+            voice.updateHiddenIndices(highlights.unattempted(in: card))
         }
         .onDisappear { voice.stop() }
         .alert("Microphone Access Needed", isPresented: $showingMicDenied) {
@@ -92,9 +91,17 @@ struct SessionView: View {
         .overlay(alignment: .top) {
             Group {
                 if let earned = store.justEarned {
-                    AchievementToast(achievement: earned)
+                    Toast(
+                        symbol: "\(earned.symbol).fill",
+                        title: "Achievement earned",
+                        detail: earned.title
+                    )
                 } else if store.dailyGoalReached {
-                    DailyGoalToast()
+                    Toast(
+                        symbol: "sparkles",
+                        title: "Daily goal complete",
+                        detail: "Today's practice is in — streak secured."
+                    )
                 }
             }
             .padding(.top, 10)
@@ -104,19 +111,11 @@ struct SessionView: View {
         .animation(.spring(response: 0.42, dampingFraction: 0.8), value: store.justEarned)
         .onChange(of: store.dailyGoalReached) { _, reached in
             guard reached else { return }
-            Feedback.sessionComplete()
-            Task {
-                try? await Task.sleep(for: .seconds(3))
-                store.dailyGoalReached = false
-            }
+            celebrate { store.dailyGoalReached = false }
         }
         .onChange(of: store.justEarned) { _, earned in
             guard earned != nil else { return }
-            Feedback.sessionComplete()
-            Task {
-                try? await Task.sleep(for: .seconds(3))
-                store.justEarned = nil
-            }
+            celebrate { store.justEarned = nil }
         }
         .onChange(of: store.passageJustMemorized) { _, memorized in
             guard memorized else { return }
@@ -133,45 +132,56 @@ struct SessionView: View {
         }
     }
 
+    private func celebrate(thenDismiss: @escaping () -> Void) {
+        Feedback.sessionComplete()
+        Task {
+            try? await Task.sleep(for: .seconds(3))
+            thenDismiss()
+        }
+    }
+
     private var currentTitle: String {
         store.passages.first { $0.id == passage.id }?.title ?? passage.title
     }
 
-    private func remainingHiddenIndices(of card: Reviewable) -> [Int] {
-        card.hiddenWords
-            .filter { !recitedWords.contains($0) && !missedWords.contains($0) }
-            .sorted()
-    }
-
     private func registerRecited(_ indices: [Int]) {
-        recitedWords.formUnion(indices)
+        highlights.recite(indices)
         Feedback.wordMatched()
         tour?.complete(.recite)
     }
 
     private func completeChunk() {
         Feedback.sessionComplete()
-        withAnimation(.easeInOut(duration: 0.3)) {
-            recitedWords = []
-            missedWords = []
-        }
+        withAnimation(.easeInOut(duration: 0.3)) { highlights.clear() }
     }
 
     private func registerMiss(_ index: Int, movedOn: Bool) {
-        withAnimation(.linear(duration: 0.3)) { missShakes += 1 }
-        if movedOn { missedWords.insert(index) }
-        missFlashIndex = index
+        withAnimation(.linear(duration: 0.3)) { highlights.miss(index, movedOn: movedOn) }
         Feedback.recitationMiss()
         tour?.complete(.recite)
         Task {
             try? await Task.sleep(for: .milliseconds(600))
-            withAnimation(.easeOut(duration: 0.3)) {
-                if missFlashIndex == index { missFlashIndex = nil }
-            }
+            withAnimation(.easeOut(duration: 0.3)) { highlights.stopFlashing(index) }
         }
     }
 
-    // MARK: Progress
+    private func startRecitation() {
+        guard let card = vm.current else { return }
+        vm.endPeek()
+        var remaining = highlights.unattempted(in: card)
+        if remaining.isEmpty {
+            highlights.clear()
+            remaining = card.hiddenWords.sorted()
+        }
+        Feedback.prepareRecitation()
+        Task {
+            await voice.start(
+                words: card.words.map(String.init),
+                contextText: card.expectedText,
+                hiddenIndices: remaining
+            )
+        }
+    }
 
     private var progressRow: some View {
         VStack(spacing: 9) {
@@ -244,8 +254,6 @@ struct SessionView: View {
         return max(weights.count - 1, 0)
     }
 
-    // MARK: Reading
-
     private var readingArea: some View {
         GeometryReader { geo in
             ScrollView {
@@ -267,11 +275,11 @@ struct SessionView: View {
                 .padding(.bottom, 36)
             }
             .scrollIndicators(.hidden)
-        .scrollDisabled(painting)
+        .scrollDisabled(painting.isActive)
         .simultaneousGesture(
             DragGesture(minimumDistance: 24)
                 .onEnded { value in
-                    guard !painting else { return }
+                    guard !painting.isActive else { return }
                     guard abs(value.translation.width) > abs(value.translation.height) else { return }
                     if value.translation.width < 0, vm.canGoForward {
                         withAnimation(.easeInOut(duration: 0.28)) { vm.skip(forward: true) }
@@ -297,17 +305,17 @@ struct SessionView: View {
                             token: String(words[idx]),
                             hidden: vm.isHidden(idx),
                             expected: expected,
-                            recited: recitedWords.contains(idx),
-                            missed: missedWords.contains(idx),
-                            missFlashing: missFlashIndex == idx,
+                            recited: highlights.recited.contains(idx),
+                            missed: highlights.missed.contains(idx),
+                            missFlashing: highlights.isFlashing(idx),
                             staggerDelay: vm.cascading ? Motion.cascadeDelay(idx, of: words.count) : 0
                         )
                             .appFont(Typography.recite)
-                            .modifier(ShakeEffect(shakes: missFlashIndex == idx ? CGFloat(missShakes) : 0))
+                            .modifier(ShakeEffect(shakes: highlights.shakeAmount(at: idx)))
                             .onGeometryChange(for: CGRect.self) { proxy in
                                 proxy.frame(in: .global)
                             } action: { frame in
-                                wordFrames[idx] = frame
+                                painting.record(frame, at: idx)
                             }
                     }
                 }
@@ -318,26 +326,26 @@ struct SessionView: View {
         .simultaneousGesture(
             SpatialTapGesture(coordinateSpace: .global)
                 .onEnded { value in
-                    guard !painting, let idx = wordIndex(at: value.location) else { return }
+                    guard !painting.isActive, let idx = wordIndex(at: value.location) else { return }
                     withAnimation(Motion.toggle) { vm.toggleWord(idx) }
                 }
         )
         .gesture(PaintRecognizer(
             onBegan: { location in
                 guard !vm.wordsRevealed else { return }
-                painting = true
+                painting.begin()
                 Feedback.flip()
                 paint(at: location)
             },
             onMoved: { location in
-                guard painting else { return }
+                guard painting.isActive else { return }
                 paint(at: location)
             },
             onEnded: {
-                paintTargetHidden = nil
+                painting.end()
                 Task {
                     try? await Task.sleep(for: .milliseconds(80))
-                    painting = false
+                    painting.settle()
                 }
             }
         ))
@@ -345,101 +353,12 @@ struct SessionView: View {
 
     private func paint(at location: CGPoint) {
         guard let idx = wordIndex(at: location) else { return }
-        let target = paintTargetHidden ?? !vm.isHidden(idx)
-        paintTargetHidden = target
-        guard vm.isHidden(idx) != target else { return }
+        guard painting.shouldToggle(vm.isHidden(idx)) else { return }
         withAnimation(Motion.toggle) { vm.toggleWord(idx) }
     }
 
     private func wordIndex(at location: CGPoint) -> Int? {
-        let count = vm.current?.words.count ?? 0
-        return wordFrames.first { idx, frame in
-            idx < count && frame.insetBy(dx: -3.5, dy: -6).contains(location)
-        }?.key
-    }
-
-    // MARK: Bottom bar
-
-    private var bottomBar: some View {
-        VStack(spacing: 0) {
-            if micVisible {
-                micButton
-                    .padding(.top, 12)
-                    .transition(.opacity.combined(with: .scale(scale: 0.85)))
-            }
-            if voice.isListening {
-                heardRow
-            }
-        }
-        .padding(.bottom, 12)
-        .animation(.easeInOut(duration: 0.2), value: micVisible)
-        .animation(.easeInOut(duration: 0.2), value: voice.isListening)
-    }
-
-    private var micVisible: Bool {
-        voice.isListening || !(vm.current?.hiddenWords.isEmpty ?? true)
-    }
-
-    private var heardRow: some View {
-        HStack(spacing: 7) {
-            if voice.isSettling {
-                ProgressView()
-                    .controlSize(.mini)
-                    .tint(Theme.muted)
-            }
-            Text(heardLabel)
-                .appFont(Typography.micro)
-                .foregroundStyle(Theme.faint)
-                .lineLimit(1)
-                .truncationMode(.head)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, 26)
-        .padding(.top, 8)
-        .animation(.easeInOut(duration: 0.15), value: voice.isSettling)
-    }
-
-    private var heardLabel: String {
-        if voice.isSettling { return "Checking…" }
-        return voice.heardText.isEmpty ? "Listening…" : voice.heardText
-    }
-
-    private var micButton: some View {
-        Button {
-            switch voice.state {
-            case .listening:
-                voice.stop()
-            case .micDenied:
-                showingMicDenied = true
-            case .idle, .failed:
-                guard let card = vm.current else { return }
-                vm.endPeek()
-                var remaining = remainingHiddenIndices(of: card)
-                if remaining.isEmpty {
-                    recitedWords = []
-                    missedWords = []
-                    remaining = card.hiddenWords.sorted()
-                }
-                Feedback.prepareRecitation()
-                Task {
-                    await voice.start(
-                        words: card.words.map(String.init),
-                        contextText: card.expectedText,
-                        hiddenIndices: remaining
-                    )
-                }
-            case .preparingModel:
-                break
-            }
-        } label: {
-            micIcon
-                .frame(width: 56, height: 56)
-                .background(micFill, in: Circle())
-                .overlay(Circle().stroke(micStroke, lineWidth: 1))
-                .contentShape(Circle())
-        }
-        .buttonStyle(.haptic)
-        .animation(.easeInOut(duration: 0.18), value: voice.state)
+        painting.index(at: location, wordCount: vm.current?.words.count ?? 0)
     }
 
     private var optionsMenu: some View {
@@ -465,70 +384,11 @@ struct SessionView: View {
         .buttonStyle(.icon)
     }
 
-    @ViewBuilder
-    private var micIcon: some View {
-        switch voice.state {
-        case .preparingModel:
-            ProgressView()
-                .controlSize(.small)
-                .tint(Theme.muted)
-        case .listening:
-            Image(systemName: "waveform")
-                .font(.system(size: 21, weight: .semibold))
-                .foregroundStyle(Theme.accent)
-                .symbolEffect(.variableColor.iterative.dimInactiveLayers, options: .repeat(.continuous))
-                .transition(.symbolEffect(.drawOn))
-        case .idle, .failed, .micDenied:
-            Image(systemName: micSymbol)
-                .font(.system(size: 21, weight: .regular))
-                .foregroundStyle(micTint)
-                .contentTransition(.symbolEffect(.replace.magic(fallback: .replace.offUp)))
-                .transition(.opacity)
-        }
-    }
-
-    private var micSymbol: String {
-        voice.state == .micDenied ? "mic.slash" : "mic"
-    }
-
-    private var micTint: Color {
-        voice.state == .micDenied ? Theme.muted.opacity(0.5) : Theme.navIcon
-    }
-
-    private var micFill: Color {
-        voice.state == .listening ? Theme.accent.opacity(0.18) : Theme.surface
-    }
-
-    private var micStroke: Color {
-        voice.state == .listening ? Theme.accent.opacity(0.7) : Theme.hairline
-    }
-
     private var emptyQueue: some View {
         Text("Nothing to review yet.")
             .appFont(Typography.subtitle)
             .foregroundStyle(Theme.muted)
             .multilineTextAlignment(.center)
-    }
-}
-
-private struct PaintRecognizer: UIGestureRecognizerRepresentable {
-    let onBegan: (CGPoint) -> Void
-    let onMoved: (CGPoint) -> Void
-    let onEnded: () -> Void
-
-    func makeUIGestureRecognizer(context: Context) -> UILongPressGestureRecognizer {
-        let recognizer = UILongPressGestureRecognizer()
-        recognizer.minimumPressDuration = 0.3
-        return recognizer
-    }
-
-    func handleUIGestureRecognizerAction(_ recognizer: UILongPressGestureRecognizer, context: Context) {
-        switch recognizer.state {
-        case .began: onBegan(recognizer.location(in: nil))
-        case .changed: onMoved(recognizer.location(in: nil))
-        case .ended, .cancelled, .failed: onEnded()
-        default: break
-        }
     }
 }
 
@@ -545,46 +405,21 @@ private struct ShakeEffect: GeometryEffect {
     }
 }
 
-private struct AchievementToast: View {
-    let achievement: Achievement
-
-    private var detail: String { achievement.title }
+private struct Toast: View {
+    let symbol: String
+    let title: String
+    let detail: String
 
     var body: some View {
         HStack(spacing: 10) {
-            Image(systemName: "\(achievement.symbol).fill")
+            Image(systemName: symbol)
                 .appIcon(16, weight: .semibold)
                 .foregroundStyle(Theme.gold)
             VStack(alignment: .leading, spacing: 2) {
-                Text("Achievement earned")
+                Text(title)
                     .appFont(Typography.label)
                     .foregroundStyle(Theme.ink)
                 Text(detail)
-                    .appFont(Typography.micro)
-                    .foregroundStyle(Theme.muted)
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(
-            Capsule(style: .continuous)
-                .fill(Theme.rowBg)
-                .overlay(Capsule(style: .continuous).stroke(Theme.gold.opacity(0.5), lineWidth: 1))
-        )
-    }
-}
-
-private struct DailyGoalToast: View {
-    var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "sparkles")
-                .appIcon(16, weight: .semibold)
-                .foregroundStyle(Theme.gold)
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Daily goal complete")
-                    .appFont(Typography.label)
-                    .foregroundStyle(Theme.ink)
-                Text("Today's practice is in — streak secured.")
                     .appFont(Typography.micro)
                     .foregroundStyle(Theme.muted)
             }

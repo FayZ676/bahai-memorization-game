@@ -76,7 +76,6 @@ struct Reviewable: Codable, Identifiable, Hashable {
     mutating func setAllWords(hidden: Bool) {
         hiddenWords = hidden ? Set(0..<wordCount) : []
     }
-
 }
 
 struct Passage: Codable, Identifiable, Hashable {

@@ -116,8 +116,6 @@ extension EnvironmentValues {
 }
 
 extension View {
-    /// `onlyIfCurrent` is for screens the tour does not gate: reaching one out of
-    /// order is ordinary curiosity, not progress, and must not skip the steps between.
     func completesTourStep(_ step: TourStep, onlyIfCurrent: Bool = false) -> some View {
         modifier(TourStepReporter(step: step, onlyIfCurrent: onlyIfCurrent))
     }
