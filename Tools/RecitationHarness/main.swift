@@ -76,6 +76,15 @@ check("word 1 missed as moved-on, later words still matched",
         == Set([RecitationMatcher.Event.missed(index: 1, movedOn: true), .matched(index: 3), .matched(index: 6)].map(String.init(describing:))),
       "\(pastEvents)")
 
+print("\nRegression: pausing must not flash a miss on the next word")
+var paused = RecitationMatcher(words: bearLine, hiddenIndices: [0, 1, 2, 3, 4, 5, 6])
+var pausedEvents: [RecitationMatcher.Event] = []
+pausedEvents += paused.ingest(heard("I bear witness, O my God"), isFinal: false)
+pausedEvents += paused.ingest(heard("I bear witness, O my God,", confidence: 0.9), isFinal: true)
+pausedEvents += paused.ingest(heard(".", confidence: 0.0), isFinal: true)
+check("no miss when the reciter simply stops", !pausedEvents.contains(where: isMiss), "\(pausedEvents)")
+check("still expecting the next unsaid word", paused.nextExpectedIndex == 6, "\(String(describing: paused.nextExpectedIndex))")
+
 print("\nStall and retry: three wrong finals")
 var retry = RecitationMatcher(words: words, hiddenIndices: [1, 3, 6])
 _ = retry.ingest(heard("O"), isFinal: true)

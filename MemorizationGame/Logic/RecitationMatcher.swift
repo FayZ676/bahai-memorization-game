@@ -65,7 +65,8 @@ struct RecitationMatcher {
 
         let spoken = settled + pending
         guard !spoken.isEmpty else { return [] }
-        let reached = Self.alignedIndices(spoken: spoken.map(\.key), reference: words)
+        let alignment = Self.align(spoken: spoken.map(\.key), reference: words)
+        let reached = alignment.reference
 
         var events: [Event] = []
         for index in hiddenIndices where reached.contains(index) {
@@ -87,10 +88,12 @@ struct RecitationMatcher {
             events.append(.missed(index: index, movedOn: true))
         }
 
-        guard isFinal,
-              !progressed,
-              let expected = nextExpectedIndex,
-              usable.contains(where: { $0.confidence >= Self.confidenceFloor })
+        let arrived = (spoken.count - usable.count)..<spoken.count
+        let unexplained = arrived.contains {
+            spoken[$0].confidence >= Self.confidenceFloor && !alignment.spoken.contains($0)
+        }
+
+        guard isFinal, !progressed, unexplained, let expected = nextExpectedIndex
         else { return events }
 
         attempts += 1
@@ -104,10 +107,15 @@ struct RecitationMatcher {
         return events
     }
 
-    private static func alignedIndices(spoken: [String], reference: [String]) -> Set<Int> {
+    private struct Alignment {
+        let reference: Set<Int>
+        let spoken: Set<Int>
+    }
+
+    private static func align(spoken: [String], reference: [String]) -> Alignment {
         let spokenCount = spoken.count
         let referenceCount = reference.count
-        guard spokenCount > 0, referenceCount > 0 else { return [] }
+        guard spokenCount > 0, referenceCount > 0 else { return Alignment(reference: [], spoken: []) }
 
         var cache: [String: Bool] = [:]
         func aligns(_ row: Int, _ column: Int) -> Bool {
@@ -138,12 +146,16 @@ struct RecitationMatcher {
             best = column
         }
 
-        var result: Set<Int> = []
+        var hitReference: Set<Int> = []
+        var hitSpoken: Set<Int> = []
         var row = spokenCount
         var column = best
         while row > 0, column > 0 {
             if cost[row][column] == cost[row - 1][column - 1] + (aligns(row - 1, column - 1) ? 0 : 1) {
-                if aligns(row - 1, column - 1) { result.insert(column - 1) }
+                if aligns(row - 1, column - 1) {
+                    hitReference.insert(column - 1)
+                    hitSpoken.insert(row - 1)
+                }
                 row -= 1
                 column -= 1
             } else if cost[row][column] == cost[row - 1][column] + 1 {
@@ -152,6 +164,6 @@ struct RecitationMatcher {
                 column -= 1
             }
         }
-        return result
+        return Alignment(reference: hitReference, spoken: hitSpoken)
     }
 }
