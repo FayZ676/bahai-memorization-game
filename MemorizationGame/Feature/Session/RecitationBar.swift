@@ -27,27 +27,14 @@ struct RecitationBar: View {
     }
 
     private var heardRow: some View {
-        HStack(spacing: 7) {
-            if voice.isSettling {
-                ProgressView()
-                    .controlSize(.mini)
-                    .tint(Theme.muted)
-            }
-            Text(heardLabel)
-                .appFont(Typography.micro)
-                .foregroundStyle(Theme.faint)
-                .lineLimit(1)
-                .truncationMode(.head)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, 26)
-        .padding(.top, Spacing.sm)
-        .animation(.easeInOut(duration: 0.15), value: voice.isSettling)
-    }
-
-    private var heardLabel: String {
-        if voice.isSettling { return "Checking…" }
-        return voice.heardText.isEmpty ? "Listening…" : voice.heardText
+        Text(voice.heardText.isEmpty ? "Listening…" : voice.heardText)
+            .appFont(Typography.micro)
+            .foregroundStyle(Theme.faint)
+            .lineLimit(1)
+            .truncationMode(.head)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 26)
+            .padding(.top, Spacing.sm)
     }
 
     private var micButton: some View {

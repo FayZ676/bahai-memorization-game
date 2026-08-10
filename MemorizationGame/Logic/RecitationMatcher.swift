@@ -6,15 +6,34 @@ struct RecitationMatcher {
         case missed(index: Int, movedOn: Bool)
     }
 
+    struct HeardToken {
+        let key: String
+        let confidence: Double
+        let start: Double
+        let end: Double
+
+        init(text: some StringProtocol, confidence: Double, start: Double, end: Double) {
+            self.key = PhoneticKey.encode(text)
+            self.confidence = confidence
+            self.start = start
+            self.end = end
+        }
+    }
+
+    private static let lookahead = 12
+    private static let utteranceGap = 0.6
+    private static let attemptBudget = 3
+    private static let confidenceFloor = 0.25
+
     private let words: [String]
     private var hiddenIndices: [Int]
+    private var cursor = 0
     private var queuePosition = 0
-    private var failedAttempts = 0
-    private var segmentMatchConsumed = 0
-    private var normalizedCache: [String: String] = [:]
+    private var attempts = 0
+    private var consumedUpTo = 0.0
 
     init(words: [String], hiddenIndices: [Int]) {
-        self.words = words.map(Self.normalize)
+        self.words = words.map(PhoneticKey.encode)
         self.hiddenIndices = hiddenIndices.filter { $0 >= 0 && $0 < words.count }.sorted()
     }
 
@@ -25,132 +44,139 @@ struct RecitationMatcher {
         let frontier = nextExpectedIndex ?? words.count
         hiddenIndices = indices.filter { $0 >= 0 && $0 < words.count }.sorted()
         queuePosition = hiddenIndices.firstIndex { $0 >= frontier } ?? hiddenIndices.count
-        failedAttempts = 0
+        attempts = 0
     }
 
-    mutating func updateVolatile(_ segmentTokens: [String]) -> [Event] {
-        scan(segmentTokens, commitMisses: false)
-    }
-
-    mutating func finalizeSegment(_ segmentTokens: [String]) -> [Event] {
-        let events = scan(segmentTokens, commitMisses: true)
-        segmentMatchConsumed = 0
-        return events
-    }
-
-    private mutating func normalized(_ token: String) -> String {
-        if let cached = normalizedCache[token] { return cached }
-        let value = Self.normalize(token)
-        normalizedCache[token] = value
-        return value
-    }
-
-    private mutating func scan(_ segmentTokens: [String], commitMisses: Bool) -> [Event] {
-        var tokens: [String] = []
-        tokens.reserveCapacity(segmentTokens.count)
-        for raw in segmentTokens {
-            let token = normalized(raw)
-            if !token.isEmpty { tokens.append(token) }
-        }
+    mutating func ingest(_ tokens: [HeardToken], finalizedThrough: Double) -> [Event] {
+        let pending = tokens.filter { !$0.key.isEmpty && $0.end > consumedUpTo }
+        guard !pending.isEmpty else { return [] }
         var events: [Event] = []
-        var position = min(segmentMatchConsumed, tokens.count)
-        while position < tokens.count, let expected = nextExpectedIndex {
-            let token = tokens[position]
-            let leftBehind = tokens.count - 1 - position >= 2
-            defer { position += 1 }
-            if Self.tokensMatch(token, words[expected]) {
-                events.append(.matched(index: expected))
-                advance()
-                segmentMatchConsumed = position + 1
-            } else if isIgnorableContext(token, before: expected) || !(commitMisses || leftBehind) {
-            } else if let nextHidden = upcomingHiddenIndex, Self.tokensMatch(token, words[nextHidden]) {
-                events.append(.missed(index: expected, movedOn: true))
-                advance()
-                events.append(.matched(index: nextHidden))
-                advance()
-                segmentMatchConsumed = position + 1
-            } else if matchesSkipWindow(token, after: expected) {
-                events.append(.missed(index: expected, movedOn: true))
-                advance()
-                segmentMatchConsumed = position + 1
-            } else {
-                failedAttempts += 1
-                if failedAttempts >= 2 {
-                    events.append(.missed(index: expected, movedOn: true))
-                    advance()
-                } else {
-                    events.append(.missed(index: expected, movedOn: false))
-                }
-                segmentMatchConsumed = position + 1
-            }
+        for utterance in Self.utterances(in: pending) {
+            guard !isComplete else { break }
+            events += absorb(utterance, settled: utterance.allSatisfy { $0.end <= finalizedThrough })
         }
         return events
     }
 
-    private mutating func advance() {
-        queuePosition += 1
-        failedAttempts = 0
-    }
+    private mutating func absorb(_ utterance: [HeardToken], settled: Bool) -> [Event] {
+        let start = cursor
+        let windowEnd = min(words.count, start + Self.lookahead)
+        guard windowEnd > start else { return [] }
+        let alignment = Self.align(
+            spoken: utterance.map(\.key),
+            reference: Array(words[start..<windowEnd])
+        )
 
-    private var upcomingHiddenIndex: Int? {
-        queuePosition + 1 < hiddenIndices.count ? hiddenIndices[queuePosition + 1] : nil
-    }
+        var events: [Event] = []
+        let reached = start + alignment.referenceConsumed
+        while let checkpoint = nextExpectedIndex, checkpoint < reached {
+            let matched = alignment.matchedOffsets.contains(checkpoint - start)
+            events.append(
+                matched
+                    ? .matched(index: checkpoint)
+                    : .missed(index: checkpoint, movedOn: true)
+            )
+            queuePosition += 1
+            attempts = 0
+        }
+        cursor = max(cursor, reached)
 
-    private func isIgnorableContext(_ token: String, before expected: Int) -> Bool {
-        let previousHidden = queuePosition > 0 ? hiddenIndices[queuePosition - 1] : 0
-        let start = min(previousHidden, max(0, expected - 6))
-        return words[start..<expected].contains { Self.tokensMatch(token, $0) }
-    }
+        if let index = alignment.lastMatchedTokenIndex {
+            consumedUpTo = utterance[index].end
+        }
+        guard settled, let last = utterance.last else { return events }
+        consumedUpTo = max(consumedUpTo, last.end)
 
-    private func matchesSkipWindow(_ token: String, after expected: Int) -> Bool {
-        let window = words.indices.filter { $0 > expected && $0 <= expected + 2 }
-        return window.contains { Self.tokensMatch(token, words[$0]) }
-    }
+        guard alignment.matchedOffsets.isEmpty,
+              let checkpoint = nextExpectedIndex,
+              utterance.contains(where: { $0.confidence >= Self.confidenceFloor })
+        else { return events }
 
-    static let spokenEquivalents: [String: String] = [
-        "oh": "o",
-    ]
-
-    private static let foldingLocale = Locale(identifier: "en_US")
-
-    static func normalize(_ token: some StringProtocol) -> String {
-        let folded: String
-        if token.unicodeScalars.allSatisfy(\.isASCII) {
-            folded = token.lowercased().filter(\.isLetter)
+        attempts += 1
+        if attempts >= Self.attemptBudget {
+            events.append(.missed(index: checkpoint, movedOn: true))
+            queuePosition += 1
+            attempts = 0
+            cursor = max(cursor, checkpoint + 1)
         } else {
-            folded = token
-                .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: foldingLocale)
-                .filter(\.isLetter)
+            events.append(.missed(index: checkpoint, movedOn: false))
         }
-        return spokenEquivalents[folded] ?? folded
+        return events
     }
 
-    static func tokensMatch(_ spoken: String, _ reference: String) -> Bool {
-        guard spoken != reference else { return true }
-        let tolerance: Int
-        switch reference.count {
-        case ..<4: return false
-        case 4...6: tolerance = 1
-        default: tolerance = 2
-        }
-        return levenshtein(spoken, reference, limit: tolerance) <= tolerance
-    }
-
-    private static func levenshtein(_ a: String, _ b: String, limit: Int) -> Int {
-        if abs(a.count - b.count) > limit { return limit + 1 }
-        let aChars = Array(a)
-        let bChars = Array(b)
-        var previous = Array(0...bChars.count)
-        for (i, aChar) in aChars.enumerated() {
-            var current = [i + 1]
-            current.reserveCapacity(bChars.count + 1)
-            for (j, bChar) in bChars.enumerated() {
-                let substitution = previous[j] + (aChar == bChar ? 0 : 1)
-                current.append(min(previous[j + 1] + 1, current[j] + 1, substitution))
+    private static func utterances(in tokens: [HeardToken]) -> [[HeardToken]] {
+        var result: [[HeardToken]] = []
+        var current: [HeardToken] = []
+        for token in tokens {
+            if let last = current.last, token.start - last.end > utteranceGap {
+                result.append(current)
+                current = []
             }
-            if current.min()! > limit { return limit + 1 }
-            previous = current
+            current.append(token)
         }
-        return previous[bChars.count]
+        if !current.isEmpty { result.append(current) }
+        return result
+    }
+
+    private struct Alignment {
+        let referenceConsumed: Int
+        let matchedOffsets: Set<Int>
+        let lastMatchedTokenIndex: Int?
+    }
+
+    private static func align(spoken: [String], reference: [String]) -> Alignment {
+        let spokenCount = spoken.count
+        let referenceCount = reference.count
+        guard spokenCount > 0, referenceCount > 0 else {
+            return Alignment(referenceConsumed: 0, matchedOffsets: [], lastMatchedTokenIndex: nil)
+        }
+
+        var cost = Array(
+            repeating: Array(repeating: 0, count: referenceCount + 1),
+            count: spokenCount + 1
+        )
+        for column in 0...referenceCount { cost[0][column] = column }
+        for row in 0...spokenCount { cost[row][0] = row }
+        for row in 1...spokenCount {
+            for column in 1...referenceCount {
+                let aligned = PhoneticKey.matches(spoken[row - 1], reference[column - 1])
+                cost[row][column] = min(
+                    cost[row - 1][column - 1] + (aligned ? 0 : 1),
+                    cost[row - 1][column] + 1,
+                    cost[row][column - 1] + 1
+                )
+            }
+        }
+
+        var best = 0
+        for column in 0...referenceCount where cost[spokenCount][column] < cost[spokenCount][best] {
+            best = column
+        }
+
+        var matched: Set<Int> = []
+        var lastToken: Int?
+        var row = spokenCount
+        var column = best
+        while row > 0, column > 0 {
+            let aligned = PhoneticKey.matches(spoken[row - 1], reference[column - 1])
+            if cost[row][column] == cost[row - 1][column - 1] + (aligned ? 0 : 1) {
+                if aligned {
+                    matched.insert(column - 1)
+                    if lastToken == nil { lastToken = row - 1 }
+                }
+                row -= 1
+                column -= 1
+            } else if cost[row][column] == cost[row - 1][column] + 1 {
+                row -= 1
+            } else {
+                column -= 1
+            }
+        }
+
+        return Alignment(
+            referenceConsumed: best,
+            matchedOffsets: matched,
+            lastMatchedTokenIndex: lastToken
+        )
     }
 }
