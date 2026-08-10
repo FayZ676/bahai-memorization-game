@@ -26,6 +26,10 @@ final class SessionViewModel {
         return q[min(step, q.count - 1)]
     }
 
+    var passageText: String {
+        store.queue(for: passage).map(\.expectedText).joined(separator: " ")
+    }
+
     private var queueLength: Int { store.queue(for: passage).count }
 
     var canGoForward: Bool { step < queueLength - 1 }

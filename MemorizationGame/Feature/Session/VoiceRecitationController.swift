@@ -47,7 +47,12 @@ final class VoiceRecitationController {
         Task { _ = await RecitationLanguageModel.shared.configuration(for: text) }
     }
 
-    func start(words: [String], contextText: String, hiddenIndices: [Int]) async {
+    func start(
+        words: [String],
+        contextText: String,
+        passageText: String,
+        hiddenIndices: [Int]
+    ) async {
         guard !hiddenIndices.isEmpty else { return }
         guard state == .idle || state == .failed || state == .micDenied else { return }
         guard await Self.micPermissionGranted() else {
@@ -57,7 +62,7 @@ final class VoiceRecitationController {
         state = .preparingModel
         do {
             await prewarmTask?.value
-            let customization = await RecitationLanguageModel.shared.configuration(for: contextText)
+            let customization = await RecitationLanguageModel.shared.configuration(for: passageText)
             guard state == .preparingModel else { return }
             let transcriber = Self.makeTranscriber(customizing: customization)
             try await Self.ensureModelInstalled(for: transcriber)

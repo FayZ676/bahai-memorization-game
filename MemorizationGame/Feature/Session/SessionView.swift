@@ -68,16 +68,12 @@ struct SessionView: View {
             voice.onMiss = { registerMiss($0, movedOn: $1) }
             voice.onCompleted = { completeChunk() }
             voice.prewarm()
-            if let card = vm.current { voice.prepare(for: card.expectedText) }
+            voice.prepare(for: vm.passageText)
         }
         .onChange(of: vm.presentationEpoch) {
             voice.stop()
             highlights.clear()
-            if let card = vm.current { voice.prepare(for: card.expectedText) }
-        }
-        .onChange(of: vm.current?.expectedText) { _, text in
-            guard let text else { return }
-            voice.prepare(for: text)
+            voice.prepare(for: vm.passageText)
         }
         .onChange(of: vm.current?.hiddenWords) {
             guard let card = vm.current else { return }
@@ -184,6 +180,7 @@ struct SessionView: View {
             await voice.start(
                 words: card.words.map(String.init),
                 contextText: card.expectedText,
+                passageText: vm.passageText,
                 hiddenIndices: remaining
             )
         }
