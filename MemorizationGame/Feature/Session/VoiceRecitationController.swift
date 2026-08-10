@@ -55,7 +55,12 @@ final class VoiceRecitationController {
         state = .preparingModel
         do {
             await prewarmTask?.value
-            let transcriber = Self.makeTranscriber()
+            let customization = await RecitationLanguageModel.configuration(for: contextText)
+            #if DEBUG
+            print("RECITE customization \(customization == nil ? "unavailable" : "ready")")
+            #endif
+            guard state == .preparingModel else { return }
+            let transcriber = Self.makeTranscriber(customizing: customization)
             try await Self.ensureModelInstalled(for: transcriber)
             let analyzerFormat = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber])
             guard state == .preparingModel else { return }
@@ -300,10 +305,15 @@ final class VoiceRecitationController {
         modelRetention: .processLifetime
     )
 
-    private static func makeTranscriber() -> DictationTranscriber {
+    private static func makeTranscriber(
+        customizing configuration: SFSpeechLanguageModel.Configuration? = nil
+    ) -> DictationTranscriber {
         var preset = DictationTranscriber.Preset.progressiveShortDictation
         preset.reportingOptions = [.volatileResults, .frequentFinalization]
         preset.attributeOptions = [.audioTimeRange, .transcriptionConfidence]
+        if let configuration {
+            preset.contentHints.insert(.customizedLanguage(modelConfiguration: configuration))
+        }
         return DictationTranscriber(locale: Locale(identifier: "en-US"), preset: preset)
     }
 
