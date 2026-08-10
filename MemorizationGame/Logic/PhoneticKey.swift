@@ -2,6 +2,7 @@ import Foundation
 
 enum PhoneticKey {
     static func encode(_ token: some StringProtocol) -> String {
+        if String(token.filter { $0.isLetter || $0.isNumber }) == "0" { return "o" }
         let prepared = prepared(token)
         guard !prepared.isEmpty else { return "" }
         return String(collapsingRepeats(droppingInteriorVowels(sounds(prepared))))

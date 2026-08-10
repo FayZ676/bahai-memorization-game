@@ -27,6 +27,7 @@ final class VoiceRecitationController {
     private var resultsTask: Task<Void, Never>?
     private var finalizeDebounce: Task<Void, Never>?
     private var prewarmTask: Task<Void, Never>?
+    private var listeningSince: ContinuousClock.Instant?
     private var matcher = RecitationMatcher(words: [], hiddenIndices: [])
 
     var isListening: Bool { state == .listening }
@@ -78,6 +79,7 @@ final class VoiceRecitationController {
             self.inputBuilder = inputBuilder
             try startAudioEngine(feeding: inputBuilder, format: analyzerFormat)
             try await analyzer.start(inputSequence: inputSequence)
+            listeningSince = .now
             state = .listening
             observeResults(from: transcriber)
         } catch {
@@ -126,8 +128,16 @@ final class VoiceRecitationController {
             .trimmingCharacters(in: .whitespacesAndNewlines)
         let tokens = Self.tokens(in: result.text)
         let before = matcher.diagnostic
+        let started = ContinuousClock.now
         let events = matcher.ingest(tokens, isFinal: result.isFinal)
-        Self.trace(result: result, tokens: tokens, before: before, events: events)
+        Self.trace(
+            result: result,
+            tokens: tokens,
+            before: before,
+            events: events,
+            compute: started.duration(to: .now),
+            sinceListening: listeningSince?.duration(to: .now)
+        )
         dispatch(events)
         nextExpectedIndex = matcher.nextExpectedIndex
         if !result.isFinal { scheduleIdleFinalize() }
@@ -146,13 +156,25 @@ final class VoiceRecitationController {
         result: SpeechTranscriber.Result,
         tokens: [RecitationMatcher.HeardToken],
         before: String,
-        events: [RecitationMatcher.Event]
+        events: [RecitationMatcher.Event],
+        compute: Duration,
+        sinceListening: Duration?
     ) {
         #if DEBUG
+        func millis(_ duration: Duration) -> String {
+            String(format: "%.1fms", Double(duration.components.attoseconds) / 1e15
+                + Double(duration.components.seconds) * 1000)
+        }
+        let audioCovered = result.range.end.seconds
+        let pipeline = sinceListening.map { elapsed -> String in
+            let wall = Double(elapsed.components.seconds)
+                + Double(elapsed.components.attoseconds) / 1e18
+            return audioCovered.isFinite ? String(format: "%.0fms", (wall - audioCovered) * 1000) : "?"
+        } ?? "?"
         let described = tokens.map {
             "\($0.text)/\($0.key)c\(String(format: "%.2f", $0.confidence))"
         }
-        print("RECITE final=\(result.isFinal) \(before)")
+        print("RECITE final=\(result.isFinal) compute=\(millis(compute)) pipeline=\(pipeline) \(before)")
         print("RECITE   tokens \(described.joined(separator: " "))")
         print("RECITE   events \(events)")
         #endif
@@ -161,7 +183,7 @@ final class VoiceRecitationController {
     private static func tokens(in text: AttributedString) -> [RecitationMatcher.HeardToken] {
         text.runs.flatMap { run in
             String(text[run.range].characters)
-                .split(whereSeparator: \.isWhitespace)
+                .split(whereSeparator: { $0.isWhitespace || $0 == "-" })
                 .map {
                     RecitationMatcher.HeardToken(
                         text: $0,

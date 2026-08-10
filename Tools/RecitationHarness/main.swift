@@ -18,7 +18,8 @@ for (a, b) in [("God", "Lord"), ("Son", "Spirit"), ("mercy", "bounty"), ("light"
 }
 
 func heard(_ text: String, confidence: Double = 1.0) -> [RecitationMatcher.HeardToken] {
-    text.split(separator: " ").map { .init(text: $0, confidence: confidence) }
+    text.split(whereSeparator: { $0 == " " || $0 == "-" })
+        .map { .init(text: $0, confidence: confidence) }
 }
 func isMiss(_ event: RecitationMatcher.Event) -> Bool {
     if case .missed = event { return true }
@@ -84,6 +85,22 @@ pausedEvents += paused.ingest(heard("I bear witness, O my God,", confidence: 0.9
 pausedEvents += paused.ingest(heard(".", confidence: 0.0), isFinal: true)
 check("no miss when the reciter simply stops", !pausedEvents.contains(where: isMiss), "\(pausedEvents)")
 check("still expecting the next unsaid word", paused.nextExpectedIndex == 6, "\(String(describing: paused.nextExpectedIndex))")
+
+print("\nRegression: 'O' transcribed as the digit zero")
+check("bare 0 encodes as O", PhoneticKey.encode("0") == PhoneticKey.encode("O"),
+      "[\(PhoneticKey.encode("0")) vs \(PhoneticKey.encode("O"))]")
+var zero = RecitationMatcher(words: bearLine, hiddenIndices: [3])
+let zeroEvents = zero.ingest(heard("I bear witness, 0 my god, that"), isFinal: true)
+check("O still matched", zeroEvents.contains(.matched(index: 3)), "\(zeroEvents)")
+check("O not missed", !zeroEvents.contains(where: isMiss), "\(zeroEvents)")
+
+print("\nRegression: hyphenated word heard as one token")
+let subsisting = ["the", "Help", "in", "Peril,", "the", "Self-", "Subsisting."]
+var hyphen = RecitationMatcher(words: subsisting, hiddenIndices: [1, 3, 5, 6])
+let hyphenEvents = hyphen.ingest(heard("the help in peril, the self-subsisting."), isFinal: true)
+check("Self- matched", hyphenEvents.contains(.matched(index: 5)), "\(hyphenEvents)")
+check("Subsisting matched", hyphenEvents.contains(.matched(index: 6)), "\(hyphenEvents)")
+check("nothing missed", !hyphenEvents.contains(where: isMiss), "\(hyphenEvents)")
 
 print("\nStall and retry: three wrong finals")
 var retry = RecitationMatcher(words: words, hiddenIndices: [1, 3, 6])

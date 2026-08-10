@@ -117,14 +117,19 @@ struct RecitationMatcher {
         let referenceCount = reference.count
         guard spokenCount > 0, referenceCount > 0 else { return Alignment(reference: [], spoken: []) }
 
-        var cache: [String: Bool] = [:]
-        func aligns(_ row: Int, _ column: Int) -> Bool {
-            let key = "\(row)|\(column)"
-            if let cached = cache[key] { return cached }
-            let value = PhoneticKey.matches(spoken[row], reference[column])
-            cache[key] = value
-            return value
+        var lookup: [String: Set<String>] = [:]
+        let aligned = spoken.map { spokenKey in
+            reference.map { referenceKey in
+                if let known = lookup[referenceKey] { return known.contains(spokenKey) }
+                var equivalents: Set<String> = []
+                for candidate in Set(spoken) where PhoneticKey.matches(candidate, referenceKey) {
+                    equivalents.insert(candidate)
+                }
+                lookup[referenceKey] = equivalents
+                return equivalents.contains(spokenKey)
+            }
         }
+        func aligns(_ row: Int, _ column: Int) -> Bool { aligned[row][column] }
 
         var cost = Array(
             repeating: Array(repeating: 0, count: referenceCount + 1),
