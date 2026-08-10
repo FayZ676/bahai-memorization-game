@@ -77,21 +77,10 @@ final class VoiceRecitationController {
         }
         state = .preparingModel
         do {
-            let clock = ContinuousClock.now
-            var marks: [String] = []
-            func mark(_ label: String) {
-                #if DEBUG
-                let elapsed = clock.duration(to: .now)
-                let ms = Double(elapsed.components.seconds) * 1000
-                    + Double(elapsed.components.attoseconds) / 1e15
-                marks.append(String(format: "%@=%.0fms", label, ms))
-                #endif
-            }
             prepare(for: passageText)
             guard let ready = await readyTask?.value else { throw CancellationError() }
             readyTask = nil
             readyText = nil
-            mark("ready")
             passageInUse = passageText
             let transcriber = ready.transcriber
             let analyzer = ready.analyzer
@@ -107,16 +96,11 @@ final class VoiceRecitationController {
             self.analyzer = analyzer
             guard state == .preparingModel else { return }
             try Self.activateAudioSession()
-            mark("session")
             let (inputSequence, inputBuilder) = AsyncStream<AnalyzerInput>.makeStream()
             self.inputBuilder = inputBuilder
             try startAudioEngine(feeding: inputBuilder, format: analyzerFormat)
             try await analyzer.start(inputSequence: inputSequence)
-            mark("start")
             state = .listening
-            #if DEBUG
-            print("RECITE start \(marks.joined(separator: " "))")
-            #endif
             observeResults(from: transcriber)
         } catch {
             state = .failed
@@ -200,9 +184,6 @@ final class VoiceRecitationController {
     }
 
     private func dispatch(_ events: [RecitationMatcher.Event]) {
-        #if DEBUG
-        if !events.isEmpty { print("RECITE events \(events) heard=\(heardText)") }
-        #endif
         for event in events {
             switch event {
             case .matched(let index):
