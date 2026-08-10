@@ -102,6 +102,15 @@ check("Self- matched", hyphenEvents.contains(.matched(index: 5)), "\(hyphenEvent
 check("Subsisting matched", hyphenEvents.contains(.matched(index: 6)), "\(hyphenEvents)")
 check("nothing missed", !hyphenEvents.contains(where: isMiss), "\(hyphenEvents)")
 
+print("\nRegression: a transient volatile misread must not commit a miss")
+var transient = RecitationMatcher(words: bearLine, hiddenIndices: [6, 7, 8, 9, 10])
+var transientEvents: [RecitationMatcher.Event] = []
+transientEvents += transient.ingest(heard("that the is created me"), isFinal: false)
+check("nothing missed while volatile", !transientEvents.contains(where: isMiss), "\(transientEvents)")
+transientEvents += transient.ingest(heard("that Thou hast created me"), isFinal: false)
+check("revised hypothesis still matches Thou", transientEvents.contains(.matched(index: 7)), "\(transientEvents)")
+check("revised hypothesis still matches hast", transientEvents.contains(.matched(index: 8)), "\(transientEvents)")
+
 print("\nStall and retry: three wrong finals")
 var retry = RecitationMatcher(words: words, hiddenIndices: [1, 3, 6])
 _ = retry.ingest(heard("O"), isFinal: true)

@@ -82,10 +82,12 @@ struct RecitationMatcher {
             attempts = 0
         }
 
-        for index in hiddenIndices where index + Self.movedOnMargin < frontier {
-            guard !matched.contains(index), !missed.contains(index) else { continue }
-            missed.insert(index)
-            events.append(.missed(index: index, movedOn: true))
+        if isFinal {
+            for index in hiddenIndices where index + Self.movedOnMargin < frontier {
+                guard !matched.contains(index), !missed.contains(index) else { continue }
+                missed.insert(index)
+                events.append(.missed(index: index, movedOn: true))
+            }
         }
 
         let arrived = (spoken.count - usable.count)..<spoken.count
