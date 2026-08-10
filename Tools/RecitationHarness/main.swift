@@ -17,46 +17,52 @@ for (a, b) in [("God", "Lord"), ("Son", "Spirit"), ("mercy", "bounty"), ("light"
           "[\(PhoneticKey.encode(a)) vs \(PhoneticKey.encode(b))]")
 }
 
-func tokens(_ text: String, from: Double = 0, gap: Double = 0.1, confidence: Double = 0.9) -> [RecitationMatcher.HeardToken] {
-    var result: [RecitationMatcher.HeardToken] = []
-    var clock = from
-    for word in text.split(separator: " ") {
-        result.append(.init(text: word, confidence: confidence, start: clock, end: clock + 0.3))
-        clock += 0.3 + gap
-    }
-    return result
+func heard(_ text: String, confidence: Double = 1.0) -> [RecitationMatcher.HeardToken] {
+    text.split(separator: " ").map { .init(text: $0, confidence: confidence) }
+}
+func isMiss(_ event: RecitationMatcher.Event) -> Bool {
+    if case .missed = event { return true }
+    return false
 }
 
 let line = "O Son of Spirit My first counsel is this"
 let words = line.split(separator: " ").map(String.init)
 
-print("\nClean recitation at speed (one settled utterance)")
+print("\nClean recitation, single final")
 var clean = RecitationMatcher(words: words, hiddenIndices: [1, 3, 6])
-let cleanEvents = clean.ingest(tokens(line), finalizedThrough: .greatestFiniteMagnitude)
+let cleanEvents = clean.ingest(heard(line), isFinal: true)
 check("all three matched", cleanEvents == [.matched(index: 1), .matched(index: 3), .matched(index: 6)], "\(cleanEvents)")
 check("complete", clean.isComplete)
 
 print("\nASR returns 'the' for 'Thy'")
 let thy = ["Thy", "loving", "kindness", "hath", "encompassed", "me"]
 var thyMatcher = RecitationMatcher(words: thy, hiddenIndices: [0, 3])
-let thyEvents = thyMatcher.ingest(tokens("the loving kindness has encompassed me"), finalizedThrough: .greatestFiniteMagnitude)
+let thyEvents = thyMatcher.ingest(heard("the loving kindness has encompassed me"), isFinal: true)
 check("Thy and hath matched", thyEvents == [.matched(index: 0), .matched(index: 3)], "\(thyEvents)")
+
+print("\nRegression: growing volatile segment must not lose a correct word")
+let bearLine = ["I", "bear", "witness", "O", "my", "God", "that", "Thou", "hast", "created", "me"]
+var bearMatcher = RecitationMatcher(words: bearLine, hiddenIndices: [0, 1, 2, 3, 4, 5])
+var bearEvents: [RecitationMatcher.Event] = []
+for volatileText in ["I", "I bear", "I bear w", "I bear wit", "I bear witness", "I bear witness, O", "I bear witness, O my"] {
+    bearEvents += bearMatcher.ingest(heard(volatileText), isFinal: false)
+}
+bearEvents += bearMatcher.ingest(heard("I bear witness, O my God."), isFinal: true)
+check("bear matched", bearEvents.contains(.matched(index: 1)), "\(bearEvents)")
+check("nothing missed", !bearEvents.contains(where: isMiss), "\(bearEvents)")
+check("each word announced once", Set(bearEvents.map { if case .matched(let i) = $0 { return i } else { return -1 } }).count == bearEvents.count, "\(bearEvents)")
 
 print("\nFumble then speak straight past it")
 var past = RecitationMatcher(words: words, hiddenIndices: [1, 3, 6])
-let pastEvents = past.ingest(tokens("O banana of Spirit My first counsel"), finalizedThrough: .greatestFiniteMagnitude)
+let pastEvents = past.ingest(heard("O banana of Spirit My first counsel"), isFinal: true)
 check("word 1 missed as moved-on, later words still matched",
       pastEvents == [.missed(index: 1, movedOn: true), .matched(index: 3), .matched(index: 6)], "\(pastEvents)")
 
-print("\nStall and retry: three settled wrong utterances")
+print("\nStall and retry: three wrong finals")
 var retry = RecitationMatcher(words: words, hiddenIndices: [1, 3, 6])
-_ = retry.ingest(tokens("O"), finalizedThrough: .greatestFiniteMagnitude)
+_ = retry.ingest(heard("O"), isFinal: true)
 var attemptEvents: [RecitationMatcher.Event] = []
-var clock = 5.0
-for _ in 0..<3 {
-    attemptEvents += retry.ingest(tokens("banana", from: clock), finalizedThrough: .greatestFiniteMagnitude)
-    clock += 5.0
-}
+for _ in 0..<3 { attemptEvents += retry.ingest(heard("banana"), isFinal: true) }
 check("two soft misses then a moved-on miss",
       attemptEvents == [.missed(index: 1, movedOn: false), .missed(index: 1, movedOn: false), .missed(index: 1, movedOn: true)],
       "\(attemptEvents)")
@@ -64,17 +70,14 @@ check("cursor advanced past the burnt word", retry.nextExpectedIndex == 3, "\(St
 
 print("\nVolatile text never commits a miss")
 var volatileMatcher = RecitationMatcher(words: words, hiddenIndices: [1, 3, 6])
-let volatileEvents = volatileMatcher.ingest(tokens("O banana"), finalizedThrough: 0)
-check("no miss emitted while unsettled", !volatileEvents.contains { if case .missed = $0 { return true }; return false }, "\(volatileEvents)")
+let volatileEvents = volatileMatcher.ingest(heard("O banana"), isFinal: false)
+check("no miss emitted while volatile", !volatileEvents.contains(where: isMiss), "\(volatileEvents)")
 
-print("\nRepeated volatile deliveries are idempotent")
-var repeated = RecitationMatcher(words: words, hiddenIndices: [1, 3, 6])
-var all: [RecitationMatcher.Event] = []
-all += repeated.ingest(tokens("O Son"), finalizedThrough: .greatestFiniteMagnitude)
-all += repeated.ingest(tokens("O Son of"), finalizedThrough: .greatestFiniteMagnitude)
-all += repeated.ingest(tokens("O Son of Spirit"), finalizedThrough: .greatestFiniteMagnitude)
-check("word 1 matched exactly once", all.filter { $0 == .matched(index: 1) }.count == 1, "\(all)")
-check("word 3 matched exactly once", all.filter { $0 == .matched(index: 3) }.count == 1, "\(all)")
+print("\nLow-confidence junk cannot burn an attempt")
+var junk = RecitationMatcher(words: words, hiddenIndices: [1, 3, 6])
+_ = junk.ingest(heard("O"), isFinal: true)
+let junkEvents = junk.ingest(heard(".", confidence: 0.0), isFinal: true)
+check("no miss from a zero-confidence token", !junkEvents.contains(where: isMiss), "\(junkEvents)")
 
 print(failures == 0 ? "\nALL PASS" : "\n\(failures) FAILURE(S)")
 exit(failures == 0 ? 0 : 1)

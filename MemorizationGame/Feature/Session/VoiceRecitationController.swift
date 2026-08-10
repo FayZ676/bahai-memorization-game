@@ -25,6 +25,7 @@ final class VoiceRecitationController {
     private var transcriber: SpeechTranscriber?
     private var inputBuilder: AsyncStream<AnalyzerInput>.Continuation?
     private var resultsTask: Task<Void, Never>?
+    private var finalizeDebounce: Task<Void, Never>?
     private var prewarmTask: Task<Void, Never>?
     private var matcher = RecitationMatcher(words: [], hiddenIndices: [])
 
@@ -123,49 +124,51 @@ final class VoiceRecitationController {
     private func ingest(_ result: SpeechTranscriber.Result) {
         heardText = String(result.text.characters)
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        dispatch(
-            matcher.ingest(
-                Self.tokens(in: result.text),
-                finalizedThrough: Self.finalizedThrough(for: result)
-            )
-        )
+        let tokens = Self.tokens(in: result.text)
+        let before = matcher.diagnostic
+        let events = matcher.ingest(tokens, isFinal: result.isFinal)
+        Self.trace(result: result, tokens: tokens, before: before, events: events)
+        dispatch(events)
         nextExpectedIndex = matcher.nextExpectedIndex
+        if !result.isFinal { scheduleIdleFinalize() }
     }
 
-    private static func finalizedThrough(for result: SpeechTranscriber.Result) -> Double {
-        guard !result.isFinal else { return .greatestFiniteMagnitude }
-        let boundary = result.resultsFinalizationTime.seconds
-        return boundary.isFinite ? boundary : 0
+    private func scheduleIdleFinalize() {
+        finalizeDebounce?.cancel()
+        finalizeDebounce = Task {
+            try? await Task.sleep(for: .milliseconds(400))
+            guard !Task.isCancelled, state == .listening, let analyzer else { return }
+            try? await analyzer.finalize(through: nil)
+        }
+    }
+
+    private static func trace(
+        result: SpeechTranscriber.Result,
+        tokens: [RecitationMatcher.HeardToken],
+        before: String,
+        events: [RecitationMatcher.Event]
+    ) {
+        #if DEBUG
+        let described = tokens.map {
+            "\($0.text)/\($0.key)c\(String(format: "%.2f", $0.confidence))"
+        }
+        print("RECITE final=\(result.isFinal) \(before)")
+        print("RECITE   tokens \(described.joined(separator: " "))")
+        print("RECITE   events \(events)")
+        #endif
     }
 
     private static func tokens(in text: AttributedString) -> [RecitationMatcher.HeardToken] {
-        func usable(_ value: Double?) -> Double? {
-            guard let value, value.isFinite, value > 0 else { return nil }
-            return value
-        }
-        var tokens: [RecitationMatcher.HeardToken] = []
-        var elapsed = 0.0
-        for run in text.runs {
-            let pieces = String(text[run.range].characters).split(whereSeparator: \.isWhitespace)
-            guard !pieces.isEmpty else { continue }
-            let confidence = run.transcriptionConfidence ?? 1
-            let range = run.audioTimeRange
-            let start = usable(range?.start.seconds) ?? elapsed
-            let duration = usable(range?.duration.seconds) ?? Double(pieces.count) * 0.3
-            let span = duration / Double(pieces.count)
-            for (offset, piece) in pieces.enumerated() {
-                tokens.append(
+        text.runs.flatMap { run in
+            String(text[run.range].characters)
+                .split(whereSeparator: \.isWhitespace)
+                .map {
                     RecitationMatcher.HeardToken(
-                        text: piece,
-                        confidence: confidence,
-                        start: start + span * Double(offset),
-                        end: start + span * Double(offset + 1)
+                        text: $0,
+                        confidence: run.transcriptionConfidence ?? 1
                     )
-                )
-            }
-            elapsed = start + duration
+                }
         }
-        return tokens
     }
 
     private func dispatch(_ events: [RecitationMatcher.Event]) {
@@ -202,6 +205,8 @@ final class VoiceRecitationController {
     private func teardown() {
         resultsTask?.cancel()
         resultsTask = nil
+        finalizeDebounce?.cancel()
+        finalizeDebounce = nil
         inputBuilder?.finish()
         inputBuilder = nil
         audioEngine.inputNode.removeTap(onBus: 0)
