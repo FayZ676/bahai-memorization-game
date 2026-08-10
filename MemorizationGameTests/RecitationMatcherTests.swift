@@ -70,9 +70,19 @@ struct VolatileResultTests {
     @Test("A final pass moves on only after three failed tokens")
     func finalMovesOnAfterThreeFailures() {
         var matcher = RecitationMatcher(words: verse, hiddenIndices: [0])
+        matcher.resetSegmentCursor()
         #expect(movedOnIndices(matcher.finalizeSegment(["zzz"])).isEmpty)
+        matcher.resetSegmentCursor()
         #expect(movedOnIndices(matcher.finalizeSegment(["yyy"])).isEmpty)
+        matcher.resetSegmentCursor()
         #expect(movedOnIndices(matcher.finalizeSegment(["www"])) == [0])
+    }
+
+    @Test("A finalized result no longer rewinds the cursor for the next fragment")
+    func finalizeDoesNotResetCursor() {
+        var matcher = RecitationMatcher(words: verse, hiddenIndices: [0, 3])
+        _ = matcher.finalizeSegment(["Praise", "be", "to", "Thee"])
+        #expect(matcher.segmentCursor == 4)
     }
 }
 
