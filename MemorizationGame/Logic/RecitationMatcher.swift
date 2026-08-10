@@ -18,138 +18,115 @@ struct RecitationMatcher {
         }
     }
 
-    private struct Progress {
-        var cursor = 0
-        var queuePosition = 0
-        var attempts = 0
-    }
-
-    private static let lookahead = 12
     private static let attemptBudget = 3
     private static let confidenceFloor = 0.25
+    private static let movedOnMargin = 2
 
     private let words: [String]
     private var hiddenIndices: [Int]
-    private var committed = Progress()
-    private var live = Progress()
-    private var announced: Set<Int> = []
+    private var settled: [HeardToken] = []
+    private var pending: [HeardToken] = []
+    private var matched: Set<Int> = []
+    private var missed: Set<Int> = []
+    private var frontier = -1
+    private var attempts = 0
 
     init(words: [String], hiddenIndices: [Int]) {
         self.words = words.map(PhoneticKey.encode)
         self.hiddenIndices = hiddenIndices.filter { $0 >= 0 && $0 < words.count }.sorted()
     }
 
-    var isComplete: Bool { committed.queuePosition >= hiddenIndices.count }
-    var nextExpectedIndex: Int? { checkpoint(in: live) }
+    var isComplete: Bool {
+        hiddenIndices.allSatisfy { matched.contains($0) || missed.contains($0) }
+    }
+
+    var nextExpectedIndex: Int? {
+        hiddenIndices.first { !matched.contains($0) && !missed.contains($0) }
+    }
 
     var diagnostic: String {
         let expected = nextExpectedIndex.map { "\($0):\(words[$0])" } ?? "done"
-        return "cursor=\(live.cursor) expect=\(expected) attempts=\(committed.attempts)"
+        return "expect=\(expected) frontier=\(frontier) attempts=\(attempts) settled=\(settled.count)"
     }
 
     mutating func replaceHidden(with indices: [Int]) {
-        let frontier = checkpoint(in: committed) ?? words.count
         hiddenIndices = indices.filter { $0 >= 0 && $0 < words.count }.sorted()
-        committed.queuePosition = hiddenIndices.firstIndex { $0 >= frontier } ?? hiddenIndices.count
-        committed.attempts = 0
-        live = committed
-        announced.removeAll()
+        attempts = 0
     }
 
     mutating func ingest(_ tokens: [HeardToken], isFinal: Bool) -> [Event] {
-        var state = committed
-        let events = scan(tokens, state: &state, commitMisses: isFinal)
-        live = state
-
-        var output: [Event] = []
-        for event in events {
-            guard case .matched(let index) = event else {
-                output.append(event)
-                continue
-            }
-            if announced.insert(index).inserted { output.append(event) }
-        }
-
+        let usable = tokens.filter { !$0.key.isEmpty }
         if isFinal {
-            committed = state
-            announced.removeAll()
+            settled.append(contentsOf: usable)
+            pending = []
+        } else {
+            pending = usable
         }
-        return output
-    }
 
-    private func checkpoint(in state: Progress) -> Int? {
-        state.queuePosition < hiddenIndices.count ? hiddenIndices[state.queuePosition] : nil
-    }
-
-    private func scan(
-        _ tokens: [HeardToken],
-        state: inout Progress,
-        commitMisses: Bool
-    ) -> [Event] {
-        let spoken = tokens.filter { !$0.key.isEmpty }
-        let start = state.cursor
-        let windowEnd = min(words.count, start + Self.lookahead)
-        guard !spoken.isEmpty, windowEnd > start else { return [] }
-
-        let alignment = Self.align(
-            spoken: spoken.map(\.key),
-            reference: Array(words[start..<windowEnd])
-        )
+        let spoken = settled + pending
+        guard !spoken.isEmpty else { return [] }
+        let reached = Self.alignedIndices(spoken: spoken.map(\.key), reference: words)
 
         var events: [Event] = []
-        let reached = start + alignment.referenceConsumed
-        while let checkpoint = checkpoint(in: state), checkpoint < reached {
-            if alignment.matchedOffsets.contains(checkpoint - start) {
-                events.append(.matched(index: checkpoint))
-            } else if commitMisses {
-                events.append(.missed(index: checkpoint, movedOn: true))
-            }
-            state.queuePosition += 1
-            state.attempts = 0
+        for index in hiddenIndices where reached.contains(index) {
+            guard !matched.contains(index), !missed.contains(index) else { continue }
+            matched.insert(index)
+            events.append(.matched(index: index))
         }
-        state.cursor = max(state.cursor, reached)
 
-        guard commitMisses,
-              alignment.matchedOffsets.isEmpty,
-              let checkpoint = checkpoint(in: state),
-              spoken.contains(where: { $0.confidence >= Self.confidenceFloor })
+        let advanced = reached.max() ?? -1
+        let progressed = advanced > frontier
+        if progressed {
+            frontier = advanced
+            attempts = 0
+        }
+
+        for index in hiddenIndices where index + Self.movedOnMargin < frontier {
+            guard !matched.contains(index), !missed.contains(index) else { continue }
+            missed.insert(index)
+            events.append(.missed(index: index, movedOn: true))
+        }
+
+        guard isFinal,
+              !progressed,
+              let expected = nextExpectedIndex,
+              usable.contains(where: { $0.confidence >= Self.confidenceFloor })
         else { return events }
 
-        state.attempts += 1
-        if state.attempts >= Self.attemptBudget {
-            events.append(.missed(index: checkpoint, movedOn: true))
-            state.queuePosition += 1
-            state.attempts = 0
-            state.cursor = max(state.cursor, checkpoint + 1)
+        attempts += 1
+        if attempts >= Self.attemptBudget {
+            missed.insert(expected)
+            attempts = 0
+            events.append(.missed(index: expected, movedOn: true))
         } else {
-            events.append(.missed(index: checkpoint, movedOn: false))
+            events.append(.missed(index: expected, movedOn: false))
         }
         return events
     }
 
-    private struct Alignment {
-        let referenceConsumed: Int
-        let matchedOffsets: Set<Int>
-    }
-
-    private static func align(spoken: [String], reference: [String]) -> Alignment {
+    private static func alignedIndices(spoken: [String], reference: [String]) -> Set<Int> {
         let spokenCount = spoken.count
         let referenceCount = reference.count
-        guard spokenCount > 0, referenceCount > 0 else {
-            return Alignment(referenceConsumed: 0, matchedOffsets: [])
+        guard spokenCount > 0, referenceCount > 0 else { return [] }
+
+        var cache: [String: Bool] = [:]
+        func aligns(_ row: Int, _ column: Int) -> Bool {
+            let key = "\(row)|\(column)"
+            if let cached = cache[key] { return cached }
+            let value = PhoneticKey.matches(spoken[row], reference[column])
+            cache[key] = value
+            return value
         }
 
         var cost = Array(
             repeating: Array(repeating: 0, count: referenceCount + 1),
             count: spokenCount + 1
         )
-        for column in 0...referenceCount { cost[0][column] = column }
         for row in 0...spokenCount { cost[row][0] = row }
         for row in 1...spokenCount {
             for column in 1...referenceCount {
-                let aligned = PhoneticKey.matches(spoken[row - 1], reference[column - 1])
                 cost[row][column] = min(
-                    cost[row - 1][column - 1] + (aligned ? 0 : 1),
+                    cost[row - 1][column - 1] + (aligns(row - 1, column - 1) ? 0 : 1),
                     cost[row - 1][column] + 1,
                     cost[row][column - 1] + 1
                 )
@@ -161,13 +138,12 @@ struct RecitationMatcher {
             best = column
         }
 
-        var matched: Set<Int> = []
+        var result: Set<Int> = []
         var row = spokenCount
         var column = best
         while row > 0, column > 0 {
-            let aligned = PhoneticKey.matches(spoken[row - 1], reference[column - 1])
-            if cost[row][column] == cost[row - 1][column - 1] + (aligned ? 0 : 1) {
-                if aligned { matched.insert(column - 1) }
+            if cost[row][column] == cost[row - 1][column - 1] + (aligns(row - 1, column - 1) ? 0 : 1) {
+                if aligns(row - 1, column - 1) { result.insert(column - 1) }
                 row -= 1
                 column -= 1
             } else if cost[row][column] == cost[row - 1][column] + 1 {
@@ -176,7 +152,6 @@ struct RecitationMatcher {
                 column -= 1
             }
         }
-
-        return Alignment(referenceConsumed: best, matchedOffsets: matched)
+        return result
     }
 }

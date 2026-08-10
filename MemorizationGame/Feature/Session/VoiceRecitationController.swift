@@ -136,7 +136,7 @@ final class VoiceRecitationController {
     private func scheduleIdleFinalize() {
         finalizeDebounce?.cancel()
         finalizeDebounce = Task {
-            try? await Task.sleep(for: .milliseconds(400))
+            try? await Task.sleep(for: .milliseconds(1200))
             guard !Task.isCancelled, state == .listening, let analyzer else { return }
             try? await analyzer.finalize(through: nil)
         }

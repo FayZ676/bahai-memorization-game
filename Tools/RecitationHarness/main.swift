@@ -52,11 +52,29 @@ check("bear matched", bearEvents.contains(.matched(index: 1)), "\(bearEvents)")
 check("nothing missed", !bearEvents.contains(where: isMiss), "\(bearEvents)")
 check("each word announced once", Set(bearEvents.map { if case .matched(let i) = $0 { return i } else { return -1 } }).count == bearEvents.count, "\(bearEvents)")
 
+print("\nRegression: junk finals must not discard volatile progress")
+let peril = ["there", "is", "none", "other", "God", "but", "Him", "the", "Help", "in", "Peril", "the", "Self-Subsisting"]
+var perilMatcher = RecitationMatcher(words: peril, hiddenIndices: [6, 7, 8, 9, 10])
+var perilEvents: [RecitationMatcher.Event] = []
+perilEvents += perilMatcher.ingest(heard("there is none other God but"), isFinal: true)
+perilEvents += perilMatcher.ingest(heard("The"), isFinal: false)
+perilEvents += perilMatcher.ingest(heard(".", confidence: 0.0), isFinal: true)
+perilEvents += perilMatcher.ingest(heard("him the help"), isFinal: false)
+perilEvents += perilMatcher.ingest(heard("him the help in"), isFinal: false)
+perilEvents += perilMatcher.ingest(heard("him the help in peril"), isFinal: false)
+perilEvents += perilMatcher.ingest(heard("to..", confidence: 0.01), isFinal: true)
+perilEvents += perilMatcher.ingest(heard("him the help in peril the self-subsisting"), isFinal: false)
+check("Help matched", perilEvents.contains(.matched(index: 8)), "\(perilEvents)")
+check("Peril matched", perilEvents.contains(.matched(index: 10)), "\(perilEvents)")
+check("no misses from junk finals", !perilEvents.contains(where: isMiss), "\(perilEvents)")
+
 print("\nFumble then speak straight past it")
 var past = RecitationMatcher(words: words, hiddenIndices: [1, 3, 6])
 let pastEvents = past.ingest(heard("O banana of Spirit My first counsel"), isFinal: true)
 check("word 1 missed as moved-on, later words still matched",
-      pastEvents == [.missed(index: 1, movedOn: true), .matched(index: 3), .matched(index: 6)], "\(pastEvents)")
+      Set(pastEvents.map(String.init(describing:)))
+        == Set([RecitationMatcher.Event.missed(index: 1, movedOn: true), .matched(index: 3), .matched(index: 6)].map(String.init(describing:))),
+      "\(pastEvents)")
 
 print("\nStall and retry: three wrong finals")
 var retry = RecitationMatcher(words: words, hiddenIndices: [1, 3, 6])
