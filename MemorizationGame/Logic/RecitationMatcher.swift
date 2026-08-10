@@ -7,12 +7,10 @@ struct RecitationMatcher {
     }
 
     struct HeardToken {
-        let text: String
         let key: String
         let confidence: Double
 
         init(text: some StringProtocol, confidence: Double) {
-            self.text = String(text)
             self.key = PhoneticKey.encode(text)
             self.confidence = confidence
         }
@@ -42,11 +40,6 @@ struct RecitationMatcher {
 
     var nextExpectedIndex: Int? {
         hiddenIndices.first { !matched.contains($0) && !missed.contains($0) }
-    }
-
-    var diagnostic: String {
-        let expected = nextExpectedIndex.map { "\($0):\(words[$0])" } ?? "done"
-        return "expect=\(expected) frontier=\(frontier) attempts=\(attempts) settled=\(settled.count)"
     }
 
     mutating func replaceHidden(with indices: [Int]) {

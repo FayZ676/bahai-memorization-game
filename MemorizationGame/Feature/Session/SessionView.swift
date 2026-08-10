@@ -68,10 +68,16 @@ struct SessionView: View {
             voice.onMiss = { registerMiss($0, movedOn: $1) }
             voice.onCompleted = { completeChunk() }
             voice.prewarm()
+            if let card = vm.current { voice.prepare(for: card.expectedText) }
         }
         .onChange(of: vm.presentationEpoch) {
             voice.stop()
             highlights.clear()
+            if let card = vm.current { voice.prepare(for: card.expectedText) }
+        }
+        .onChange(of: vm.current?.expectedText) { _, text in
+            guard let text else { return }
+            voice.prepare(for: text)
         }
         .onChange(of: vm.current?.hiddenWords) {
             guard let card = vm.current else { return }

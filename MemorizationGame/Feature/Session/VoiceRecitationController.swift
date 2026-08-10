@@ -27,8 +27,6 @@ final class VoiceRecitationController {
     private var resultsTask: Task<Void, Never>?
     private var finalizeDebounce: Task<Void, Never>?
     private var prewarmTask: Task<Void, Never>?
-    private var listeningSince: ContinuousClock.Instant?
-    private var lastResultAt: ContinuousClock.Instant?
     private var matcher = RecitationMatcher(words: [], hiddenIndices: [])
 
     var isListening: Bool { state == .listening }
@@ -45,6 +43,10 @@ final class VoiceRecitationController {
         }
     }
 
+    func prepare(for text: String) {
+        Task { _ = await RecitationLanguageModel.shared.configuration(for: text) }
+    }
+
     func start(words: [String], contextText: String, hiddenIndices: [Int]) async {
         guard !hiddenIndices.isEmpty else { return }
         guard state == .idle || state == .failed || state == .micDenied else { return }
@@ -55,10 +57,7 @@ final class VoiceRecitationController {
         state = .preparingModel
         do {
             await prewarmTask?.value
-            let customization = await RecitationLanguageModel.configuration(for: contextText)
-            #if DEBUG
-            print("RECITE customization \(customization == nil ? "unavailable" : "ready")")
-            #endif
+            let customization = await RecitationLanguageModel.shared.configuration(for: contextText)
             guard state == .preparingModel else { return }
             let transcriber = Self.makeTranscriber(customizing: customization)
             try await Self.ensureModelInstalled(for: transcriber)
@@ -85,7 +84,6 @@ final class VoiceRecitationController {
             self.inputBuilder = inputBuilder
             try startAudioEngine(feeding: inputBuilder, format: analyzerFormat)
             try await analyzer.start(inputSequence: inputSequence)
-            listeningSince = .now
             state = .listening
             observeResults(from: transcriber)
         } catch {
@@ -132,22 +130,7 @@ final class VoiceRecitationController {
     private func ingest(_ result: DictationTranscriber.Result) {
         heardText = String(result.text.characters)
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        let tokens = Self.tokens(in: result.text)
-        let before = matcher.diagnostic
-        let started = ContinuousClock.now
-        let gap = lastResultAt?.duration(to: started)
-        lastResultAt = started
-        let events = matcher.ingest(tokens, isFinal: result.isFinal)
-        Self.trace(
-            result: result,
-            tokens: tokens,
-            before: before,
-            events: events,
-            compute: started.duration(to: .now),
-            sinceListening: listeningSince?.duration(to: .now),
-            gap: gap
-        )
-        dispatch(events)
+        dispatch(matcher.ingest(Self.tokens(in: result.text), isFinal: result.isFinal))
         nextExpectedIndex = matcher.nextExpectedIndex
         if !result.isFinal { scheduleIdleFinalize() }
     }
@@ -159,35 +142,6 @@ final class VoiceRecitationController {
             guard !Task.isCancelled, state == .listening, let analyzer else { return }
             try? await analyzer.finalize(through: nil)
         }
-    }
-
-    private static func trace(
-        result: DictationTranscriber.Result,
-        tokens: [RecitationMatcher.HeardToken],
-        before: String,
-        events: [RecitationMatcher.Event],
-        compute: Duration,
-        sinceListening: Duration?,
-        gap: Duration?
-    ) {
-        #if DEBUG
-        func millis(_ duration: Duration) -> String {
-            String(format: "%.1fms", Double(duration.components.attoseconds) / 1e15
-                + Double(duration.components.seconds) * 1000)
-        }
-        let audioCovered = result.range.end.seconds
-        let pipeline = sinceListening.map { elapsed -> String in
-            let wall = Double(elapsed.components.seconds)
-                + Double(elapsed.components.attoseconds) / 1e18
-            return audioCovered.isFinite ? String(format: "%.0fms", (wall - audioCovered) * 1000) : "?"
-        } ?? "?"
-        let described = tokens.map {
-            "\($0.text)/\($0.key)c\(String(format: "%.2f", $0.confidence))"
-        }
-        print("RECITE final=\(result.isFinal) n=\(tokens.count) gap=\(gap.map(millis) ?? "-") compute=\(millis(compute)) pipeline=\(pipeline) \(before)")
-        print("RECITE   tokens \(described.joined(separator: " "))")
-        print("RECITE   events \(events)")
-        #endif
     }
 
     private static func tokens(in text: AttributedString) -> [RecitationMatcher.HeardToken] {
@@ -214,28 +168,6 @@ final class VoiceRecitationController {
         }
     }
 
-    private final class TapMeter: @unchecked Sendable {
-        private var callbacks = 0
-        private var frames = 0
-        private var last = ContinuousClock.now
-
-        func record(_ delta: Int) {
-            callbacks += 1
-            frames += delta
-            let elapsed = last.duration(to: .now)
-            guard elapsed > .seconds(1) else { return }
-            let seconds = Double(elapsed.components.seconds)
-                + Double(elapsed.components.attoseconds) / 1e18
-            print(String(
-                format: "RECITE tap callbacks=%d frames=%d over %.2fs (every %.0fms)",
-                callbacks, frames, seconds, seconds * 1000 / Double(callbacks)
-            ))
-            callbacks = 0
-            frames = 0
-            last = .now
-        }
-    }
-
     private func startAudioEngine(
         feeding inputBuilder: AsyncStream<AnalyzerInput>.Continuation,
         format analyzerFormat: AVAudioFormat?
@@ -248,11 +180,7 @@ final class VoiceRecitationController {
         }
         converter.primeMethod = .none
         input.removeTap(onBus: 0)
-        let meter = TapMeter()
         input.installTap(onBus: 0, bufferSize: 1024, format: tapFormat) { buffer, _ in
-            #if DEBUG
-            meter.record(Int(buffer.frameLength))
-            #endif
             guard let converted = Self.converted(buffer, with: converter, to: analyzerFormat) else { return }
             inputBuilder.yield(AnalyzerInput(buffer: converted))
         }

@@ -2,18 +2,29 @@ import CryptoKit
 import Foundation
 import Speech
 
-enum RecitationLanguageModel {
+actor RecitationLanguageModel {
+    static let shared = RecitationLanguageModel()
+
+    private var builds: [String: Task<SFSpeechLanguageModel.Configuration?, Never>] = [:]
+
+    func configuration(for text: String) async -> SFSpeechLanguageModel.Configuration? {
+        let key = Self.fingerprint(text)
+        if let existing = builds[key] { return await existing.value }
+        let build = Task { await Self.build(text, key: key) }
+        builds[key] = build
+        return await build.value
+    }
+
     private static let locale = Locale(identifier: "en-US")
     private static let identifier = "com.faizififita.MemorizationGame.recitation"
     private static let windows = [3, 5]
     private static let phraseWeight = 20
     private static let customizationWeight = 0.9
 
-    static func configuration(for text: String) async -> SFSpeechLanguageModel.Configuration? {
+    private static func build(_ text: String, key: String) async -> SFSpeechLanguageModel.Configuration? {
         let phrases = phrases(in: text)
         guard !phrases.isEmpty, let directory = cacheDirectory() else { return nil }
 
-        let key = fingerprint(text)
         let training = directory.appending(path: "\(key).bin")
         let model = directory.appending(path: "\(key).lm")
         let vocabulary = directory.appending(path: "\(key).voc")
