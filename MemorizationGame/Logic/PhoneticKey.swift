@@ -14,8 +14,7 @@ enum PhoneticKey {
         guard sharesOnset(spoken, reference) else { return false }
         let tolerance: Int
         switch reference.count {
-        case 1: return false
-        case 2...5: tolerance = 1
+        case 1...5: tolerance = 1
         default: tolerance = 2
         }
         return distance(spoken, reference, limit: tolerance) <= tolerance

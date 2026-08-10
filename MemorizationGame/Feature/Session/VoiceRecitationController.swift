@@ -26,25 +26,41 @@ final class VoiceRecitationController {
     private var inputBuilder: AsyncStream<AnalyzerInput>.Continuation?
     private var resultsTask: Task<Void, Never>?
     private var finalizeDebounce: Task<Void, Never>?
-    private var prewarmTask: Task<Void, Never>?
+    private var readyTask: Task<Ready?, Never>?
+    private var readyText: String?
+    private var passageInUse: String?
     private var matcher = RecitationMatcher(words: [], hiddenIndices: [])
 
     var isListening: Bool { state == .listening }
 
-    func prewarm() {
-        guard prewarmTask == nil else { return }
-        prewarmTask = Task {
-            let transcriber = Self.makeTranscriber()
-            try? await Self.ensureModelInstalled(for: transcriber)
-            let analyzer = SpeechAnalyzer(modules: [transcriber], options: Self.analyzerOptions)
-            let format = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber])
-            try? await analyzer.prepareToAnalyze(in: format)
-            await analyzer.cancelAndFinishNow()
-        }
+    private struct Ready {
+        let transcriber: DictationTranscriber
+        let analyzer: SpeechAnalyzer
+        let format: AVAudioFormat?
     }
 
     func prepare(for text: String) {
-        Task { _ = await RecitationLanguageModel.shared.configuration(for: text) }
+        guard readyText != text else { return }
+        readyText = text
+        let previous = readyTask
+        readyTask = Task {
+            if let stale = await previous?.value { await stale.analyzer.cancelAndFinishNow() }
+            let customization = await RecitationLanguageModel.shared.configuration(for: text)
+            let transcriber = Self.makeTranscriber(customizing: customization)
+            try? await Self.ensureModelInstalled(for: transcriber)
+            let format = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber])
+            let analyzer = SpeechAnalyzer(modules: [transcriber], options: Self.analyzerOptions)
+            let context = AnalysisContext()
+            context.contextualStrings = [
+                .general: RecitationContext.contextualStrings(
+                    for: text,
+                    hidden: Set(Reviewable.tokens(in: text).indices)
+                )
+            ]
+            try? await analyzer.setContext(context)
+            try? await analyzer.prepareToAnalyze(in: format)
+            return Ready(transcriber: transcriber, analyzer: analyzer, format: format)
+        }
     }
 
     func start(
@@ -61,35 +77,46 @@ final class VoiceRecitationController {
         }
         state = .preparingModel
         do {
-            await prewarmTask?.value
-            let customization = await RecitationLanguageModel.shared.configuration(for: passageText)
-            guard state == .preparingModel else { return }
-            let transcriber = Self.makeTranscriber(customizing: customization)
-            try await Self.ensureModelInstalled(for: transcriber)
-            let analyzerFormat = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber])
-            guard state == .preparingModel else { return }
+            let clock = ContinuousClock.now
+            var marks: [String] = []
+            func mark(_ label: String) {
+                #if DEBUG
+                let elapsed = clock.duration(to: .now)
+                let ms = Double(elapsed.components.seconds) * 1000
+                    + Double(elapsed.components.attoseconds) / 1e15
+                marks.append(String(format: "%@=%.0fms", label, ms))
+                #endif
+            }
+            prepare(for: passageText)
+            guard let ready = await readyTask?.value else { throw CancellationError() }
+            readyTask = nil
+            readyText = nil
+            mark("ready")
+            passageInUse = passageText
+            let transcriber = ready.transcriber
+            let analyzer = ready.analyzer
+            let analyzerFormat = ready.format
+            guard state == .preparingModel else {
+                await analyzer.cancelAndFinishNow()
+                return
+            }
             matcher = RecitationMatcher(words: words, hiddenIndices: hiddenIndices)
             heardText = ""
             nextExpectedIndex = matcher.nextExpectedIndex
-            let analyzer = SpeechAnalyzer(modules: [transcriber], options: Self.analyzerOptions)
             self.transcriber = transcriber
             self.analyzer = analyzer
-            let context = AnalysisContext()
-            context.contextualStrings = [
-                .general: RecitationContext.contextualStrings(
-                    for: contextText,
-                    hidden: Set(hiddenIndices)
-                )
-            ]
-            try await analyzer.setContext(context)
-            try await analyzer.prepareToAnalyze(in: analyzerFormat)
             guard state == .preparingModel else { return }
             try Self.activateAudioSession()
+            mark("session")
             let (inputSequence, inputBuilder) = AsyncStream<AnalyzerInput>.makeStream()
             self.inputBuilder = inputBuilder
             try startAudioEngine(feeding: inputBuilder, format: analyzerFormat)
             try await analyzer.start(inputSequence: inputSequence)
+            mark("start")
             state = .listening
+            #if DEBUG
+            print("RECITE start \(marks.joined(separator: " "))")
+            #endif
             observeResults(from: transcriber)
         } catch {
             state = .failed
@@ -110,6 +137,16 @@ final class VoiceRecitationController {
             state = .idle
         }
         teardown()
+        if let passageInUse { prepare(for: passageInUse) }
+    }
+
+    func release() {
+        stop()
+        passageInUse = nil
+        readyText = nil
+        let pending = readyTask
+        readyTask = nil
+        Task { if let ready = await pending?.value { await ready.analyzer.cancelAndFinishNow() } }
     }
 
     private func observeResults(from transcriber: DictationTranscriber) {
@@ -163,6 +200,9 @@ final class VoiceRecitationController {
     }
 
     private func dispatch(_ events: [RecitationMatcher.Event]) {
+        #if DEBUG
+        if !events.isEmpty { print("RECITE events \(events) heard=\(heardText)") }
+        #endif
         for event in events {
             switch event {
             case .matched(let index):

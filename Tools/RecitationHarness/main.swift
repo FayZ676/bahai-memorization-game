@@ -7,7 +7,7 @@ func check(_ label: String, _ condition: Bool, _ detail: @autoclosure () -> Stri
 }
 
 print("PhoneticKey equivalences")
-for (a, b) in [("Thy", "the"), ("Thee", "the"), ("Thou", "though"), ("hath", "has"), ("art", "are"), ("unto", "into")] {
+for (a, b) in [("Thy", "the"), ("Thee", "the"), ("Thou", "though"), ("hath", "has"), ("art", "are"), ("unto", "into"), ("Thy", "that"), ("Thee", "these")] {
     check("\(a) ~ \(b)", PhoneticKey.matches(PhoneticKey.encode(b), PhoneticKey.encode(a)),
           "[\(PhoneticKey.encode(a)) vs \(PhoneticKey.encode(b))]")
 }
