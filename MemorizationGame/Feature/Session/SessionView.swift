@@ -67,17 +67,18 @@ struct SessionView: View {
             voice.onWordsMatched = { registerRecited($0) }
             voice.onMiss = { registerMiss($0, movedOn: $1) }
             voice.onCompleted = { completeChunk() }
-            voice.prewarm()
+            voice.prepare(for: vm.passageText)
         }
         .onChange(of: vm.presentationEpoch) {
             voice.stop()
             highlights.clear()
+            voice.prepare(for: vm.passageText)
         }
         .onChange(of: vm.current?.hiddenWords) {
             guard let card = vm.current else { return }
             voice.updateHiddenIndices(highlights.unattempted(in: card))
         }
-        .onDisappear { voice.stop() }
+        .onDisappear { voice.release() }
         .alert("Microphone Access Needed", isPresented: $showingMicDenied) {
             Button("Open Settings") {
                 if let url = URL(string: UIApplication.openSettingsURLString) {
@@ -178,6 +179,7 @@ struct SessionView: View {
             await voice.start(
                 words: card.words.map(String.init),
                 contextText: card.expectedText,
+                passageText: vm.passageText,
                 hiddenIndices: remaining
             )
         }

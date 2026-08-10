@@ -16,35 +16,59 @@ final class VoiceRecitationController {
     private(set) var state: State = .idle
     private(set) var nextExpectedIndex: Int?
     private(set) var heardText = ""
-    private(set) var isSettling = false
     var onWordsMatched: (([Int]) -> Void)?
     var onMiss: ((Int, Bool) -> Void)?
     var onCompleted: (() -> Void)?
 
     private let audioEngine = AVAudioEngine()
     private var analyzer: SpeechAnalyzer?
-    private var transcriber: SpeechTranscriber?
+    private var transcriber: DictationTranscriber?
     private var inputBuilder: AsyncStream<AnalyzerInput>.Continuation?
     private var resultsTask: Task<Void, Never>?
     private var finalizeDebounce: Task<Void, Never>?
-    private var prewarmTask: Task<Void, Never>?
+    private var readyTask: Task<Ready?, Never>?
+    private var readyText: String?
+    private var passageInUse: String?
     private var matcher = RecitationMatcher(words: [], hiddenIndices: [])
 
     var isListening: Bool { state == .listening }
 
-    func prewarm() {
-        guard prewarmTask == nil else { return }
-        prewarmTask = Task {
-            let transcriber = Self.makeTranscriber()
+    private struct Ready {
+        let transcriber: DictationTranscriber
+        let analyzer: SpeechAnalyzer
+        let format: AVAudioFormat?
+    }
+
+    func prepare(for text: String) {
+        guard readyText != text else { return }
+        readyText = text
+        let previous = readyTask
+        readyTask = Task {
+            if let stale = await previous?.value { await stale.analyzer.cancelAndFinishNow() }
+            let customization = await RecitationLanguageModel.shared.configuration(for: text)
+            let transcriber = Self.makeTranscriber(customizing: customization)
             try? await Self.ensureModelInstalled(for: transcriber)
-            let analyzer = SpeechAnalyzer(modules: [transcriber], options: Self.analyzerOptions)
             let format = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber])
+            let analyzer = SpeechAnalyzer(modules: [transcriber], options: Self.analyzerOptions)
+            let context = AnalysisContext()
+            context.contextualStrings = [
+                .general: RecitationContext.contextualStrings(
+                    for: text,
+                    hidden: Set(Reviewable.tokens(in: text).indices)
+                )
+            ]
+            try? await analyzer.setContext(context)
             try? await analyzer.prepareToAnalyze(in: format)
-            await analyzer.cancelAndFinishNow()
+            return Ready(transcriber: transcriber, analyzer: analyzer, format: format)
         }
     }
 
-    func start(words: [String], contextText: String, hiddenIndices: [Int]) async {
+    func start(
+        words: [String],
+        contextText: String,
+        passageText: String,
+        hiddenIndices: [Int]
+    ) async {
         guard !hiddenIndices.isEmpty else { return }
         guard state == .idle || state == .failed || state == .micDenied else { return }
         guard await Self.micPermissionGranted() else {
@@ -53,26 +77,23 @@ final class VoiceRecitationController {
         }
         state = .preparingModel
         do {
-            await prewarmTask?.value
-            let transcriber = Self.makeTranscriber()
-            try await Self.ensureModelInstalled(for: transcriber)
-            let analyzerFormat = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber])
-            guard state == .preparingModel else { return }
+            prepare(for: passageText)
+            guard let ready = await readyTask?.value else { throw CancellationError() }
+            readyTask = nil
+            readyText = nil
+            passageInUse = passageText
+            let transcriber = ready.transcriber
+            let analyzer = ready.analyzer
+            let analyzerFormat = ready.format
+            guard state == .preparingModel else {
+                await analyzer.cancelAndFinishNow()
+                return
+            }
             matcher = RecitationMatcher(words: words, hiddenIndices: hiddenIndices)
             heardText = ""
             nextExpectedIndex = matcher.nextExpectedIndex
-            let analyzer = SpeechAnalyzer(modules: [transcriber], options: Self.analyzerOptions)
             self.transcriber = transcriber
             self.analyzer = analyzer
-            let context = AnalysisContext()
-            context.contextualStrings = [
-                .general: RecitationContext.contextualStrings(
-                    for: contextText,
-                    hidden: Set(hiddenIndices)
-                )
-            ]
-            try await analyzer.setContext(context)
-            try await analyzer.prepareToAnalyze(in: analyzerFormat)
             guard state == .preparingModel else { return }
             try Self.activateAudioSession()
             let (inputSequence, inputBuilder) = AsyncStream<AnalyzerInput>.makeStream()
@@ -100,9 +121,19 @@ final class VoiceRecitationController {
             state = .idle
         }
         teardown()
+        if let passageInUse { prepare(for: passageInUse) }
     }
 
-    private func observeResults(from transcriber: SpeechTranscriber) {
+    func release() {
+        stop()
+        passageInUse = nil
+        readyText = nil
+        let pending = readyTask
+        readyTask = nil
+        Task { if let ready = await pending?.value { await ready.analyzer.cancelAndFinishNow() } }
+    }
+
+    private func observeResults(from transcriber: DictationTranscriber) {
         resultsTask = Task {
             do {
                 for try await result in transcriber.results {
@@ -122,30 +153,33 @@ final class VoiceRecitationController {
         }
     }
 
-    private func ingest(_ result: SpeechTranscriber.Result) {
-        let text = String(result.text.characters)
-        let tokens = text
-            .split(whereSeparator: \.isWhitespace)
-            .map(String.init)
-        heardText = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        isSettling = false
-        finalizeDebounce?.cancel()
-        if result.isFinal {
-            dispatch(matcher.finalizeSegment(tokens))
-        } else {
-            dispatch(matcher.updateVolatile(tokens))
-            scheduleIdleFinalize()
-        }
+    private func ingest(_ result: DictationTranscriber.Result) {
+        heardText = String(result.text.characters)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        dispatch(matcher.ingest(Self.tokens(in: result.text), isFinal: result.isFinal))
         nextExpectedIndex = matcher.nextExpectedIndex
+        if !result.isFinal { scheduleIdleFinalize() }
     }
 
     private func scheduleIdleFinalize() {
+        finalizeDebounce?.cancel()
         finalizeDebounce = Task {
-            try? await Task.sleep(for: .milliseconds(750))
+            try? await Task.sleep(for: .milliseconds(1200))
             guard !Task.isCancelled, state == .listening, let analyzer else { return }
-            isSettling = true
             try? await analyzer.finalize(through: nil)
-            isSettling = false
+        }
+    }
+
+    private static func tokens(in text: AttributedString) -> [RecitationMatcher.HeardToken] {
+        text.runs.flatMap { run in
+            String(text[run.range].characters)
+                .split(whereSeparator: { $0.isWhitespace || $0 == "-" })
+                .map {
+                    RecitationMatcher.HeardToken(
+                        text: $0,
+                        confidence: run.transcriptionConfidence ?? 1
+                    )
+                }
         }
     }
 
@@ -185,7 +219,6 @@ final class VoiceRecitationController {
         resultsTask = nil
         finalizeDebounce?.cancel()
         finalizeDebounce = nil
-        isSettling = false
         inputBuilder?.finish()
         inputBuilder = nil
         audioEngine.inputNode.removeTap(onBus: 0)
@@ -226,16 +259,19 @@ final class VoiceRecitationController {
         modelRetention: .processLifetime
     )
 
-    private static func makeTranscriber() -> SpeechTranscriber {
-        SpeechTranscriber(
-            locale: Locale(identifier: "en-US"),
-            transcriptionOptions: [],
-            reportingOptions: [.volatileResults, .fastResults],
-            attributeOptions: []
-        )
+    private static func makeTranscriber(
+        customizing configuration: SFSpeechLanguageModel.Configuration? = nil
+    ) -> DictationTranscriber {
+        var preset = DictationTranscriber.Preset.progressiveShortDictation
+        preset.reportingOptions = [.volatileResults, .frequentFinalization]
+        preset.attributeOptions = [.audioTimeRange, .transcriptionConfidence]
+        if let configuration {
+            preset.contentHints.insert(.customizedLanguage(modelConfiguration: configuration))
+        }
+        return DictationTranscriber(locale: Locale(identifier: "en-US"), preset: preset)
     }
 
-    private static func ensureModelInstalled(for transcriber: SpeechTranscriber) async throws {
+    private static func ensureModelInstalled(for transcriber: DictationTranscriber) async throws {
         if let request = try await AssetInventory.assetInstallationRequest(supporting: [transcriber]) {
             try await request.downloadAndInstall()
         }

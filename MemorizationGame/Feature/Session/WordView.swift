@@ -51,7 +51,7 @@ struct WordView: View {
         }
         .scaleEffect(pulsing ? 1.15 : 1)
         .animation(Motion.fade.delay(staggerDelay), value: hidden)
-        .animation(.easeInOut(duration: 0.18), value: expected)
+        .animation(.easeInOut(duration: 0.09), value: expected)
         .onChange(of: recited) { wasRecited, isRecited in
             guard isRecited, !wasRecited else { return }
             withAnimation(.easeOut(duration: 0.1)) { pulsing = true }
