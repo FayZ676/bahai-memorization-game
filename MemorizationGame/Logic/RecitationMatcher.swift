@@ -28,14 +28,18 @@ struct RecitationMatcher {
         failedAttempts = 0
     }
 
+    var segmentCursor: Int { segmentMatchConsumed }
+
+    mutating func resetSegmentCursor() {
+        segmentMatchConsumed = 0
+    }
+
     mutating func updateVolatile(_ segmentTokens: [String]) -> [Event] {
         scan(segmentTokens, commitMisses: false)
     }
 
     mutating func finalizeSegment(_ segmentTokens: [String]) -> [Event] {
-        let events = scan(segmentTokens, commitMisses: true)
-        segmentMatchConsumed = 0
-        return events
+        scan(segmentTokens, commitMisses: true)
     }
 
     private mutating func normalized(_ token: String) -> String {

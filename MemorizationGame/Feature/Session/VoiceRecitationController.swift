@@ -1,4 +1,5 @@
 import AVFoundation
+import CoreMedia
 import Observation
 import Speech
 
@@ -29,6 +30,7 @@ final class VoiceRecitationController {
     private var finalizeDebounce: Task<Void, Never>?
     private var prewarmTask: Task<Void, Never>?
     private var matcher = RecitationMatcher(words: [], hiddenIndices: [])
+    private var consumption = TranscriptConsumption()
 
     var isListening: Bool { state == .listening }
 
@@ -59,6 +61,7 @@ final class VoiceRecitationController {
             let analyzerFormat = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber])
             guard state == .preparingModel else { return }
             matcher = RecitationMatcher(words: words, hiddenIndices: hiddenIndices)
+            consumption = TranscriptConsumption()
             heardText = ""
             nextExpectedIndex = matcher.nextExpectedIndex
             let analyzer = SpeechAnalyzer(modules: [transcriber], options: Self.analyzerOptions)
@@ -124,19 +127,44 @@ final class VoiceRecitationController {
 
     private func ingest(_ result: SpeechTranscriber.Result) {
         let text = String(result.text.characters)
-        let tokens = text
-            .split(whereSeparator: \.isWhitespace)
-            .map(String.init)
         heardText = text.trimmingCharacters(in: .whitespacesAndNewlines)
         isSettling = false
         finalizeDebounce?.cancel()
-        if result.isFinal {
-            dispatch(matcher.finalizeSegment(tokens))
-        } else {
-            dispatch(matcher.updateVolatile(tokens))
-            scheduleIdleFinalize()
+        let timed = Self.timedTokens(in: result.text, fallbackEnd: result.range.end.seconds)
+        let pending = consumption.pending(in: timed)
+        if !pending.isEmpty {
+            matcher.resetSegmentCursor()
+            let words = pending.map(\.text)
+            if result.isFinal {
+                dispatch(matcher.finalizeSegment(words))
+            } else {
+                dispatch(matcher.updateVolatile(words))
+            }
+            consumption.advance(over: pending, committed: matcher.segmentCursor)
         }
+        if !result.isFinal { scheduleIdleFinalize() }
         nextExpectedIndex = matcher.nextExpectedIndex
+    }
+
+    private static func timedTokens(
+        in text: AttributedString,
+        fallbackEnd: Double
+    ) -> [TimedToken] {
+        var timed: [TimedToken] = []
+        var lastEnd = -Double.greatestFiniteMagnitude
+        for run in text.runs {
+            let piece = String(text[run.range].characters)
+            let end = run.audioTimeRange?.end.seconds ?? lastEnd
+            for token in piece.split(whereSeparator: \.isWhitespace)
+            where !RecitationMatcher.normalize(token).isEmpty {
+                timed.append(TimedToken(text: String(token), end: end))
+            }
+            lastEnd = end
+        }
+        for index in timed.indices where timed[index].end == -Double.greatestFiniteMagnitude {
+            timed[index].end = fallbackEnd
+        }
+        return timed
     }
 
     private func scheduleIdleFinalize() {
@@ -231,7 +259,7 @@ final class VoiceRecitationController {
             locale: Locale(identifier: "en-US"),
             transcriptionOptions: [],
             reportingOptions: [.volatileResults, .fastResults],
-            attributeOptions: []
+            attributeOptions: [.audioTimeRange]
         )
     }
 
