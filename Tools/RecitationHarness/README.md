@@ -13,6 +13,7 @@ target and cannot affect the build.
 swiftc -O \
   MemorizationGame/Logic/PhoneticKey.swift \
   MemorizationGame/Logic/RecitationMatcher.swift \
+  MemorizationGame/Logic/RecitationTrace.swift \
   Tools/RecitationHarness/main.swift \
   -o /tmp/recitation-harness && /tmp/recitation-harness
 ```

@@ -228,7 +228,10 @@ final class VoiceRecitationController {
         let events = matcher.ingest(tokens, isFinal: result.isFinal)
         RecitationTrace.emit(
             "matcher",
-            "events=\(events) next=\(matcher.nextExpectedIndex.map(String.init) ?? "-") in \(RecitationTrace.ms(since: ingestStarted))"
+            """
+            events=\(events) owed=\(matcher.nextExpectedIndex.map(String.init) ?? "-") \
+            cursor=\(matcher.cursorIndex.map(String.init) ?? "-") in \(RecitationTrace.ms(since: ingestStarted))
+            """
         )
         dispatch(events)
         nextExpectedIndex = matcher.nextExpectedIndex
