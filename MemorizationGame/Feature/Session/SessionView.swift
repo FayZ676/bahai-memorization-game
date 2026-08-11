@@ -22,6 +22,7 @@ struct SessionView: View {
 
     private static let followInsets = (top: CGFloat(56), bottom: CGFloat(120))
     private static let followAnchor = UnitPoint(x: 0, y: 0.34)
+    private static let followSettleDelays: [Duration] = [.milliseconds(140), .milliseconds(450)]
 
     init(passage: Passage, store: AppStore) {
         self.passage = passage
@@ -318,23 +319,32 @@ struct SessionView: View {
                 }
                 .onChange(of: voice.isListening) { _, listening in
                     guard listening else { return }
-                    follow(voice.cursorIndex, using: scroller)
+                    Task { await settleCursorInView(using: scroller) }
                 }
             }
         }
         .frame(maxHeight: .infinity)
     }
 
-    private func follow(_ index: Int?, using scroller: ScrollViewProxy) {
+    private func follow(_ index: Int?, using scroller: ScrollViewProxy, force: Bool = false) {
         guard voice.isListening,
               let index,
               let frame = painting.frame(at: index),
               readingViewport != .zero else { return }
         let ceiling = readingViewport.minY + Self.followInsets.top
         let floor = readingViewport.maxY - Self.followInsets.bottom
-        guard frame.minY < ceiling || frame.maxY > floor else { return }
+        guard force || frame.minY < ceiling || frame.maxY > floor else { return }
         withAnimation(.easeInOut(duration: 0.35)) {
             scroller.scrollTo(index, anchor: Self.followAnchor)
+        }
+    }
+
+    private func settleCursorInView(using scroller: ScrollViewProxy) async {
+        follow(voice.cursorIndex, using: scroller, force: true)
+        for delay in Self.followSettleDelays {
+            try? await Task.sleep(for: delay)
+            guard voice.isListening else { return }
+            follow(voice.cursorIndex, using: scroller, force: true)
         }
     }
 
