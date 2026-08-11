@@ -19,6 +19,7 @@ struct RecitationMatcher {
     private static let attemptBudget = 3
     private static let confidenceFloor = 0.25
     private static let movedOnMargin = 2
+    private static let lookahead = 12
 
     private let words: [String]
     private var hiddenIndices: [Int]
@@ -61,7 +62,12 @@ struct RecitationMatcher {
         let spoken = settled + pending
         guard !spoken.isEmpty else { return [] }
         let alignStarted = Date()
-        let alignment = Self.align(spoken: spoken.map(\.key), reference: words)
+        let entry = hiddenIndices.first ?? 0
+        let horizon = min(words.count, entry + spoken.count + Self.lookahead)
+        let alignment = Self.align(
+            spoken: spoken.map(\.key),
+            reference: Array(words[0..<horizon])
+        )
         let reached = alignment.reference
         RecitationTrace.emit(
             "align",
@@ -70,7 +76,7 @@ struct RecitationMatcher {
             spokenKeys=[\(spoken.map(\.key).joined(separator: " "))] \
             reached=\(reached.sorted()) unalignedSpoken=\(Array(0..<spoken.count).filter { !alignment.spoken.contains($0) }) \
             frontier=\(frontier) attempts=\(attempts) next=\(nextExpectedIndex.map(String.init) ?? "-") \
-            in \(RecitationTrace.ms(since: alignStarted))
+            horizon=\(horizon) in \(RecitationTrace.ms(since: alignStarted))
             """
         )
 
@@ -88,9 +94,9 @@ struct RecitationMatcher {
             attempts = 0
             unexplainedSinceProgress = false
         } else {
-            let horizon = isFinal ? spoken.count : spoken.count - 1
-            if judged < horizon {
-                unexplainedSinceProgress = unexplainedSinceProgress || (judged..<horizon).contains {
+            let judgeable = isFinal ? spoken.count : spoken.count - 1
+            if judged < judgeable {
+                unexplainedSinceProgress = unexplainedSinceProgress || (judged..<judgeable).contains {
                     spoken[$0].confidence >= Self.confidenceFloor && !alignment.spoken.contains($0)
                 }
             }

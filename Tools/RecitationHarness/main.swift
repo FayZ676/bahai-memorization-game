@@ -119,6 +119,28 @@ check("restating final emits no miss on the unsaid next word",
 check("still expecting word 29", device.nextExpectedIndex == 29,
       "\(String(describing: device.nextExpectedIndex))")
 
+print("\nDevice 2026-08-11: a repeated phrase later in the passage must not steal the cursor")
+let repeating = """
+I testify unto that whereunto have testified all created things and the Concourse \
+on high and the inmates of the highest Paradise I testify that Thou art God
+"""
+let repeatingWords = repeating.split(separator: " ").map(String.init)
+var stolen = RecitationMatcher(
+    words: repeatingWords,
+    hiddenIndices: Array(0..<repeatingWords.count)
+)
+// The reciter has said "I testify unto that"; the recogniser drops "unto",
+// so the spoken keys match the later "I testify that" at zero cost.
+_ = stolen.ingest(heard("I testify"), isFinal: false)
+let stolenEvents = stolen.ingest(heard("I testify that"), isFinal: false)
+check("cursor stays near the opening, not the later repetition",
+      (stolen.nextExpectedIndex ?? 99) <= 4,
+      "next=\(String(describing: stolen.nextExpectedIndex))")
+check("no miss emitted from the volatile", !stolenEvents.contains(where: isMiss), "\(stolenEvents)")
+let stolenFinal = stolen.ingest(heard("I testify unto that whereunto"), isFinal: true)
+let burned = stolenFinal.filter { if case .missed(_, let movedOn) = $0 { return movedOn } else { return false } }
+check("a final must not burn the rest of the passage", burned.count <= 1, "\(burned.count) burned: \(burned)")
+
 print("\nRegression: 'O' transcribed as the digit zero")
 check("bare 0 encodes as O", PhoneticKey.encode("0") == PhoneticKey.encode("O"),
       "[\(PhoneticKey.encode("0")) vs \(PhoneticKey.encode("O"))]")
