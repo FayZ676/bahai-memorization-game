@@ -5,7 +5,12 @@
 `push-build.sh` uploads without Xcode's UI, which needs an API key rather than your Apple ID.
 
 1. App Store Connect → **Users and Access → Integrations → App Store Connect API**.
-2. Create a key with the **App Manager** role. Download the `.p8` — it downloads once only.
+2. Create a key with the **Admin** role. Download the `.p8` — it downloads once only.
+
+   App Manager is not enough. `push-build.sh` passes `-allowProvisioningUpdates`, so the key
+   has to create the distribution certificate and regenerate the App Store provisioning
+   profile; an App Manager key fails both with "Cloud signing permission error". A key's role
+   is fixed at creation, so a key with the wrong role has to be revoked and reissued.
 3. Move it where the script looks for it:
 
    ```
@@ -20,6 +25,10 @@
    ASC_KEY_ID=XXXXXXXXXX
    ASC_ISSUER_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
    ```
+
+The first upload on a machine stops partway while `codesign` waits on a keychain dialog for
+the login password — it looks like a hang, since nothing is printed and the window can sit
+behind Xcode. Answer it with **Always Allow** so later releases run unattended.
 
 ## Pushing a build
 
