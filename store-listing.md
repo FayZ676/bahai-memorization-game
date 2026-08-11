@@ -46,6 +46,15 @@ QUIET BY DESIGN
 
 Verses is built around one belief: memorization isn't a test to pass, it's a way of carrying words with you. Hide what you know. Read what you don't. Come back tomorrow.
 
+## What's New — 1.2 (4000)
+Achievements now go by the kind of prayer rather than one particular prayer — memorize any morning prayer, any healing prayer, any prayer for the Fast, and it counts.
+
+Settings has a new Send feedback row for writing in from inside the app, and a link to the privacy policy at the foot.
+
+The welcome tour now points you to the achievements before it finishes.
+
+Small fixes and refinements.
+
 ---
 
 ## Support / Privacy URLs
