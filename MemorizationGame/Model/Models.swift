@@ -27,43 +27,22 @@ struct Reviewable: Codable, Identifiable, Hashable {
     }
 
     static func tokens(in text: String) -> [Substring] {
-        text
-            .split(whereSeparator: { $0 == " " || $0 == "\n" })
-            .flatMap(splitInternalHyphens)
+        WordLayoutStore.layout(for: text).words
+    }
+
+    private var layout: WordLayout {
+        WordLayoutStore.layout(for: expectedText)
     }
 
     var words: [Substring] {
-        Self.tokens(in: expectedText)
+        layout.words
     }
 
     var paragraphs: [Range<Int>] {
-        var ranges: [Range<Int>] = []
-        var start = 0
-        for paragraph in expectedText.split(separator: "\n", omittingEmptySubsequences: true) {
-            let count = Self.tokens(in: String(paragraph)).count
-            guard count > 0 else { continue }
-            ranges.append(start..<(start + count))
-            start += count
-        }
-        return ranges.isEmpty ? [0..<wordCount] : ranges
+        layout.paragraphs
     }
 
-    private static func splitInternalHyphens(_ word: Substring) -> [Substring] {
-        var pieces: [Substring] = []
-        var pieceStart = word.startIndex
-        var searchStart = word.startIndex
-        while let hyphenIndex = word[searchStart...].firstIndex(of: "-") {
-            let afterHyphen = word.index(after: hyphenIndex)
-            if hyphenIndex > pieceStart, afterHyphen < word.endIndex {
-                pieces.append(word[pieceStart..<hyphenIndex])
-                pieceStart = hyphenIndex
-            }
-            searchStart = afterHyphen
-        }
-        pieces.append(word[pieceStart...])
-        return pieces
-    }
-    var wordCount: Int { words.count }
+    var wordCount: Int { layout.words.count }
 
     mutating func toggleWord(_ index: Int) {
         if hiddenWords.contains(index) {
