@@ -46,7 +46,7 @@ struct SettingsView: View {
                         NavigationLink {
                             ReportIssueView()
                         } label: {
-                            DisclosureRow("Report a recitation issue")
+                            DisclosureRow("Report Issue")
                         }
                         .buttonStyle(.haptic)
 

@@ -49,7 +49,7 @@ struct ReportIssueView: View {
     }
 
     private var intro: some View {
-        Text("Said a word and it still counted as missed? Send what the app heard.")
+        Text("Tell us what went wrong. Your recent recitations come along in case they're part of it.")
             .appFont(Typography.callout)
             .foregroundStyle(Theme.muted)
             .lineSpacing(3)
@@ -60,7 +60,7 @@ struct ReportIssueView: View {
     private var editor: some View {
         ZStack(alignment: .topLeading) {
             if message.isEmpty {
-                Text("Anything you'd like to add?")
+                Text("What went wrong?")
                     .appFont(Typography.body)
                     .foregroundStyle(Theme.faint)
                     .padding(.vertical, 20)
@@ -123,13 +123,13 @@ struct ReportIssueView: View {
     private var record: some View {
         if attempts.isEmpty {
             InfoNote(Typography.micro, color: Theme.faint) {
-                Text("Nothing recorded yet. Recite from memory and whatever the app mishears will show up here.")
+                Text("No recitations recorded yet — just describe the issue below.")
                     .appFont(Typography.micro)
                     .foregroundStyle(Theme.faint)
             }
             .padding(.horizontal, 6)
         } else {
-            OptionSection(label: "What the app heard", icon: "waveform") {
+            OptionSection(label: "Recent recitations", icon: "waveform") {
                 ForEach(Array(attempts.enumerated()), id: \.element.id) { index, attempt in
                     if index > 0 { HairlineDivider() }
                     AttemptRow(attempt: attempt, showsSource: chunkID == nil)
