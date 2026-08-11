@@ -334,7 +334,7 @@ struct SessionView: View {
         } action: { frame in
             scriptureFrame = frame
         }
-        .background(alignment: .topLeading) {
+        .overlay(alignment: .topLeading) {
             RecitationCursor(target: cursorTarget)
         }
         .contentShape(Rectangle())
