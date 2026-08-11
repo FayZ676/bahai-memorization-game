@@ -27,17 +27,13 @@ struct ReportIssueView: View {
             ScreenHeader(title: "Report Issue", onBack: { dismiss() })
         } content: {
             ScrollView {
-                VStack(alignment: .leading, spacing: 22) {
+                VStack(alignment: .leading, spacing: 18) {
                     intro
-                    OptionSection(
-                        label: "Message",
-                        icon: "text.alignleft",
-                        footer: "Optional. The record below is sent either way."
-                    ) {
+                    record
+                    OptionSection(label: "Message", icon: "text.alignleft") {
                         editor
                     }
                     sendRow
-                    record
                 }
                 .padding(.horizontal, 18)
                 .padding(.bottom, 32)
@@ -53,17 +49,12 @@ struct ReportIssueView: View {
     }
 
     private var intro: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("When a word you said is counted as missed")
-                .appFont(Typography.subtitle)
-                .foregroundStyle(Theme.ink)
-            Text("The app matches what it hears against the words you've hidden, and sometimes it gets one wrong. Below is what it heard the last few times you recited. Sending it shows exactly where the matching went astray — nothing else about you is included.")
-                .appFont(Typography.callout)
-                .foregroundStyle(Theme.muted)
-                .lineSpacing(3)
-        }
-        .padding(.horizontal, 6)
-        .padding(.top, 4)
+        Text("Said a word and it still counted as missed? Send what the app heard.")
+            .appFont(Typography.callout)
+            .foregroundStyle(Theme.muted)
+            .lineSpacing(3)
+            .padding(.horizontal, 6)
+            .padding(.top, 4)
     }
 
     private var editor: some View {
@@ -83,7 +74,7 @@ struct ReportIssueView: View {
                 .tint(Theme.accent)
                 .scrollContentBackground(.hidden)
                 .focused($editorFocused)
-                .frame(minHeight: 110)
+                .frame(minHeight: 84)
                 .padding(.vertical, 12)
                 .padding(.horizontal, 15)
         }
@@ -109,9 +100,13 @@ struct ReportIssueView: View {
                     if sending {
                         ProgressView().tint(Theme.bg)
                     } else {
-                        Text("Send Report")
-                            .appFont(Typography.button)
-                            .foregroundStyle(Theme.bg)
+                        HStack(spacing: 8) {
+                            Image(systemName: "paperplane.fill")
+                                .appIcon(15, weight: .semibold)
+                            Text("Send Report")
+                                .appFont(Typography.button)
+                        }
+                        .foregroundStyle(Theme.bg)
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -134,26 +129,10 @@ struct ReportIssueView: View {
             }
             .padding(.horizontal, 6)
         } else {
-            VStack(alignment: .leading, spacing: 22) {
-                ForEach(attempts) { attempt in
-                    OptionSection(label: Self.stamp(attempt.date), icon: "clock") {
-                        if chunkID == nil {
-                            SourceRow(attempt: attempt)
-                            HairlineDivider()
-                        }
-                        if attempt.misses.isEmpty {
-                            Text("Every word was heard.")
-                                .appFont(Typography.body)
-                                .foregroundStyle(Theme.muted)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .optionRow()
-                        } else {
-                            ForEach(Array(attempt.misses.enumerated()), id: \.element.id) { index, miss in
-                                if index > 0 { HairlineDivider() }
-                                MissRow(miss: miss)
-                            }
-                        }
-                    }
+            OptionSection(label: "What the app heard", icon: "waveform") {
+                ForEach(Array(attempts.enumerated()), id: \.element.id) { index, attempt in
+                    if index > 0 { HairlineDivider() }
+                    AttemptRow(attempt: attempt, showsSource: chunkID == nil)
                 }
             }
         }
@@ -180,49 +159,51 @@ struct ReportIssueView: View {
             withAnimation(.easeInOut(duration: 0.25)) { sent = true }
         }
     }
-
-    private static func stamp(_ date: Date) -> String {
-        date.formatted(date: .abbreviated, time: .shortened)
-    }
 }
 
-private struct SourceRow: View {
+private struct AttemptRow: View {
     let attempt: RecitationAttempt
+    let showsSource: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(attempt.passageTitle)
-                .appFont(Typography.label)
-                .foregroundStyle(Theme.ink)
-            Text("\(attempt.excerpt)… · \(attempt.summary)")
+        VStack(alignment: .leading, spacing: 4) {
+            Text(header)
                 .appFont(Typography.micro)
                 .foregroundStyle(Theme.faint)
                 .lineLimit(1)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .optionRow()
-    }
-}
-
-private struct MissRow: View {
-    let miss: RecitationMiss
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(miss.expected)
-                .appFont(Typography.verse)
-                .foregroundStyle(Theme.ink)
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                Text("heard")
-                    .appFont(Typography.micro)
-                    .tracking(0.5)
-                    .foregroundStyle(Theme.faint)
-                Text(miss.heardSomething ? "“\(miss.heard)”" : "nothing")
-                    .appFont(Typography.callout)
-                    .foregroundStyle(miss.heardSomething ? Theme.warn : Theme.muted)
+            if attempt.misses.isEmpty {
+                Text("Every word was heard")
+                    .appFont(Typography.caption)
+                    .foregroundStyle(Theme.muted)
+            } else {
+                misses
+                    .appFont(Typography.caption)
+                    .lineSpacing(2)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .optionRow()
+        .padding(.vertical, Spacing.sm)
+        .padding(.horizontal, Spacing.lg)
+    }
+
+    private var header: String {
+        let stamp = attempt.date.formatted(date: .abbreviated, time: .shortened)
+        return showsSource
+            ? "\(stamp) · \(attempt.passageTitle) · \(attempt.summary)"
+            : "\(stamp) · \(attempt.summary)"
+    }
+
+    private var misses: Text {
+        attempt.misses
+            .map { miss in
+                Text(miss.expected).foregroundStyle(Theme.ink)
+                    + Text(" → ").foregroundStyle(Theme.faint)
+                    + Text(miss.heardSomething ? miss.heard : "nothing")
+                        .foregroundStyle(miss.heardSomething ? Theme.warn : Theme.muted)
+            }
+            .enumerated()
+            .reduce(Text("")) { line, pair in
+                pair.offset == 0 ? pair.element : line + Text("   ").foregroundStyle(Theme.faint) + pair.element
+            }
     }
 }
