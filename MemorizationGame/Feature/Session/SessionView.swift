@@ -279,9 +279,9 @@ struct SessionView: View {
                     .padding(.top, 20)
                     Spacer(minLength: 0)
                 }
-                .frame(maxWidth: .infinity, minHeight: geo.size.height - 60, alignment: .topLeading)
+                .frame(maxWidth: .infinity, minHeight: geo.size.height - 64, alignment: .topLeading)
                 .padding(.horizontal, 30)
-                .padding(.top, 24)
+                .padding(.top, 28)
                 .padding(.bottom, 36)
             }
             .scrollIndicators(.hidden)

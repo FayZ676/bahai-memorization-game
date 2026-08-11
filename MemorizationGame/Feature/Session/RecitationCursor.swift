@@ -9,16 +9,16 @@ struct RecitationCursor: View {
     @State private var height: CGFloat = 0
     @State private var visible = false
 
-    private static let inset = CGSize(width: -5, height: -3)
+    private static let inset = CGSize(width: -10, height: -7)
     private static let leadingEdge = Animation.spring(response: 0.26, dampingFraction: 0.86)
     private static let trailingEdge = Animation.spring(response: 0.34, dampingFraction: 0.9)
     private static let lineBreak = Animation.spring(response: 0.34, dampingFraction: 0.86)
 
     var body: some View {
-        RoundedRectangle(cornerRadius: Radius.word, style: .continuous)
+        RoundedRectangle(cornerRadius: Radius.inset, style: .continuous)
             .strokeBorder(Theme.accent.opacity(0.3), lineWidth: 1)
             .background(
-                RoundedRectangle(cornerRadius: Radius.word, style: .continuous)
+                RoundedRectangle(cornerRadius: Radius.inset, style: .continuous)
                     .fill(Theme.accent.opacity(0.12))
             )
             .frame(width: max(trailing - leading, 4), height: height)
