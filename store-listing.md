@@ -40,8 +40,8 @@ BRING YOUR OWN
 
 QUIET BY DESIGN
 • No account, no sign-in
-• Everything stays on your iPhone
-• No ads, no leaderboards, no notifications nagging you to practice
+• Your passages, your progress, and your voice stay on your iPhone
+• No ads, no leaderboards, and reminders only if you ask for them
 • A simple record of how many words you've hidden each day — encouragement, not obligation
 
 Verses is built around one belief: memorization isn't a test to pass, it's a way of carrying words with you. Hide what you know. Read what you don't. Come back tomorrow.
