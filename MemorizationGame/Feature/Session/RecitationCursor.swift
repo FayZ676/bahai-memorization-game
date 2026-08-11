@@ -10,8 +10,8 @@ struct RecitationCursor: View {
     @State private var visible = false
 
     private static let inset = CGSize(width: -5, height: -3)
-    private static let leadingEdge = Animation.spring(response: 0.24, dampingFraction: 0.82)
-    private static let trailingEdge = Animation.spring(response: 0.42, dampingFraction: 0.9)
+    private static let leadingEdge = Animation.spring(response: 0.26, dampingFraction: 0.86)
+    private static let trailingEdge = Animation.spring(response: 0.34, dampingFraction: 0.9)
     private static let lineBreak = Animation.spring(response: 0.34, dampingFraction: 0.86)
 
     var body: some View {

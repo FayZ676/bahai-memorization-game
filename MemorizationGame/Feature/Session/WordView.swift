@@ -74,7 +74,6 @@ struct WordView: View {
     }
 
     private var highlight: Color? {
-        if pulsing { return Theme.accent.opacity(0.16) }
         if missFlashing { return Theme.warn.opacity(0.2) }
         return nil
     }
