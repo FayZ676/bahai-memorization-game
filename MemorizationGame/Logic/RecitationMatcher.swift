@@ -28,6 +28,8 @@ struct RecitationMatcher {
     private var missed: Set<Int> = []
     private var frontier = -1
     private var attempts = 0
+    private var judged = 0
+    private var unexplainedSinceProgress = false
 
     init(words: [String], hiddenIndices: [Int]) {
         self.words = words.map(PhoneticKey.encode)
@@ -58,8 +60,19 @@ struct RecitationMatcher {
 
         let spoken = settled + pending
         guard !spoken.isEmpty else { return [] }
+        let alignStarted = Date()
         let alignment = Self.align(spoken: spoken.map(\.key), reference: words)
         let reached = alignment.reference
+        RecitationTrace.emit(
+            "align",
+            """
+            \(isFinal ? "FINAL " : "volatile") settled=\(settled.count) pending=\(pending.count) \
+            spokenKeys=[\(spoken.map(\.key).joined(separator: " "))] \
+            reached=\(reached.sorted()) unalignedSpoken=\(Array(0..<spoken.count).filter { !alignment.spoken.contains($0) }) \
+            frontier=\(frontier) attempts=\(attempts) next=\(nextExpectedIndex.map(String.init) ?? "-") \
+            in \(RecitationTrace.ms(since: alignStarted))
+            """
+        )
 
         var events: [Event] = []
         for index in hiddenIndices where reached.contains(index) {
@@ -73,7 +86,16 @@ struct RecitationMatcher {
         if progressed {
             frontier = advanced
             attempts = 0
+            unexplainedSinceProgress = false
+        } else {
+            let horizon = isFinal ? spoken.count : spoken.count - 1
+            if judged < horizon {
+                unexplainedSinceProgress = unexplainedSinceProgress || (judged..<horizon).contains {
+                    spoken[$0].confidence >= Self.confidenceFloor && !alignment.spoken.contains($0)
+                }
+            }
         }
+        judged = max(judged, spoken.count)
 
         if isFinal {
             for index in hiddenIndices where index + Self.movedOnMargin < frontier {
@@ -83,14 +105,18 @@ struct RecitationMatcher {
             }
         }
 
-        let arrived = (spoken.count - usable.count)..<spoken.count
-        let unexplained = arrived.contains {
-            spoken[$0].confidence >= Self.confidenceFloor && !alignment.spoken.contains($0)
-        }
+        RecitationTrace.emit(
+            "verdict",
+            """
+            progressed=\(progressed) unexplained=\(unexplainedSinceProgress) judged=\(judged) \
+            hidden=\(hiddenIndices) matched=\(matched.sorted()) missed=\(missed.sorted()) events=\(events)
+            """
+        )
 
-        guard isFinal, !progressed, unexplained, let expected = nextExpectedIndex
+        guard isFinal, !progressed, unexplainedSinceProgress, let expected = nextExpectedIndex
         else { return events }
 
+        unexplainedSinceProgress = false
         attempts += 1
         if attempts >= Self.attemptBudget {
             missed.insert(expected)

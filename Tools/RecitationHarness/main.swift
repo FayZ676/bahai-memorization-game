@@ -86,6 +86,39 @@ pausedEvents += paused.ingest(heard(".", confidence: 0.0), isFinal: true)
 check("no miss when the reciter simply stops", !pausedEvents.contains(where: isMiss), "\(pausedEvents)")
 check("still expecting the next unsaid word", paused.nextExpectedIndex == 6, "\(String(describing: paused.nextExpectedIndex))")
 
+print("\nDevice 2026-08-11: a restating final must not miss on stale unaligned tokens")
+let prayer = """
+O God, my God! My back is bowed by the burden of my sins, and my heedlessness \
+hath destroyed me whenever I ponder my evil doings and Thy bounteousness my heart \
+melteth within me, and my blood boileth in my veins.
+"""
+let prayerWords = prayer.split(separator: " ").map(String.init)
+var device = RecitationMatcher(
+    words: prayerWords,
+    hiddenIndices: Array(0...15) + Array(21...27) + Array(29...40)
+)
+let devicePrefix = """
+Oh God, my God my back is bowed by the burden of my sins, and my heedlessness \
+had destroyed me whenever I ponder my evil doings
+"""
+var deviceEvents: [RecitationMatcher.Event] = []
+deviceEvents += device.ingest(heard(devicePrefix), isFinal: false)
+deviceEvents += device.ingest(heard(devicePrefix + " and"), isFinal: false)
+deviceEvents += device.ingest(heard(devicePrefix + " and Lebanon"), isFinal: false)
+deviceEvents += device.ingest(heard(devicePrefix + " and Lebanon ambulance"), isFinal: false)
+deviceEvents += device.ingest(heard(devicePrefix + " and Lebanon ambulance the"), isFinal: false)
+let deviceFinal = device.ingest(
+    heard(devicePrefix + " and Lebanon ambulance the", confidence: 0.8),
+    isFinal: true
+)
+check("volatiles credited 'and' and 'Thy'",
+      deviceEvents.contains(.matched(index: 26)) && deviceEvents.contains(.matched(index: 27)),
+      "\(deviceEvents)")
+check("restating final emits no miss on the unsaid next word",
+      !deviceFinal.contains(where: isMiss), "\(deviceFinal)")
+check("still expecting word 29", device.nextExpectedIndex == 29,
+      "\(String(describing: device.nextExpectedIndex))")
+
 print("\nRegression: 'O' transcribed as the digit zero")
 check("bare 0 encodes as O", PhoneticKey.encode("0") == PhoneticKey.encode("O"),
       "[\(PhoneticKey.encode("0")) vs \(PhoneticKey.encode("O"))]")
