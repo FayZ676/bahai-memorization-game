@@ -16,6 +16,9 @@ struct SessionView: View {
     @State private var scriptureFrame: CGRect = .zero
     @State private var readingViewport: CGRect = .zero
     @State private var scrollRequest: ScrollRequest?
+    @State private var readingPosition = ScrollPosition()
+    @State private var wordFrames = WordFrames()
+    @State private var scrollOffset = ScrollOffset()
     @State private var showingFullText = false
     @State private var showingEdit = false
     let passage: Passage
@@ -79,6 +82,7 @@ struct SessionView: View {
         .onChange(of: vm.presentationEpoch) {
             voice.stop()
             highlights.clear()
+            wordFrames.forget()
             voice.prepare(for: vm.passageText)
         }
         .onChange(of: vm.current?.hiddenWords) {
@@ -161,7 +165,7 @@ struct SessionView: View {
     private var cursorTarget: CGRect? {
         guard voice.isListening,
               let index = voice.cursorIndex,
-              let frame = painting.frame(at: index),
+              let frame = wordFrames.frame(at: index),
               scriptureFrame != .zero else { return nil }
         return frame.offsetBy(dx: -scriptureFrame.minX, dy: -scriptureFrame.minY)
     }
@@ -278,81 +282,87 @@ struct SessionView: View {
 
     private var readingArea: some View {
         GeometryReader { geo in
-            ScrollViewReader { scroller in
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 0) {
-                        if let card = vm.current {
-                            scripture(for: card)
-                        }
-                        InfoNote(Typography.micro, color: Theme.faint) {
-                            Text("Tap and glide over words to show or hide them")
-                                .appFont(Typography.micro)
-                                .foregroundStyle(Theme.faint)
-                        }
-                        .padding(.top, 20)
-                        Spacer(minLength: 0)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    if let card = vm.current {
+                        scripture(for: card)
                     }
-                    .frame(maxWidth: .infinity, minHeight: geo.size.height - 64, alignment: .topLeading)
-                    .padding(.horizontal, 30)
-                    .padding(.top, 28)
-                    .padding(.bottom, 36)
+                    InfoNote(Typography.micro, color: Theme.faint) {
+                        Text("Tap and glide over words to show or hide them")
+                            .appFont(Typography.micro)
+                            .foregroundStyle(Theme.faint)
+                    }
+                    .padding(.top, 20)
+                    Spacer(minLength: 0)
                 }
-                .scrollIndicators(.hidden)
-                .scrollDisabled(painting.isActive)
-                .simultaneousGesture(
-                    DragGesture(minimumDistance: 24)
-                        .onEnded { value in
-                            guard !painting.isActive else { return }
-                            guard abs(value.translation.width) > abs(value.translation.height) else { return }
-                            if value.translation.width < 0, vm.canGoForward {
-                                withAnimation(.easeInOut(duration: 0.28)) { vm.skip(forward: true) }
-                            } else if value.translation.width > 0, vm.canGoBack {
-                                withAnimation(.easeInOut(duration: 0.28)) { vm.skip(forward: false) }
-                            }
+                .frame(maxWidth: .infinity, minHeight: geo.size.height - 64, alignment: .topLeading)
+                .padding(.horizontal, 30)
+                .padding(.top, 28)
+                .padding(.bottom, 36)
+            }
+            .scrollIndicators(.hidden)
+            .scrollDisabled(painting.isActive)
+            .scrollPosition($readingPosition)
+            .onScrollGeometryChange(for: CGFloat.self) { geometry in
+                geometry.contentOffset.y
+            } action: { _, y in
+                scrollOffset.y = y
+            }
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 24)
+                    .onEnded { value in
+                        guard !painting.isActive else { return }
+                        guard abs(value.translation.width) > abs(value.translation.height) else { return }
+                        if value.translation.width < 0, vm.canGoForward {
+                            withAnimation(.easeInOut(duration: 0.28)) { vm.skip(forward: true) }
+                        } else if value.translation.width > 0, vm.canGoBack {
+                            withAnimation(.easeInOut(duration: 0.28)) { vm.skip(forward: false) }
                         }
-                )
-                .fadeEdge(.top, height: 16)
-                .fadeEdge(.bottom, height: 28)
-                .onGeometryChange(for: CGRect.self) { proxy in
-                    proxy.frame(in: .global)
-                } action: { frame in
-                    readingViewport = frame
-                }
-                .onChange(of: voice.cursorIndex) { _, index in
-                    guard voice.isListening else { return }
-                    follow(index, using: scroller)
-                }
-                .onChange(of: scrollRequest) { _, request in
-                    guard let request else { return }
-                    Task { await settleCursorInView(from: request.index, using: scroller) }
-                }
-                .onChange(of: voice.isListening) { _, listening in
-                    guard listening, let index = voice.cursorIndex else { return }
-                    follow(index, using: scroller, force: true)
-                }
+                    }
+            )
+            .fadeEdge(.top, height: 16)
+            .fadeEdge(.bottom, height: 28)
+            .onGeometryChange(for: CGRect.self) { proxy in
+                proxy.frame(in: .global)
+            } action: { frame in
+                readingViewport = frame
+            }
+            .onChange(of: voice.cursorIndex) { _, index in
+                guard voice.isListening else { return }
+                follow(index)
+            }
+            .onChange(of: scrollRequest) { _, request in
+                guard let request else { return }
+                Task { await settleCursorInView(from: request.index) }
+            }
+            .onChange(of: voice.isListening) { _, listening in
+                guard listening, let index = voice.cursorIndex else { return }
+                follow(index, force: true)
             }
         }
         .frame(maxHeight: .infinity)
     }
 
-    private func follow(_ index: Int?, using scroller: ScrollViewProxy, force: Bool = false) {
+    private func follow(_ index: Int?, force: Bool = false) {
         guard let index,
-              let frame = painting.frame(at: index),
+              let frame = wordFrames.frame(at: index),
               readingViewport != .zero else { return }
         let ceiling = readingViewport.minY + Self.followInsets.top
         let floor = readingViewport.maxY - Self.followInsets.bottom
         guard force || frame.minY < ceiling || frame.maxY > floor else { return }
+        let anchorY = readingViewport.minY + readingViewport.height * Self.followAnchor.y
+        let target = max(scrollOffset.y + frame.minY - anchorY, 0)
         withAnimation(.easeInOut(duration: 0.35)) {
-            scroller.scrollTo(index, anchor: Self.followAnchor)
+            readingPosition.scrollTo(y: target)
         }
     }
 
-    private func settleCursorInView(from index: Int, using scroller: ScrollViewProxy) async {
-        follow(index, using: scroller, force: true)
+    private func settleCursorInView(from index: Int) async {
+        follow(index, force: true)
         for delay in Self.followSettleDelays {
             try? await Task.sleep(for: delay)
             guard scrollRequest?.index == index else { return }
-            follow(voice.isListening ? (voice.cursorIndex ?? index) : index, using: scroller, force: true)
+            follow(voice.isListening ? (voice.cursorIndex ?? index) : index, force: true)
         }
     }
 
@@ -375,9 +385,8 @@ struct SessionView: View {
                             .onGeometryChange(for: CGRect.self) { proxy in
                                 proxy.frame(in: .global)
                             } action: { frame in
-                                painting.record(frame, at: idx)
+                                wordFrames.record(frame, at: idx)
                             }
-                            .id(idx)
                     }
                 }
             }
@@ -427,7 +436,7 @@ struct SessionView: View {
     }
 
     private func wordIndex(at location: CGPoint) -> Int? {
-        painting.index(at: location, wordCount: vm.current?.words.count ?? 0)
+        wordFrames.index(at: location, wordCount: vm.current?.words.count ?? 0)
     }
 
     private var optionsMenu: some View {

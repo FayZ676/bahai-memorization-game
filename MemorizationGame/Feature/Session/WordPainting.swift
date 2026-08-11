@@ -1,11 +1,9 @@
 import SwiftUI
 
-struct WordPainting {
-    private(set) var isActive = false
+final class WordFrames {
     private var frames: [Int: CGRect] = [:]
-    private var targetHidden: Bool?
 
-    mutating func record(_ frame: CGRect, at index: Int) {
+    func record(_ frame: CGRect, at index: Int) {
         frames[index] = frame
     }
 
@@ -18,6 +16,19 @@ struct WordPainting {
             index < wordCount && frame.insetBy(dx: -3.5, dy: -6).contains(location)
         }?.key
     }
+
+    func forget() {
+        frames.removeAll()
+    }
+}
+
+final class ScrollOffset {
+    var y: CGFloat = 0
+}
+
+struct WordPainting {
+    private(set) var isActive = false
+    private var targetHidden: Bool?
 
     mutating func begin() {
         isActive = true
