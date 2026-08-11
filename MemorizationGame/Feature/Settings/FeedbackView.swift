@@ -75,7 +75,9 @@ struct FeedbackView: View {
                 OptionSection(
                     label: "Email",
                     icon: "envelope",
-                    footer: "Optional, and only used to reply. Your app version and device are sent along so problems are easier to trace."
+                    footer: kind == .problem
+                        ? "Optional, and only used to reply. Your app version, device, and recent speech logs are sent along so problems are easier to trace."
+                        : "Optional, and only used to reply. Your app version and device are sent along so problems are easier to trace."
                 ) {
                     TextField("So I can write back", text: $email)
                         .appFont(Typography.body)
@@ -159,12 +161,18 @@ struct FeedbackView: View {
     private func send() {
         editorFocused = false
         sending = true
-        let payload = (kind: kind.rawValue, message: trimmedMessage, email: email.trimmingCharacters(in: .whitespaces))
+        let payload = (
+            kind: kind.rawValue,
+            message: trimmedMessage,
+            email: email.trimmingCharacters(in: .whitespaces),
+            trace: kind == .problem ? RecitationLog.shared.diagnostics : ""
+        )
         Task {
             let delivered = await FeedbackForm.submit(
                 kind: payload.kind,
                 message: payload.message,
-                email: payload.email
+                email: payload.email,
+                trace: payload.trace
             )
             sending = false
             guard delivered else {

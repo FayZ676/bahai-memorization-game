@@ -22,6 +22,7 @@ final class VoiceRecitationController {
     var onWordsMatched: (([Int]) -> Void)?
     var onMiss: ((Int, Bool) -> Void)?
     var onCompleted: (() -> Void)?
+    var onAttemptFinished: ((RecitationDraft) -> Void)?
 
     private let audioEngine = AVAudioEngine()
     private var analyzer: SpeechAnalyzer?
@@ -169,6 +170,7 @@ final class VoiceRecitationController {
         if state != .micDenied {
             state = .idle
         }
+        reportAttempt()
         teardown()
         if let passageInUse { prepare(for: passageInUse) }
     }
@@ -180,6 +182,18 @@ final class VoiceRecitationController {
         let pending = readyTask
         readyTask = nil
         Task { if let ready = await pending?.value { await ready.analyzer.cancelAndFinishNow() } }
+    }
+
+    private func reportAttempt() {
+        let draft = RecitationDraft(
+            expectedCount: matcher.expectedCount,
+            matchedCount: matcher.matchedCount,
+            misses: matcher.misses,
+            transcript: matcher.transcript
+        )
+        guard !draft.isEmpty else { return }
+        matcher = RecitationMatcher(words: [], hiddenIndices: [])
+        onAttemptFinished?(draft)
     }
 
     private func observeResults(from transcriber: DictationTranscriber) {

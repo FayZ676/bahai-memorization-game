@@ -200,5 +200,36 @@ _ = junk.ingest(heard("O"), isFinal: true)
 let junkEvents = junk.ingest(heard(".", confidence: 0.0), isFinal: true)
 check("no miss from a zero-confidence token", !junkEvents.contains(where: isMiss), "\(junkEvents)")
 
+print("\nMiss records name the expected word and what was heard in its place")
+var recorded = RecitationMatcher(words: words, hiddenIndices: [1, 3, 6])
+_ = recorded.ingest(heard("O banana of Spirit My first counsel"), isFinal: true)
+check("one miss recorded", recorded.misses.count == 1, "\(recorded.misses)")
+check("expected word kept verbatim", recorded.misses.first?.expected == "Son", "\(recorded.misses)")
+check("heard word attributed to the gap", recorded.misses.first?.heard == "banana", "\(recorded.misses)")
+check("phonetic keys kept for debugging",
+      recorded.misses.first?.expectedKey == PhoneticKey.encode("Son")
+        && recorded.misses.first?.heardKeys == [PhoneticKey.encode("banana")],
+      "\(recorded.misses)")
+
+print("\nA word skipped in silence records nothing heard")
+var silent = RecitationMatcher(words: words, hiddenIndices: [1, 3, 6])
+_ = silent.ingest(heard("O Son of My first counsel"), isFinal: true)
+check("miss recorded for the skipped word", silent.misses.map(\.wordIndex) == [3], "\(silent.misses)")
+check("nothing heard in its place", silent.misses.first?.heard.isEmpty == true, "\(silent.misses)")
+
+print("\nStalling records the words heard instead of the owed one")
+var stalled = RecitationMatcher(words: words, hiddenIndices: [1, 3, 6])
+_ = stalled.ingest(heard("O"), isFinal: true)
+for _ in 0..<3 { _ = stalled.ingest(heard("banana"), isFinal: true) }
+check("the burnt word is recorded", stalled.misses.map(\.expected) == ["Son"], "\(stalled.misses)")
+check("what was heard instead is recorded",
+      stalled.misses.first.map { !$0.heard.isEmpty } == true, "\(stalled.misses)")
+
+print("\nTranscript and counts survive for the log")
+check("transcript is the spoken text", recorded.transcript == "O banana of Spirit My first counsel",
+      recorded.transcript)
+check("counts add up", recorded.matchedCount == 2 && recorded.expectedCount == 3,
+      "\(recorded.matchedCount)/\(recorded.expectedCount)")
+
 print(failures == 0 ? "\nALL PASS" : "\n\(failures) FAILURE(S)")
 exit(failures == 0 ? 0 : 1)

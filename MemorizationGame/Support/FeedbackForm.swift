@@ -9,13 +9,15 @@ enum FeedbackForm {
         static let email = "entry.1243171085"
     }
 
-    static func submit(kind: String, message: String, email: String) async -> Bool {
+    private static let traceLimit = 4000
+
+    static func submit(kind: String, message: String, email: String, trace: String = "") async -> Bool {
         var request = URLRequest(url: endpoint)
         request.httpMethod = "POST"
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         request.httpBody = encode([
             Field.kind: kind,
-            Field.message: "\(message)\n\n———\n\(AppInfo.diagnostics)",
+            Field.message: body(message: message, trace: trace),
             Field.email: email
         ])
 
@@ -23,6 +25,14 @@ enum FeedbackForm {
               let status = (response as? HTTPURLResponse)?.statusCode
         else { return false }
         return (200..<300).contains(status)
+    }
+
+    private static func body(message: String, trace: String) -> String {
+        var parts = ["\(message)\n\n———\n\(AppInfo.diagnostics)"]
+        if !trace.isEmpty {
+            parts.append("recitation log\n\(String(trace.prefix(traceLimit)))")
+        }
+        return parts.joined(separator: "\n\n———\n")
     }
 
     private static var endpoint: URL {

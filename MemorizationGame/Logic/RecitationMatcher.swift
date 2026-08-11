@@ -7,10 +7,12 @@ struct RecitationMatcher {
     }
 
     struct HeardToken {
+        let text: String
         let key: String
         let confidence: Double
 
         init(text: some StringProtocol, confidence: Double) {
+            self.text = String(text)
             self.key = PhoneticKey.encode(text)
             self.confidence = confidence
         }
@@ -20,9 +22,12 @@ struct RecitationMatcher {
     private static let confidenceFloor = 0.25
     private static let movedOnMargin = 2
     private static let lookahead = 12
+    private static let heardWindow = 6
 
     private let words: [String]
+    private let spelling: [String]
     private var hiddenIndices: [Int]
+    private(set) var misses: [RecitationMiss] = []
     private var settled: [HeardToken] = []
     private var pending: [HeardToken] = []
     private var matched: Set<Int> = []
@@ -34,8 +39,17 @@ struct RecitationMatcher {
 
     init(words: [String], hiddenIndices: [Int]) {
         self.words = words.map(PhoneticKey.encode)
+        self.spelling = words
         self.hiddenIndices = hiddenIndices.filter { $0 >= 0 && $0 < words.count }.sorted()
     }
+
+    var transcript: String {
+        (settled + pending).map(\.text).joined(separator: " ")
+    }
+
+    var matchedCount: Int { matched.count }
+
+    var expectedCount: Int { max(hiddenIndices.count, matched.count + misses.count) }
 
     var isComplete: Bool {
         hiddenIndices.allSatisfy { matched.contains($0) || missed.contains($0) }
@@ -112,6 +126,7 @@ struct RecitationMatcher {
             for index in hiddenIndices where index + Self.movedOnMargin < frontier {
                 guard !matched.contains(index), !missed.contains(index) else { continue }
                 missed.insert(index)
+                record(index, spoken: spoken, alignment: alignment)
                 events.append(.missed(index: index, movedOn: true))
             }
         }
@@ -132,6 +147,7 @@ struct RecitationMatcher {
         if attempts >= Self.attemptBudget {
             missed.insert(expected)
             attempts = 0
+            record(expected, spoken: spoken, alignment: alignment)
             events.append(.missed(index: expected, movedOn: true))
         } else {
             events.append(.missed(index: expected, movedOn: false))
@@ -139,15 +155,44 @@ struct RecitationMatcher {
         return events
     }
 
+    private mutating func record(_ index: Int, spoken: [HeardToken], alignment: Alignment) {
+        guard spelling.indices.contains(index) else { return }
+        let instead = Self.tokens(displacing: index, spoken: spoken, alignment: alignment)
+        misses.append(
+            RecitationMiss(
+                wordIndex: index,
+                expected: spelling[index],
+                heard: instead.map(\.text).joined(separator: " "),
+                expectedKey: words[index],
+                heardKeys: instead.map(\.key)
+            )
+        )
+    }
+
+    private static func tokens(
+        displacing index: Int,
+        spoken: [HeardToken],
+        alignment: Alignment
+    ) -> [HeardToken] {
+        let before = alignment.pairs.filter { $0.key < index }.map(\.value).max()
+        let after = alignment.pairs.filter { $0.key > index }.map(\.value).min()
+        let lower = (before ?? -1) + 1
+        let upper = min(after ?? spoken.count, spoken.count)
+        guard lower < upper else { return [] }
+        return Array(spoken[lower..<min(upper, lower + Self.heardWindow)])
+    }
+
     private struct Alignment {
-        let reference: Set<Int>
+        let pairs: [Int: Int]
         let spoken: Set<Int>
+
+        var reference: Set<Int> { Set(pairs.keys) }
     }
 
     private static func align(spoken: [String], reference: [String]) -> Alignment {
         let spokenCount = spoken.count
         let referenceCount = reference.count
-        guard spokenCount > 0, referenceCount > 0 else { return Alignment(reference: [], spoken: []) }
+        guard spokenCount > 0, referenceCount > 0 else { return Alignment(pairs: [:], spoken: []) }
 
         var lookup: [String: Set<String>] = [:]
         let aligned = spoken.map { spokenKey in
@@ -183,14 +228,14 @@ struct RecitationMatcher {
             best = column
         }
 
-        var hitReference: Set<Int> = []
+        var pairs: [Int: Int] = [:]
         var hitSpoken: Set<Int> = []
         var row = spokenCount
         var column = best
         while row > 0, column > 0 {
             if cost[row][column] == cost[row - 1][column - 1] + (aligns(row - 1, column - 1) ? 0 : 1) {
                 if aligns(row - 1, column - 1) {
-                    hitReference.insert(column - 1)
+                    pairs[column - 1] = row - 1
                     hitSpoken.insert(row - 1)
                 }
                 row -= 1
@@ -201,6 +246,6 @@ struct RecitationMatcher {
                 column -= 1
             }
         }
-        return Alignment(reference: hitReference, spoken: hitSpoken)
+        return Alignment(pairs: pairs, spoken: hitSpoken)
     }
 }

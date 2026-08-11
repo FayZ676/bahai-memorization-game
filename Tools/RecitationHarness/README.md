@@ -14,6 +14,7 @@ swiftc -O \
   MemorizationGame/Logic/PhoneticKey.swift \
   MemorizationGame/Logic/RecitationMatcher.swift \
   MemorizationGame/Logic/RecitationTrace.swift \
+  MemorizationGame/Logic/RecitationRecord.swift \
   Tools/RecitationHarness/main.swift \
   -o /tmp/recitation-harness && /tmp/recitation-harness
 ```
@@ -36,6 +37,9 @@ Exits non-zero on any failure. Run it from the repo root after touching either l
 - **Volatile safety** — nothing unsettled can commit a miss.
 - **Idempotence** — repeated volatile deliveries of a growing transcript match each word
   exactly once.
+- **Miss records** — every burnt word records the expected word verbatim, the tokens heard
+  in its place (empty when the word was skipped in silence), and both phonetic keys. This
+  is what the Speech Logs screen shows and what feedback submissions carry.
 
 ## Note on timings
 
