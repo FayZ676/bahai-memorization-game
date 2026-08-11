@@ -39,7 +39,7 @@ Exits non-zero on any failure. Run it from the repo root after touching either l
   exactly once.
 - **Miss records** — every burnt word records the expected word verbatim, the tokens heard
   in its place (empty when the word was skipped in silence), and both phonetic keys. This
-  is what the Speech Logs screen shows and what feedback submissions carry.
+  is what the Report Issue screen shows and what a submitted report carries.
 
 ## Note on timings
 

@@ -38,22 +38,16 @@ final class RecitationLog {
         attempts.filter { $0.chunkID == chunkID }.reversed()
     }
 
-    func clear(chunkID: UUID) {
-        attempts.removeAll { $0.chunkID == chunkID }
-        persist()
-    }
-
-    func clearAll() {
-        attempts = []
-        persist()
-    }
-
     var diagnostics: String {
-        let recent = attempts.suffix(Self.diagnosticsLimit)
-        guard !recent.isEmpty else { return "" }
+        Self.trace(of: Array(attempts.suffix(Self.diagnosticsLimit)).reversed())
+    }
+
+    static func trace(of attempts: [RecitationAttempt]) -> String {
+        guard !attempts.isEmpty else { return "" }
         let stamp = ISO8601DateFormatter()
-        return recent.reversed().map { attempt in
-            let header = "\(stamp.string(from: attempt.date)) chunk \(attempt.chunkID.uuidString.prefix(8)) "
+        return attempts.map { attempt in
+            let header = "\(stamp.string(from: attempt.date)) \(attempt.passageTitle) "
+                + "chunk \(attempt.chunkID.uuidString.prefix(8)) "
                 + "matched \(attempt.matchedCount)/\(attempt.expectedCount)"
             let lines = attempt.misses.map { miss in
                 "  [\(miss.wordIndex)] expected \"\(miss.expected)\" (\(miss.expectedKey)) "

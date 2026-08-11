@@ -44,9 +44,9 @@ struct SettingsView: View {
                         HairlineDivider()
 
                         NavigationLink {
-                            SpeechLogsView()
+                            ReportIssueView()
                         } label: {
-                            DisclosureRow("Speech logs")
+                            DisclosureRow("Report a recitation issue")
                         }
                         .buttonStyle(.haptic)
 
