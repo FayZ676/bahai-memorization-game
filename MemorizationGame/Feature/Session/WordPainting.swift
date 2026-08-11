@@ -9,6 +9,10 @@ struct WordPainting {
         frames[index] = frame
     }
 
+    func frame(at index: Int) -> CGRect? {
+        frames[index]
+    }
+
     func index(at location: CGPoint, wordCount: Int) -> Int? {
         frames.first { index, frame in
             index < wordCount && frame.insetBy(dx: -3.5, dy: -6).contains(location)

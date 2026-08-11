@@ -3,7 +3,6 @@ import SwiftUI
 struct WordView: View {
     let token: String
     let hidden: Bool
-    var expected: Bool = false
     var recited: Bool = false
     var missed: Bool = false
     var missFlashing: Bool = false
@@ -35,8 +34,8 @@ struct WordView: View {
                     .blur(radius: hidden ? 2 : 0)
                     .overlay(alignment: .bottom) {
                         reciteLine
-                            .opacity(showLine ? 1 : 0)
-                            .animation(hidden ? Motion.lineFadeIn.delay(staggerDelay) : .easeInOut(duration: 0.18), value: showLine)
+                            .opacity(hidden ? 1 : 0)
+                            .animation(hidden ? Motion.lineFadeIn.delay(staggerDelay) : .easeInOut(duration: 0.18), value: hidden)
                     }
             }
             if !p.trail.isEmpty { Text(p.trail).foregroundStyle(Theme.ink) }
@@ -49,20 +48,17 @@ struct WordView: View {
                     .padding(.vertical, -3)
             }
         }
-        .scaleEffect(pulsing ? 1.15 : 1)
+        .scaleEffect(pulsing ? 1.07 : 1)
         .animation(Motion.fade.delay(staggerDelay), value: hidden)
-        .animation(.easeInOut(duration: 0.09), value: expected)
         .onChange(of: recited) { wasRecited, isRecited in
             guard isRecited, !wasRecited else { return }
-            withAnimation(.easeOut(duration: 0.1)) { pulsing = true }
+            withAnimation(.easeOut(duration: 0.12)) { pulsing = true }
             Task {
-                try? await Task.sleep(for: .milliseconds(110))
-                withAnimation(.spring(response: 0.25, dampingFraction: 0.55)) { pulsing = false }
+                try? await Task.sleep(for: .milliseconds(130))
+                withAnimation(.spring(response: 0.32, dampingFraction: 0.7)) { pulsing = false }
             }
         }
     }
-
-    private var showLine: Bool { hidden || expected }
 
     private var reciteLine: some View {
         RoundedRectangle(cornerRadius: Radius.line, style: .continuous)
@@ -73,14 +69,13 @@ struct WordView: View {
 
     private var lineColor: Color {
         if missFlashing || missed { return Theme.warn }
-        if recited || expected { return Theme.accent }
+        if recited { return Theme.accent }
         return Theme.muted
     }
 
     private var highlight: Color? {
         if pulsing { return Theme.accent.opacity(0.16) }
         if missFlashing { return Theme.warn.opacity(0.2) }
-        if expected { return Theme.accent.opacity(0.12) }
         return nil
     }
 }

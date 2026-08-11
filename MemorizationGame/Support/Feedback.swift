@@ -21,17 +21,10 @@ enum Feedback {
         UISelectionFeedbackGenerator().selectionChanged()
     }
 
-    private static let matchGenerator = UIImpactFeedbackGenerator(style: .medium)
     private static let missGenerator = UINotificationFeedbackGenerator()
 
     static func prepareRecitation() {
-        matchGenerator.prepare()
         missGenerator.prepare()
-    }
-
-    static func wordMatched() {
-        matchGenerator.impactOccurred(intensity: 1.0)
-        matchGenerator.prepare()
     }
 
     static func recitationMiss() {

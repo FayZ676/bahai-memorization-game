@@ -13,6 +13,7 @@ struct SessionView: View {
     @State private var barWidth: CGFloat = 0
     @State private var highlights = RecitationHighlights()
     @State private var painting = WordPainting()
+    @State private var scriptureFrame: CGRect = .zero
     @State private var showingFullText = false
     @State private var showingEdit = false
     let passage: Passage
@@ -147,8 +148,15 @@ struct SessionView: View {
 
     private func registerRecited(_ indices: [Int]) {
         highlights.recite(indices)
-        Feedback.wordMatched()
         tour?.complete(.recite)
+    }
+
+    private var cursorTarget: CGRect? {
+        guard voice.isListening,
+              let index = voice.nextExpectedIndex,
+              let frame = painting.frame(at: index),
+              scriptureFrame != .zero else { return nil }
+        return frame.offsetBy(dx: -scriptureFrame.minX, dy: -scriptureFrame.minY)
     }
 
     private func completeChunk() {
@@ -302,11 +310,9 @@ struct SessionView: View {
             ForEach(Array(card.paragraphs.enumerated()), id: \.offset) { _, range in
                 FlowLayout(spacing: 7, lineSpacing: 12) {
                     ForEach(range, id: \.self) { idx in
-                        let expected = voice.nextExpectedIndex == idx
                         WordView(
                             token: String(words[idx]),
                             hidden: vm.isHidden(idx),
-                            expected: expected,
                             recited: highlights.recited.contains(idx),
                             missed: highlights.missed.contains(idx),
                             missFlashing: highlights.isFlashing(idx),
@@ -322,6 +328,14 @@ struct SessionView: View {
                     }
                 }
             }
+        }
+        .onGeometryChange(for: CGRect.self) { proxy in
+            proxy.frame(in: .global)
+        } action: { frame in
+            scriptureFrame = frame
+        }
+        .overlay(alignment: .topLeading) {
+            RecitationCursor(target: cursorTarget)
         }
         .contentShape(Rectangle())
         .allowsHitTesting(!vm.wordsRevealed)
