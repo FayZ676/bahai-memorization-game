@@ -16,7 +16,11 @@ struct RecitationCursor: View {
 
     var body: some View {
         RoundedRectangle(cornerRadius: Radius.word, style: .continuous)
-            .fill(Theme.accent.opacity(0.12))
+            .strokeBorder(Theme.accent.opacity(0.3), lineWidth: 1)
+            .background(
+                RoundedRectangle(cornerRadius: Radius.word, style: .continuous)
+                    .fill(Theme.accent.opacity(0.12))
+            )
             .frame(width: max(trailing - leading, 4), height: height)
             .offset(x: leading, y: top)
             .opacity(visible ? 1 : 0)
