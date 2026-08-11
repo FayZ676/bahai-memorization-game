@@ -15,6 +15,7 @@ struct SessionView: View {
     @State private var painting = WordPainting()
     @State private var scriptureFrame: CGRect = .zero
     @State private var readingViewport: CGRect = .zero
+    @State private var scrollRequest: ScrollRequest?
     @State private var showingFullText = false
     @State private var showingEdit = false
     let passage: Passage
@@ -191,6 +192,9 @@ struct SessionView: View {
             remaining = card.hiddenWords.sorted()
         }
         Feedback.prepareRecitation()
+        if let first = remaining.first {
+            scrollRequest = ScrollRequest(index: first)
+        }
         Task {
             await voice.start(
                 words: card.words.map(String.init),
@@ -315,11 +319,16 @@ struct SessionView: View {
                     readingViewport = frame
                 }
                 .onChange(of: voice.cursorIndex) { _, index in
+                    guard voice.isListening else { return }
                     follow(index, using: scroller)
                 }
+                .onChange(of: scrollRequest) { _, request in
+                    guard let request else { return }
+                    Task { await settleCursorInView(from: request.index, using: scroller) }
+                }
                 .onChange(of: voice.isListening) { _, listening in
-                    guard listening else { return }
-                    Task { await settleCursorInView(using: scroller) }
+                    guard listening, let index = voice.cursorIndex else { return }
+                    follow(index, using: scroller, force: true)
                 }
             }
         }
@@ -327,8 +336,7 @@ struct SessionView: View {
     }
 
     private func follow(_ index: Int?, using scroller: ScrollViewProxy, force: Bool = false) {
-        guard voice.isListening,
-              let index,
+        guard let index,
               let frame = painting.frame(at: index),
               readingViewport != .zero else { return }
         let ceiling = readingViewport.minY + Self.followInsets.top
@@ -339,12 +347,12 @@ struct SessionView: View {
         }
     }
 
-    private func settleCursorInView(using scroller: ScrollViewProxy) async {
-        follow(voice.cursorIndex, using: scroller, force: true)
+    private func settleCursorInView(from index: Int, using scroller: ScrollViewProxy) async {
+        follow(index, using: scroller, force: true)
         for delay in Self.followSettleDelays {
             try? await Task.sleep(for: delay)
-            guard voice.isListening else { return }
-            follow(voice.cursorIndex, using: scroller, force: true)
+            guard scrollRequest?.index == index else { return }
+            follow(voice.isListening ? (voice.cursorIndex ?? index) : index, using: scroller, force: true)
         }
     }
 
@@ -451,6 +459,11 @@ struct SessionView: View {
             .foregroundStyle(Theme.muted)
             .multilineTextAlignment(.center)
     }
+}
+
+private struct ScrollRequest: Equatable {
+    let index: Int
+    let issued = UUID()
 }
 
 private struct ShakeEffect: GeometryEffect {
