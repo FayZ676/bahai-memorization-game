@@ -14,10 +14,14 @@ struct SessionView: View {
     @State private var highlights = RecitationHighlights()
     @State private var painting = WordPainting()
     @State private var scriptureFrame: CGRect = .zero
+    @State private var readingViewport: CGRect = .zero
     @State private var showingFullText = false
     @State private var showingEdit = false
     let passage: Passage
     private let store: AppStore
+
+    private static let followInsets = (top: CGFloat(56), bottom: CGFloat(120))
+    private static let followAnchor = UnitPoint(x: 0, y: 0.34)
 
     init(passage: Passage, store: AppStore) {
         self.passage = passage
@@ -269,42 +273,69 @@ struct SessionView: View {
 
     private var readingArea: some View {
         GeometryReader { geo in
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    if let card = vm.current {
-                        scripture(for: card)
+            ScrollViewReader { scroller in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        if let card = vm.current {
+                            scripture(for: card)
+                        }
+                        InfoNote(Typography.micro, color: Theme.faint) {
+                            Text("Tap and glide over words to show or hide them")
+                                .appFont(Typography.micro)
+                                .foregroundStyle(Theme.faint)
+                        }
+                        .padding(.top, 20)
+                        Spacer(minLength: 0)
                     }
-                    InfoNote(Typography.micro, color: Theme.faint) {
-                        Text("Tap and glide over words to show or hide them")
-                            .appFont(Typography.micro)
-                            .foregroundStyle(Theme.faint)
-                    }
-                    .padding(.top, 20)
-                    Spacer(minLength: 0)
+                    .frame(maxWidth: .infinity, minHeight: geo.size.height - 64, alignment: .topLeading)
+                    .padding(.horizontal, 30)
+                    .padding(.top, 28)
+                    .padding(.bottom, 36)
                 }
-                .frame(maxWidth: .infinity, minHeight: geo.size.height - 64, alignment: .topLeading)
-                .padding(.horizontal, 30)
-                .padding(.top, 28)
-                .padding(.bottom, 36)
+                .scrollIndicators(.hidden)
+                .scrollDisabled(painting.isActive)
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 24)
+                        .onEnded { value in
+                            guard !painting.isActive else { return }
+                            guard abs(value.translation.width) > abs(value.translation.height) else { return }
+                            if value.translation.width < 0, vm.canGoForward {
+                                withAnimation(.easeInOut(duration: 0.28)) { vm.skip(forward: true) }
+                            } else if value.translation.width > 0, vm.canGoBack {
+                                withAnimation(.easeInOut(duration: 0.28)) { vm.skip(forward: false) }
+                            }
+                        }
+                )
+                .fadeEdge(.top, height: 16)
+                .fadeEdge(.bottom, height: 28)
+                .onGeometryChange(for: CGRect.self) { proxy in
+                    proxy.frame(in: .global)
+                } action: { frame in
+                    readingViewport = frame
+                }
+                .onChange(of: voice.cursorIndex) { _, index in
+                    follow(index, using: scroller)
+                }
+                .onChange(of: voice.isListening) { _, listening in
+                    guard listening else { return }
+                    follow(voice.cursorIndex, using: scroller)
+                }
             }
-            .scrollIndicators(.hidden)
-        .scrollDisabled(painting.isActive)
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 24)
-                .onEnded { value in
-                    guard !painting.isActive else { return }
-                    guard abs(value.translation.width) > abs(value.translation.height) else { return }
-                    if value.translation.width < 0, vm.canGoForward {
-                        withAnimation(.easeInOut(duration: 0.28)) { vm.skip(forward: true) }
-                    } else if value.translation.width > 0, vm.canGoBack {
-                        withAnimation(.easeInOut(duration: 0.28)) { vm.skip(forward: false) }
-                    }
-                }
-        )
-        .fadeEdge(.top, height: 16)
-        .fadeEdge(.bottom, height: 28)
         }
         .frame(maxHeight: .infinity)
+    }
+
+    private func follow(_ index: Int?, using scroller: ScrollViewProxy) {
+        guard voice.isListening,
+              let index,
+              let frame = painting.frame(at: index),
+              readingViewport != .zero else { return }
+        let ceiling = readingViewport.minY + Self.followInsets.top
+        let floor = readingViewport.maxY - Self.followInsets.bottom
+        guard frame.minY < ceiling || frame.maxY > floor else { return }
+        withAnimation(.easeInOut(duration: 0.35)) {
+            scroller.scrollTo(index, anchor: Self.followAnchor)
+        }
     }
 
     private func scripture(for card: Reviewable) -> some View {
@@ -328,6 +359,7 @@ struct SessionView: View {
                             } action: { frame in
                                 painting.record(frame, at: idx)
                             }
+                            .id(idx)
                     }
                 }
             }
