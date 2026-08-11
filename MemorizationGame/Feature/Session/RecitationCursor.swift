@@ -21,7 +21,6 @@ struct RecitationCursor: View {
                 RoundedRectangle(cornerRadius: Radius.inset, style: .continuous)
                     .fill(Theme.accent.opacity(0.12))
             )
-            .shadow(color: Theme.accent.opacity(0.3), radius: 8, y: 2)
             .frame(width: max(trailing - leading, 4), height: height)
             .offset(x: leading, y: top)
             .opacity(visible ? 1 : 0)
