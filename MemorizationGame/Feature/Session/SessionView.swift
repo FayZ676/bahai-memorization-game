@@ -147,24 +147,27 @@ struct SessionView: View {
     }
 
     private func registerRecited(_ indices: [Int]) {
+        RecitationTrace.emit("ui", "recited \(indices)")
         highlights.recite(indices)
         tour?.complete(.recite)
     }
 
     private var cursorTarget: CGRect? {
         guard voice.isListening,
-              let index = voice.nextExpectedIndex,
+              let index = voice.cursorIndex,
               let frame = painting.frame(at: index),
               scriptureFrame != .zero else { return nil }
         return frame.offsetBy(dx: -scriptureFrame.minX, dy: -scriptureFrame.minY)
     }
 
     private func completeChunk() {
+        RecitationTrace.emit("ui", "chunk complete")
         Feedback.sessionComplete()
         withAnimation(.easeInOut(duration: 0.3)) { highlights.clear() }
     }
 
     private func registerMiss(_ index: Int, movedOn: Bool) {
+        RecitationTrace.emit("ui", "miss \(index) movedOn=\(movedOn)")
         withAnimation(.linear(duration: 0.3)) { highlights.miss(index, movedOn: movedOn) }
         Feedback.recitationMiss()
         tour?.complete(.recite)

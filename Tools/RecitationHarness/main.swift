@@ -141,6 +141,19 @@ let stolenFinal = stolen.ingest(heard("I testify unto that whereunto"), isFinal:
 let burned = stolenFinal.filter { if case .missed(_, let movedOn) = $0 { return movedOn } else { return false } }
 check("a final must not burn the rest of the passage", burned.count <= 1, "\(burned.count) burned: \(burned)")
 
+print("\nDevice 2026-08-11: the cursor must follow the voice past a soft miss")
+var trailing = RecitationMatcher(words: words, hiddenIndices: [1, 3, 6])
+_ = trailing.ingest(heard("O"), isFinal: true)
+let softMiss = trailing.ingest(heard("banana"), isFinal: true)
+check("a soft miss was emitted", softMiss == [.missed(index: 1, movedOn: false)], "\(softMiss)")
+check("word 1 is still owed", trailing.nextExpectedIndex == 1,
+      "\(String(describing: trailing.nextExpectedIndex))")
+_ = trailing.ingest(heard("banana of Spirit"), isFinal: true)
+check("cursor moves on with the reciter", trailing.cursorIndex == 6,
+      "cursor=\(String(describing: trailing.cursorIndex))")
+check("the owed word is still tracked separately", trailing.nextExpectedIndex == 1,
+      "\(String(describing: trailing.nextExpectedIndex))")
+
 print("\nRegression: 'O' transcribed as the digit zero")
 check("bare 0 encodes as O", PhoneticKey.encode("0") == PhoneticKey.encode("O"),
       "[\(PhoneticKey.encode("0")) vs \(PhoneticKey.encode("O"))]")

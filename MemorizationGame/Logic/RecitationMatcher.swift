@@ -45,6 +45,11 @@ struct RecitationMatcher {
         hiddenIndices.first { !matched.contains($0) && !missed.contains($0) }
     }
 
+    var cursorIndex: Int? {
+        hiddenIndices.first { $0 >= frontier && !matched.contains($0) && !missed.contains($0) }
+            ?? nextExpectedIndex
+    }
+
     mutating func replaceHidden(with indices: [Int]) {
         hiddenIndices = indices.filter { $0 >= 0 && $0 < words.count }.sorted()
         attempts = 0
