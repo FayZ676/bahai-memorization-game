@@ -21,8 +21,10 @@ Xcode project `MemorizationGame.xcodeproj`, scheme `MemorizationGame`. Tested li
   "Send Feedback"; `ContactPurpose` supplies the title, copy, form kind, and whether the recitation
   record shows. Both are reachable from Settings and from the session options menu. `RecitationMatcher`
   records every burnt word (expected word, what was heard in its place, both phonetic keys);
-  `Store/RecitationLog.swift` persists the last few attempts per chunk to `recitation-log.json`, and
-  the report purpose shows that record in plain language and sends it along with the note.
+  `Store/RecitationLog.swift` persists the last few attempts per chunk to `recitation-log.json`.
+  That record lives on its own screen — `Feature/SpeechHistory/SpeechHistoryView.swift`, reachable
+  only from the session options menu — and the report purpose offers a toggle for sending it along
+  with the note.
 - `Theme/` — all colors/type/spacing as design tokens (`Theme.swift`, `Typography.swift`, etc.); never hardcode values in views. `design-theme.html` at repo root is the canonical visual reference.
 - `Design/` — generators for art that ships as an asset, one folder per thing, each with a README that is the source of truth for it: `AppIcon/` (the nine-pointed star, rasterised into `Assets.xcassets`) and `StoreFrames/` (App Store screenshots). The asset is the artefact — edit the generator, never the output. Read the folder's README before changing anything there.
 

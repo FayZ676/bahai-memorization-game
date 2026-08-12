@@ -22,6 +22,7 @@ struct SessionView: View {
     @State private var showingFullText = false
     @State private var showingEdit = false
     @State private var showingReportIssue = false
+    @State private var showingSpeechHistory = false
     @State private var showingFeedback = false
     @State private var recitingChunkID: UUID?
     let passage: Passage
@@ -68,6 +69,9 @@ struct SessionView: View {
         }
         .navigationDestination(isPresented: $showingEdit) {
             ImportView(editing: passage, store: store)
+        }
+        .navigationDestination(isPresented: $showingSpeechHistory) {
+            SpeechHistoryView()
         }
         .navigationDestination(isPresented: $showingReportIssue) {
             ContactView(purpose: .reportIssue)
@@ -478,6 +482,10 @@ struct SessionView: View {
                 Button("Show Every Word", systemImage: "eye") { vm.setAllWords(hidden: false) }
             }
             Section {
+                Button(
+                    "Speech History",
+                    systemImage: "clock.arrow.trianglehead.counterclockwise.rotate.90"
+                ) { showingSpeechHistory = true }
                 Button("Report Issue", systemImage: "exclamationmark.bubble") {
                     showingReportIssue = true
                 }

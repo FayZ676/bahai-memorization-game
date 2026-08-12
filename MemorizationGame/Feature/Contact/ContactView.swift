@@ -39,7 +39,7 @@ enum ContactPurpose {
         }
     }
 
-    var showsRecitations: Bool { self == .reportIssue }
+    var offersSpeechHistory: Bool { self == .reportIssue }
 }
 
 struct ContactView: View {
@@ -47,6 +47,7 @@ struct ContactView: View {
     @State private var log = RecitationLog.shared
     @State private var message = ""
     @State private var email = ""
+    @State private var sendingSpeechHistory = true
     @State private var sending = false
     @State private var sent = false
     @State private var failed = false
@@ -54,7 +55,7 @@ struct ContactView: View {
     let purpose: ContactPurpose
 
     private var attempts: [RecitationAttempt] {
-        purpose.showsRecitations ? log.newestFirst : []
+        purpose.offersSpeechHistory && sendingSpeechHistory ? log.newestFirst : []
     }
 
     private var trimmedMessage: String {
@@ -90,8 +91,8 @@ struct ContactView: View {
                     editor
                 }
 
-                if purpose.showsRecitations {
-                    record
+                if purpose.offersSpeechHistory {
+                    speechHistoryToggle
                 }
 
                 OptionSection(label: "Email (Optional)", icon: "envelope") {
@@ -106,27 +107,26 @@ struct ContactView: View {
         .scrollDismissesKeyboard(.interactively)
     }
 
-    @ViewBuilder
-    private var record: some View {
-        if attempts.isEmpty {
-            Text("No recitations recorded yet.")
-                .appFont(Typography.caption)
-                .foregroundStyle(Theme.faint)
-                .lineSpacing(2)
-                .padding(.horizontal, 6)
-        } else {
-            OptionSection(
-                label: "Recent recitations",
-                icon: "waveform",
-                footer: "Recitation info is automatically included."
-            ) {
-                ForEach(Array(attempts.enumerated()), id: \.element.id) { index, attempt in
-                    if index > 0 { HairlineDivider() }
-                    AttemptRow(attempt: attempt)
-                }
+    private var speechHistoryToggle: some View {
+        OptionSection(
+            label: "Speech History",
+            icon: "waveform",
+            footer: hasSpeechHistory
+                ? "Sends what the app heard during your recent recitations."
+                : "Nothing recorded yet — recite a passage and your history will appear here."
+        ) {
+            Toggle(isOn: $sendingSpeechHistory) {
+                Text("Include speech history")
+                    .appFont(Typography.body)
+                    .foregroundStyle(Theme.ink)
             }
+            .tint(Theme.accent)
+            .disabled(!hasSpeechHistory)
+            .optionRow()
         }
     }
+
+    private var hasSpeechHistory: Bool { !log.attempts.isEmpty }
 
     private var thanks: some View {
         VStack(spacing: 12) {
@@ -190,47 +190,4 @@ struct ContactView: View {
             dismiss()
         }
     }
-}
-
-private struct AttemptRow: View {
-    @Environment(\.fontScale) private var scale
-    let attempt: RecitationAttempt
-
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            (Text(header).font(Typography.micro.font(scale: scale)).foregroundStyle(Theme.faint)
-                + Text("   ")
-                + misses)
-                .lineLimit(1)
-                .padding(.horizontal, Spacing.lg)
-        }
-        .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
-        .padding(.vertical, Spacing.sm)
-    }
-
-    private var header: String {
-        let day = attempt.date.formatted(.dateTime.month(.abbreviated).day())
-        let time = attempt.date.formatted(date: .omitted, time: .shortened)
-        let stamp = "\(day), \(time)"
-        return "\(stamp) · \(attempt.passageTitle) · \(attempt.summary)"
-    }
-
-    private var misses: Text {
-        attempt.misses
-            .map { miss in
-                Text(miss.expected).font(missFont).foregroundStyle(Theme.ink)
-                    + Text(" → ").font(missFont).foregroundStyle(Theme.faint)
-                    + Text(miss.heardSomething ? miss.heard : "nothing")
-                        .font(missFont)
-                        .foregroundStyle(miss.heardSomething ? Theme.warn : Theme.muted)
-            }
-            .enumerated()
-            .reduce(Text("")) { line, pair in
-                pair.offset == 0
-                    ? pair.element
-                    : line + Text("  |  ").font(missFont).foregroundStyle(Theme.faint) + pair.element
-            }
-    }
-
-    private var missFont: Font { Typography.caption.font(scale: scale) }
 }
