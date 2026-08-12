@@ -31,7 +31,7 @@ private struct GuidedTourModifier: ViewModifier {
                     TourOverlay(
                         step: tour.step,
                         isPromptVisible: tour.isPromptVisible,
-                        onSkip: close,
+                        onSkip: onFinish,
                         onDismissPrompt: tour.dismissPrompt,
                         onShowPrompt: tour.showPrompt,
                         onFinish: finish
@@ -39,11 +39,7 @@ private struct GuidedTourModifier: ViewModifier {
                 }
             }
             .onChange(of: isActive) { _, active in
-                if active { tour = Tour(resumingAt: resumeStep) }
-            }
-            .onChange(of: tour.step) { _, step in
-                guard isActive else { return }
-                store.settings.welcomeTourStep = step.rawValue
+                if active { tour = Tour() }
             }
             .onChange(of: store.passages.count) { _, count in
                 if isActive, count > 0 { tour.complete(.importPrayer) }
@@ -57,23 +53,13 @@ private struct GuidedTourModifier: ViewModifier {
         store.reviewables.reduce(0) { $0 + $1.hiddenWords.count }
     }
 
-    private var resumeStep: TourStep {
-        TourStep(rawValue: store.settings.welcomeTourStep) ?? .openBrowse
-    }
-
     private func restart() {
-        store.settings.welcomeTourStep = TourStep.openBrowse.rawValue
         tour = Tour()
         onRestart()
     }
 
-    private func close() {
-        store.settings.hasSeenWelcomeTour = true
-        onFinish()
-    }
-
     private func finish() {
         Feedback.sessionComplete()
-        close()
+        onFinish()
     }
 }

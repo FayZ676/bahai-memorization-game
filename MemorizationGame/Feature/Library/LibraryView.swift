@@ -70,6 +70,7 @@ struct LibraryView: View {
         )
         .onAppear {
             guard !store.settings.hasSeenWelcomeTour else { return }
+            store.settings.hasSeenWelcomeTour = true
             isTourPresented = true
         }
         .confirmationDialog(
