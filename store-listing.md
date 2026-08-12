@@ -40,11 +40,18 @@ BRING YOUR OWN
 
 QUIET BY DESIGN
 • No account, no sign-in
-• Your passages, your progress, and your voice stay on your iPhone
+• Your passages, your progress, and your recordings stay on your iPhone — nothing is sent unless you send a report
 • No ads, no leaderboards, and reminders only if you ask for them
 • A simple record of how many words you've hidden each day — encouragement, not obligation
 
 Verses is built around one belief: memorization isn't a test to pass, it's a way of carrying words with you. Hide what you know. Read what you don't. Come back tomorrow.
+
+## What's New — 1.3 (4000)
+When you recite aloud, the passage now follows you — the page scrolls to keep the word you're on in view, from the moment you press record.
+
+If a word you said gets counted as missed, there's now a Report Issue screen in Settings and in the session menu. It sends what the app heard alongside your note, so it can be fixed.
+
+Long passages scroll and respond more smoothly, along with small fixes and refinements.
 
 ## What's New — 1.2 (4000)
 Achievements now go by the kind of prayer rather than one particular prayer — memorize any morning prayer, any healing prayer, any prayer for the Fast, and it counts.
