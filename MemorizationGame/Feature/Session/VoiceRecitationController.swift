@@ -265,15 +265,25 @@ final class VoiceRecitationController {
 
     private static func tokens(in text: AttributedString) -> [RecitationMatcher.HeardToken] {
         text.runs.flatMap { run in
-            String(text[run.range].characters)
+            let span = Self.span(of: run.audioTimeRange)
+            return String(text[run.range].characters)
                 .split(whereSeparator: { $0.isWhitespace || $0 == "-" })
                 .map {
                     RecitationMatcher.HeardToken(
                         text: $0,
-                        confidence: run.transcriptionConfidence ?? 1
+                        confidence: run.transcriptionConfidence ?? 1,
+                        span: span
                     )
                 }
         }
+    }
+
+    private static func span(of range: CMTimeRange?) -> ClosedRange<TimeInterval>? {
+        guard let range, range.start.isNumeric, range.duration.isNumeric else { return nil }
+        let start = range.start.seconds
+        let end = range.end.seconds
+        guard end >= start else { return nil }
+        return start...end
     }
 
     private func dispatch(_ events: [RecitationMatcher.Event]) {

@@ -10,11 +10,17 @@ struct RecitationMatcher {
         let text: String
         let key: String
         let confidence: Double
+        let span: ClosedRange<TimeInterval>?
 
-        init(text: some StringProtocol, confidence: Double) {
+        init(
+            text: some StringProtocol,
+            confidence: Double,
+            span: ClosedRange<TimeInterval>? = nil
+        ) {
             self.text = String(text)
             self.key = PhoneticKey.encode(text)
             self.confidence = confidence
+            self.span = span
         }
     }
 
@@ -22,6 +28,11 @@ struct RecitationMatcher {
     private static let confidenceFloor = 0.25
     private static let movedOnMargin = 2
     private static let unsettledMovedOnMargin = 6
+    private static let unheardAllowance: TimeInterval = 0.25
+
+    private static func seconds(_ interval: TimeInterval?) -> String {
+        interval.map { String(format: "%.2fs", $0) } ?? "-"
+    }
     private static let lookahead = 12
     private static let heardWindow = 6
 
@@ -127,14 +138,22 @@ struct RecitationMatcher {
         for index in hiddenIndices where index + margin < frontier {
             guard !matched.contains(index), !missed.contains(index) else { continue }
             let displaced = Self.tokens(displacing: index, spoken: spoken, alignment: alignment)
-            guard displaced.isEmpty else {
+            let unheard = Self.unheardSpan(around: index, spoken: spoken, alignment: alignment)
+            guard displaced.isEmpty, (unheard ?? 0) < Self.unheardAllowance else {
                 if isFinal {
                     RecitationTrace.emit(
                         "withhold",
-                        "\(index) \"\(spelling[index])\" displaced by \(displaced.map(\.text))"
+                        "\(index) \"\(spelling[index])\" displaced by \(displaced.map(\.text)) "
+                            + "unheard=\(Self.seconds(unheard))"
                     )
                 }
                 continue
+            }
+            if isFinal {
+                RecitationTrace.emit(
+                    "skipped",
+                    "\(index) \"\(spelling[index])\" unheard=\(Self.seconds(unheard))"
+                )
             }
             missed.insert(index)
             record(index, spoken: spoken, alignment: alignment)
@@ -179,13 +198,36 @@ struct RecitationMatcher {
         )
     }
 
+    private static func anchors(
+        around index: Int,
+        alignment: Alignment
+    ) -> (before: Int?, after: Int?) {
+        (
+            alignment.pairs.filter { $0.key < index }.map(\.value).max(),
+            alignment.pairs.filter { $0.key > index }.map(\.value).min()
+        )
+    }
+
+    private static func unheardSpan(
+        around index: Int,
+        spoken: [HeardToken],
+        alignment: Alignment
+    ) -> TimeInterval? {
+        let (before, after) = anchors(around: index, alignment: alignment)
+        guard let before, let after,
+              spoken.indices.contains(before), spoken.indices.contains(after),
+              let ended = spoken[before].span?.upperBound,
+              let began = spoken[after].span?.lowerBound
+        else { return nil }
+        return began - ended
+    }
+
     private static func tokens(
         displacing index: Int,
         spoken: [HeardToken],
         alignment: Alignment
     ) -> [HeardToken] {
-        let before = alignment.pairs.filter { $0.key < index }.map(\.value).max()
-        let after = alignment.pairs.filter { $0.key > index }.map(\.value).min()
+        let (before, after) = anchors(around: index, alignment: alignment)
         let lower = (before ?? -1) + 1
         let upper = min(after ?? spoken.count, spoken.count)
         guard lower < upper else { return [] }
