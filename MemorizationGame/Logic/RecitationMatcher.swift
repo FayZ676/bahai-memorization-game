@@ -29,6 +29,7 @@ struct RecitationMatcher {
     private static let movedOnMargin = 2
     private static let unsettledMovedOnMargin = 6
     private static let unheardAllowance: TimeInterval = 0.25
+    private static let movedOnCorroboration = 2
 
     private static func seconds(_ interval: TimeInterval?) -> String {
         interval.map { String(format: "%.2fs", $0) } ?? "-"
@@ -138,7 +139,10 @@ struct RecitationMatcher {
             guard !matched.contains(index), !missed.contains(index) else { continue }
             let displaced = Self.tokens(displacing: index, spoken: spoken, alignment: alignment)
             let unheard = Self.unheardSpan(around: index, spoken: spoken, alignment: alignment)
-            guard displaced.isEmpty, (unheard ?? 0) < Self.unheardAllowance else {
+            guard displaced.isEmpty,
+                  (unheard ?? 0) < Self.unheardAllowance,
+                  Self.movedOn(past: index, alignment: alignment)
+            else {
                 if isFinal {
                     RecitationTrace.emit(
                         "withhold",
@@ -193,6 +197,15 @@ struct RecitationMatcher {
                 heardKeys: instead.map(\.key)
             )
         )
+    }
+
+    private static func movedOn(past index: Int, alignment: Alignment) -> Bool {
+        var corroborating = 0
+        for reference in alignment.pairs.keys where reference > index {
+            corroborating += 1
+            if corroborating >= movedOnCorroboration { return true }
+        }
+        return false
     }
 
     private static func anchors(

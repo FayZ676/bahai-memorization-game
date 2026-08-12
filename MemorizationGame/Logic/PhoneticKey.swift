@@ -22,8 +22,8 @@ enum PhoneticKey {
 
     private static func sharesOnset(_ spoken: String, _ reference: String) -> Bool {
         guard let first = spoken.first, let second = reference.first else { return false }
-        guard !vowels.contains(first), !vowels.contains(second) else { return true }
-        return first == second
+        guard vowels.contains(first) == vowels.contains(second) else { return false }
+        return vowels.contains(first) || first == second
     }
 
     private static let foldingLocale = Locale(identifier: "en_US")
