@@ -154,12 +154,21 @@ struct LibraryView: View {
     }
 
     private var emptyState: some View {
-        VStack {
+        VStack(spacing: Spacing.xl) {
             Spacer()
-            Text("No passages yet.\nOpen the writings to get started.")
+
+            BrowseLink(.browse) {
+                Image(systemName: "book")
+                    .font(.system(size: 34, weight: .ultraLight))
+                    .foregroundStyle(Theme.accent)
+            }
+            .buttonStyle(IconButtonStyle(size: 96))
+
+            Text("Choose a prayer to get started")
                 .appFont(Typography.subtitle)
                 .foregroundStyle(Theme.muted)
                 .multilineTextAlignment(.center)
+
             Spacer()
         }
         .frame(maxWidth: .infinity)
