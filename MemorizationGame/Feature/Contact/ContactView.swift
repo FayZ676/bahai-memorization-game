@@ -18,6 +18,13 @@ enum ContactPurpose {
         }
     }
 
+    var messageLabel: String {
+        switch self {
+        case .reportIssue: return "Message (Optional)"
+        case .feedback: return "Message"
+        }
+    }
+
     var prompt: String {
         switch self {
         case .reportIssue: return "What went wrong?"
@@ -95,7 +102,7 @@ struct ContactView: View {
                         .padding(.top, 4)
                 }
 
-                OptionSection(label: "Message", icon: "text.alignleft") {
+                OptionSection(label: purpose.messageLabel, icon: "text.alignleft") {
                     editor
                 }
 
@@ -104,9 +111,9 @@ struct ContactView: View {
                 }
 
                 OptionSection(
-                    label: "Email",
+                    label: "Email (Optional)",
                     icon: "envelope",
-                    footer: "Optional, and only used to reply. Your app version and device are sent along."
+                    footer: "Only used to reply. Your app version and device are sent along."
                 ) {
                     EmailField(email: $email)
                 }
