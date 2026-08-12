@@ -126,6 +126,16 @@ struct RecitationMatcher {
         let margin = isFinal ? Self.movedOnMargin : Self.unsettledMovedOnMargin
         for index in hiddenIndices where index + margin < frontier {
             guard !matched.contains(index), !missed.contains(index) else { continue }
+            let displaced = Self.tokens(displacing: index, spoken: spoken, alignment: alignment)
+            guard displaced.isEmpty else {
+                if isFinal {
+                    RecitationTrace.emit(
+                        "withhold",
+                        "\(index) \"\(spelling[index])\" displaced by \(displaced.map(\.text))"
+                    )
+                }
+                continue
+            }
             missed.insert(index)
             record(index, spoken: spoken, alignment: alignment)
             events.append(.missed(index: index, movedOn: true))
