@@ -77,12 +77,16 @@ struct TourNote: Identifiable {
 @MainActor
 @Observable
 final class Tour {
-    private(set) var step: TourStep = .openBrowse
+    private(set) var step: TourStep
     private(set) var isPromptVisible = true
 
     private var pendingPrompt: Task<Void, Never>?
 
     private static let promptDelay = Duration.seconds(1)
+
+    init(resumingAt step: TourStep = .openBrowse) {
+        self.step = step
+    }
 
     func complete(_ completed: TourStep, onlyIfCurrent: Bool = false) {
         guard completed.rawValue >= step.rawValue,
