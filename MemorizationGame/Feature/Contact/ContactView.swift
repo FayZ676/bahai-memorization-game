@@ -52,11 +52,9 @@ struct ContactView: View {
     @State private var failed = false
     @FocusState private var editorFocused: Bool
     let purpose: ContactPurpose
-    var chunkID: UUID?
 
     private var attempts: [RecitationAttempt] {
-        guard purpose.showsRecitations else { return [] }
-        return chunkID.map { log.attempts(for: $0) } ?? log.newestFirst
+        purpose.showsRecitations ? log.newestFirst : []
     }
 
     private var trimmedMessage: String {
@@ -127,7 +125,7 @@ struct ContactView: View {
             OptionSection(label: "Recent recitations", icon: "waveform") {
                 ForEach(Array(attempts.enumerated()), id: \.element.id) { index, attempt in
                     if index > 0 { HairlineDivider() }
-                    AttemptRow(attempt: attempt, showsSource: chunkID == nil)
+                    AttemptRow(attempt: attempt)
                 }
             }
         }
@@ -208,7 +206,6 @@ struct ContactView: View {
 
 private struct AttemptRow: View {
     let attempt: RecitationAttempt
-    let showsSource: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -233,9 +230,7 @@ private struct AttemptRow: View {
 
     private var header: String {
         let stamp = attempt.date.formatted(date: .abbreviated, time: .shortened)
-        return showsSource
-            ? "\(stamp) · \(attempt.passageTitle) · \(attempt.summary)"
-            : "\(stamp) · \(attempt.summary)"
+        return "\(stamp) · \(attempt.passageTitle) · \(attempt.summary)"
     }
 
     private var misses: Text {

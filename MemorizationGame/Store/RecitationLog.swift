@@ -33,10 +33,6 @@ final class RecitationLog {
 
     var newestFirst: [RecitationAttempt] { attempts.reversed() }
 
-    func attempts(for chunkID: UUID) -> [RecitationAttempt] {
-        attempts.filter { $0.chunkID == chunkID }.reversed()
-    }
-
     static func trace(of attempts: [RecitationAttempt]) -> String {
         guard !attempts.isEmpty else { return "" }
         let stamp = ISO8601DateFormatter()

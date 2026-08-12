@@ -70,9 +70,7 @@ struct SessionView: View {
             ImportView(editing: passage, store: store)
         }
         .navigationDestination(isPresented: $showingReportIssue) {
-            if let card = vm.current {
-                ContactView(purpose: .reportIssue, chunkID: card.id)
-            }
+            ContactView(purpose: .reportIssue)
         }
         .navigationDestination(isPresented: $showingFeedback) {
             ContactView(purpose: .feedback)
