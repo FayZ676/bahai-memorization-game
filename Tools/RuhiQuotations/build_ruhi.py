@@ -66,6 +66,16 @@ BOOKS = {
         ],
         "headings": {"on a Path of Service": 0, "of the Institute Courses": 1, "at the Grassroots": 2},
     },
+    8: {
+        "title": "The Covenant of Bahá’u’lláh",
+        "url": "https://www.ruhi.org/full_texts/RUHI2100_COV_BK8_EN_1.1.1.PE_FullText_20260324.pdf",
+        "units": [
+            "The Center of the Covenant and His Will and Testament",
+            "The Guardian of the Faith",
+            "The Universal House of Justice",
+        ],
+        "headings": {"Testament": 0, "The Guardian of the Faith": 1, "of Justice": 2},
+    },
 }
 
 WORKS_BY_AUTHOR = [
@@ -102,7 +112,12 @@ SINGULAR = re.compile(
     r"|\bmemorize the following quotation\b|\bmemorize the prayer below\b",
     re.I,
 )
-BACKWARD = re.compile(r"\babove\b|\bthese short passages\b|\bpreceding\b|from the sets above|in this section", re.I)
+QUOTED = r"(?:quotation|passage|prayer|verse)s?"
+BACKWARD = re.compile(
+    rf"\b(?:above|preceding)\s+{QUOTED}\b|\b{QUOTED}\s+above\b"
+    r"|\bthese short passages\b|\bsets above\b|\bin this section\b",
+    re.I,
+)
 STORY = re.compile(r"^\s*[−-]\s*(Participant|A:|Q:)|Anna|\bI have observed\b|\bhe says\b|\bshe says\b", re.I)
 
 UNATTRIBUTED = {
@@ -120,7 +135,14 @@ STORY_DIALOGUE = (
     "My dear, all your plans will come to naught",
 )
 
-JOINED_WORDS = {"fellow- ship": "fellowship"}
+SPLIT_ACROSS_LINES = {
+    "fellow- ship": "fellowship",
+    "King- dom": "Kingdom",
+    "dis- pensations": "dispensations",
+    "remem- ber": "remember",
+}
+
+TRULY_HYPHENATED = ("All- Bountiful", "dawning- points", "good- pleasure")
 
 
 def fetch(book, refresh):
@@ -150,9 +172,10 @@ def strip_running_heads(lines):
 def tidy(text):
     text = re.sub(r"\s+", " ", text).strip()
     text = re.sub(r"(?<=[a-z’”.,;:!?])\s?(\d{1,2})(?=\s|$)", "", text)
-    for broken, whole in JOINED_WORDS.items():
+    for broken, whole in SPLIT_ACROSS_LINES.items():
         text = text.replace(broken, whole)
-    text = re.sub(r"(\w)- (\w)", r"\1-\2", text)
+    for compound in TRULY_HYPHENATED:
+        text = text.replace(compound, compound.replace("- ", "-"))
     text = re.sub(r"\.\s\.\s\.\s\.", ". …", text)
     text = re.sub(r"\.\s\.\s\.", "…", text)
     text = re.sub(r"^…\s+", "…", text)
@@ -352,6 +375,9 @@ def entries_for(book, refresh):
         index = spec["headings"].get(quotation["unit"])
         if index is None or not author or not label:
             raise SystemExit(f"book {book}: unresolved quotation at line {quotation['line']}: {text[:60]}")
+        split = re.search(r"\w+- \w+", text)
+        if split:
+            raise SystemExit(f"book {book}: is {split.group(0)!r} one word or two? add it to a table above")
         entries.append({
             "author": author,
             "heading": "",
@@ -375,7 +401,7 @@ def main():
     if not entries:
         raise SystemExit("ruhi.json is missing Book 1, which has no machine-readable source")
 
-    for book in [2, 3, 4, 5, 6, 7]:
+    for book in [2, 3, 4, 5, 6, 7, 8]:
         book_entries = entries_for(book, args.refresh)
         print(f"book {book}: {len(book_entries)} quotations")
         entries.extend(book_entries)

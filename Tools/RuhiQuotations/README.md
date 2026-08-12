@@ -1,7 +1,7 @@
 # Ruhi quotations
 
 `ruhi.json` holds every passage the Ruhi Institute courses ask you to memorize, Books 1
-through 7. It is generated, not hand-edited; `build_ruhi.py` is the source of truth for it,
+through 8. It is generated, not hand-edited; `build_ruhi.py` is the source of truth for it,
 and this README is the source of truth for the script.
 
 ```
@@ -16,7 +16,7 @@ rebuilding here, rebuild the library snapshot too.
 
 ## Where the text comes from
 
-Books 2 through 7 come from the single-file PDF editions published by the Ruhi Institute at
+Books 2 through 8 come from the single-file PDF editions published by the Ruhi Institute at
 `ruhi.org/full_texts`; the exact URLs live in `BOOKS` in the script. `pdftotext -layout`
 turns each one into the cached text under `cache/`, which is committed so a rebuild works
 without network access. The PDFs themselves are not committed — they are 20 MB and
@@ -25,6 +25,16 @@ without network access. The PDFs themselves are not committed — they are 20 MB
 Book 1 has no machine-readable source. Its 24 quotations were entered by hand, and the
 script carries them through from `ruhi.json` untouched; it refuses to run if they are
 missing.
+
+The junior youth texts — *Breezes of Confirmation*, *Walking the Straight Path* and the rest
+— are deliberately absent. The Ruhi Institute publishes full texts for the main sequence
+only, so there is nothing to extract and no footnotes to attribute against. The handful of
+junior youth passages that Book 5 reproduces in its sample lessons are already here, under
+Book 5. Do not fill the gap from memory.
+
+Justified text in these PDFs breaks words across lines, so `remem- ber` and `All- Bountiful`
+arrive looking alike. `SPLIT_ACROSS_LINES` and `TRULY_HYPHENATED` say which is which, and
+the script stops on any pair it has not been told about rather than guessing.
 
 ## Which passages are taken
 
