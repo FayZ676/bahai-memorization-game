@@ -55,20 +55,22 @@ IPAD = dict(size=(2064, 2752), folder="ipad-13", geometry=dict(
     radius=0.0520,
 ))
 
-# One pass through the app, in order: pick a prayer, read it, hide a word, hide more,
-# know it. Tiles 3 and 4 are deliberately the same chunk of the same passage at two
-# stages, so the sequence shows the thing getting harder instead of describing it.
+# One pass through the app, in order: pick a prayer, hide a word, hide more, know it.
+# Tiles 2 and 3 are deliberately the same chunk of the same passage at two stages, so the
+# sequence shows the thing getting harder instead of describing it. The closing tile is
+# dark because that is the only place a theme can be shown without spending a tile on it;
+# the iPad was never shot in dark, so it falls back to the light library through
+# per_device rather than dropping the beat entirely.
 TILES = [
     dict(name="1-choose.png", source="3-built-in-library.png",
          headline="Start with any\nof 225 prayers."),
-    dict(name="2-read.png", source="4-preview.png",
-         headline="Read it\nthrough first."),
-    dict(name="3-hide.png", source="2-hide-words.png",
+    dict(name="2-hide.png", source="2-hide-words.png",
          headline="Tap a word\nto hide it."),
-    dict(name="4-hide-more.png", source="9-hide-more.png",
+    dict(name="3-hide-more.png", source="9-hide-more.png",
          headline="Hide more\neach time you return."),
-    dict(name="5-know.png", source="1-library.png",
-         headline="Until you know it\nby heart."),
+    dict(name="4-know.png", source="6-library-dark.png", theme="dark",
+         headline="Until you know it\nby heart.",
+         per_device={"ipad-13": dict(source="1-library.png", theme="light")}),
 ]
 
 PAGE = """<!doctype html>
@@ -153,7 +155,12 @@ def data_uri(path):
     return "data:image/png;base64," + base64.b64encode(path.read_bytes()).decode()
 
 
+def resolve(tile, device):
+    return dict(tile, **tile.get("per_device", {}).get(device["folder"], {}))
+
+
 def build_page(tile, device):
+    tile = resolve(tile, device)
     width, height = device["size"]
     geo = device["geometry"]
     theme = DARK if tile.get("theme") == "dark" else LIGHT
@@ -209,9 +216,10 @@ def main():
         out_dir = SHOTS / f"{device['folder']}-framed"
         out_dir.mkdir(parents=True, exist_ok=True)
         for tile in TILES:
-            if args.only and args.only not in tile["name"] + tile["source"]:
+            source = resolve(tile, device)["source"]
+            if args.only and args.only not in tile["name"] + source:
                 continue
-            if not (SHOTS / device["folder"] / tile["source"]).exists():
+            if not (SHOTS / device["folder"] / source).exists():
                 continue
             page = work / f"{device['folder']}-{tile['name']}.html"
             page.write_text(build_page(tile, device))

@@ -13,6 +13,7 @@ CLAIMS = [
     (r"(\d+) prayers", "Prayers"),
     (r"[Hh]idden [Ww]ords[^.\n]*?, all (\d+)", "The Hidden Words"),
     (r"all (\d+) Hidden Words", "The Hidden Words"),
+    (r"(\d+) Ruhi quotations", "Ruhi"),
 ]
 
 

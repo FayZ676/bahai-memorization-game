@@ -14,26 +14,28 @@ those are built from — reshoot here, then regenerate the tiles.
 Both simulators must be on the **iOS 26** runtime — the app's deployment target refuses
 to install on the 18.6 iPad Pro that carries the same name.
 
-These are the raw captures. What gets uploaded is the five tiles in `-framed/`, which
+These are the raw captures. What gets uploaded is the four tiles in `-framed/`, which
 read in order as one pass through the app — see `Design/StoreFrames/README.md`.
 
 | Raw capture | Becomes | Shows |
 |---|---|---|
 | `3-built-in-library.png` | `1-choose.png` | the Writings surface: search, My Writings, bundled collections with counts |
-| `4-preview.png` | `2-read.png` | the hero prayer read straight through, before any of it is hidden |
-| `2-hide-words.png` | `3-hide.png` | that prayer's second section, 24% hidden |
-| `9-hide-more.png` | `4-hide-more.png` | the *same* section at 33%, which is what makes the set a sequence rather than a gallery |
-| `1-library.png` | `5-know.png` | the library, streak and progress ramps, several passages finished |
+| `2-hide-words.png` | `2-hide.png` | the hero prayer's second section, 24% hidden |
+| `9-hide-more.png` | `3-hide-more.png` | the *same* section at 33%, which is what makes the set a sequence rather than a gallery |
+| `6-library-dark.png` | `4-know.png` | the library in dark, streak and progress ramps, several passages finished |
 
-Spares, captured but not uploaded: `5-dark.png`, `6-library-dark.png`, `7-hidden-words.png`,
-`8-achievements.png` (that last one needs the `ACHIEVEMENTS=1` seed — see below).
+Every raw here feeds a tile; there are no spares left. The iPad has no dark capture, so its
+`4-know.png` falls back to `ipad-13/1-library.png` through the tile's `per_device` override.
 
 Two captures are stage-dependent and must be reshot as a pair if the hero passage changes:
 `2-hide-words.png` from the default seed and `9-hide-more.png` from `HERO_LATE=1`, which
 hides 85% of the same chunk instead of 40%. `HERO_LATE` deliberately leaves the later
 chunks empty so the session still lands on section 2 in both, keeping the two tiles
-identical but for the blanks. `4-preview.png` must be the same prayer as those two —
-reach it via Writings → Recently read, which the seed populates.
+identical but for the blanks.
+
+The dark tile is shot with `python3 tools/seed.py dark` and the simulator in dark
+appearance, from the same picks as the light library, so the streak and the progress ramps
+read identically in both.
 
 If you drop the iPad build (`TARGETED_DEVICE_FAMILY = 1`), `ipad-13/` is no longer needed.
 
@@ -57,9 +59,10 @@ show, and sets `hasSeenWelcomeTour` so the guided tour does not cover the first 
 from bahai.org from time to time and passages do disappear — if `seed.py` exits with
 `not found:`, pick a replacement of a similar shape rather than forcing the old one back.
 
-`ACHIEVEMENTS=1` appends four more passages that only `8-achievements.png` needs — a
+`ACHIEVEMENTS=1` appends four more passages that only an achievements shot needs — a
 second earned badge and three rings part-way round, so the screen is not a column of
-untouched dashes. Leave it unset for every other shot; it adds rows to the library.
+untouched dashes. No uploaded tile draws on it since the set narrowed to four, so leave it
+unset unless you are shooting that screen again; it adds rows to the library.
 
 `HERO_GROUP` sets how many source lines make up one chunk of the session hero passage.
 Leave it at the default `2` for iPhone; use `3` for iPad, where a smaller chunk floats in

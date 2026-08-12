@@ -15,16 +15,22 @@ to iterate on layout in a browser.
 
 ## What it makes
 
-Five tiles that read in order as one pass through the app — pick a prayer, read it, hide a
-word, hide more, know it. Tiles 3 and 4 are the same chunk of the same passage at two
-stages, and tile 2 previews that same prayer, so the set demonstrates the loop instead of
-describing it. Reordering the list breaks that; the story is the point, not the coverage.
+Four tiles that read in order as one pass through the app — pick a prayer, hide a word,
+hide more, know it. Tiles 2 and 3 are the same chunk of the same passage at two stages, so
+the set demonstrates the loop instead of describing it. Reordering the list breaks that;
+the story is the point, not the coverage.
+
+The closing tile is dark. It is the one place a theme can be shown without spending a tile
+on it, and it lands on the library, where the ramps and the streak carry the same reading
+in either appearance. A tile can override its source or theme per device through
+`per_device`, keyed by the raw folder name — the iPad was never shot in dark, so its
+`4-know.png` falls back to the light library rather than dropping the beat.
 
 Each tile names its own output file, so `TILES` order is the upload order and the raw
 capture it draws from can keep whatever name it was shot under. Input is
 `store-screenshots/<device>/`; a tile whose source is missing is skipped, which is why
-`--device ipad` produces three tiles — the iPad was never shot for the two session stages,
-and its three land as 1, 3 and 5, which is still the same story with beats missing.
+`--device ipad` produces three tiles — the iPad was never shot for the later session stage,
+and its three land as 1, 2 and 4, which is still the same story with a beat missing.
 
 The headline is centred in the band above the phone rather than hung from a fixed top, so
 one-line and two-line headlines both sit right without a per-tile nudge. Line breaks are
@@ -48,7 +54,7 @@ screen does.
 
 **Every claim in the copy has to hold against the build, not against the last listing.**
 The counts are hardcoded here, so re-derive them from `library.json` whenever it is rebuilt —
-225 prayers, 153 Hidden Words, 24 Ruhi passages at the time of writing — and check that
+225 prayers, 153 Hidden Words, 249 Ruhi passages at the time of writing — and check that
 feature claims match the app (reminders exist, so "no notifications" is false; the
 achievement tile names a count that `AchievementCatalog.all` has to still agree with).
 
