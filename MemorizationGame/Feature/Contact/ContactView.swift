@@ -11,13 +11,6 @@ enum ContactPurpose {
         }
     }
 
-    var intro: String? {
-        switch self {
-        case .reportIssue: return "Tell us what went wrong."
-        case .feedback: return nil
-        }
-    }
-
     var messageLabel: String {
         switch self {
         case .reportIssue: return "Message (Optional)"
@@ -93,15 +86,6 @@ struct ContactView: View {
     private var form: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                if let intro = purpose.intro {
-                    Text(intro)
-                        .appFont(Typography.callout)
-                        .foregroundStyle(Theme.muted)
-                        .lineSpacing(3)
-                        .padding(.horizontal, 6)
-                        .padding(.top, 4)
-                }
-
                 OptionSection(label: purpose.messageLabel, icon: "text.alignleft") {
                     editor
                 }
