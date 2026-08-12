@@ -92,7 +92,6 @@ struct SessionView: View {
         .onChange(of: vm.presentationEpoch) {
             voice.stop()
             highlights.clear()
-            wordFrames.forget()
             voice.prepare(for: vm.passageText)
         }
         .onChange(of: vm.current?.hiddenWords) {

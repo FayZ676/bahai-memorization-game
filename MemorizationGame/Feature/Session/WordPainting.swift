@@ -16,10 +16,6 @@ final class WordFrames {
             index < wordCount && frame.insetBy(dx: -3.5, dy: -6).contains(location)
         }?.key
     }
-
-    func forget() {
-        frames.removeAll()
-    }
 }
 
 final class ScrollOffset {
