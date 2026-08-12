@@ -110,11 +110,7 @@ struct ContactView: View {
                     record
                 }
 
-                OptionSection(
-                    label: "Email (Optional)",
-                    icon: "envelope",
-                    footer: "Only used to reply. Your app version and device are sent along."
-                ) {
+                OptionSection(label: "Email (Optional)", icon: "envelope") {
                     EmailField(email: $email)
                 }
 
