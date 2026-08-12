@@ -95,12 +95,12 @@ struct ContactView: View {
                         .padding(.top, 4)
                 }
 
-                if purpose.showsRecitations {
-                    record
-                }
-
                 OptionSection(label: "Message", icon: "text.alignleft") {
                     editor
+                }
+
+                if purpose.showsRecitations {
+                    record
                 }
 
                 OptionSection(
@@ -132,7 +132,7 @@ struct ContactView: View {
 
         InfoNote(Typography.micro, color: Theme.faint) {
             Text(attempts.isEmpty
-                ? "No recitations recorded yet — just describe the issue below."
+                ? "No recitations recorded yet."
                 : "Recitation info is automatically included.")
                 .appFont(Typography.micro)
                 .foregroundStyle(Theme.faint)
