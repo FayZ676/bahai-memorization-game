@@ -30,7 +30,13 @@ final class SessionViewModel {
         store.queue(for: passage).map(\.expectedText).joined(separator: " ")
     }
 
+    var passageHasHiddenWords: Bool {
+        store.queue(for: passage).contains { !$0.hiddenWords.isEmpty }
+    }
+
     private var queueLength: Int { store.queue(for: passage).count }
+
+    var hasMultipleSections: Bool { queueLength > 1 }
 
     var canGoForward: Bool { step < queueLength - 1 }
     var canGoBack: Bool { step > 0 }

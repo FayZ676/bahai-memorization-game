@@ -9,18 +9,20 @@ enum TourStep: Int, CaseIterable {
     case openPassage
     case hideWord
     case recite
+    case nextSection
     case achievements
     case finished
 
     var title: String {
         switch self {
         case .openBrowse: "Browsing Prayers"
-        case .pickPrayer: "Choosing a Prayer"
-        case .addPrayer: "Saving and Memorizing"
+        case .pickPrayer: "Choosing a Passage"
+        case .addPrayer: "Memorizing a Prayer"
         case .importPrayer: "Importing Prayers"
-        case .openPassage: "Open your passage"
+        case .openPassage: "Open a Memorization"
         case .hideWord: "Hiding Words"
         case .recite: "Reciting Words"
+        case .nextSection: "Moving Between Sections"
         case .achievements: "Earning Achievements"
         case .finished: "That's it"
         }
@@ -36,13 +38,15 @@ enum TourStep: Int, CaseIterable {
         let symbol = { Self.symbol($0, size: Typography.callout.size, scale: scale) }
         return switch self {
         case .openBrowse: Text("Tap the \(symbol("book")) button to browse Prayers and Writings.")
-        case .pickPrayer: Text("Choose the first prayer under **Prayers** > **Opening Words**.")
+        case .pickPrayer: Text("Choose any one of **The Hidden Words**. They are short, and a good place to begin.")
         case .addPrayer:
-            Text("Tap the \(symbol("bookmark")) button to save the prayer for later. Tap the \(symbol("text.word.spacing")) button to memorize the prayer. Try tapping the \(symbol("text.word.spacing")) button.")
+            Text("Tap the \(symbol("text.word.spacing")) button to memorize the prayer.")
         case .importPrayer: Text("Tap the \(symbol("plus")) button to add the prayer to your Memorization Library.")
         case .openPassage: Text("Tap the prayer to start memorizing it.")
         case .hideWord: Text("Tap a word to hide it. Tap it again to bring it back. Press and glide over words to hide or reveal multiple words at once.")
         case .recite: Text("Tap the \(symbol("mic")) button to practice saying hidden words aloud.")
+        case .nextSection:
+            Text("Paragraphs get split into sections. Swipe across the screen to move to the next section. Or tap the progress bar above.")
         case .achievements:
             Text("Certain prayers earn an achievement once every word is hidden. Tap the \(symbol("chevron.left")) button to return to your Library, then tap the \(symbol("trophy")) button to see them all.")
         case .finished: Text("You're ready to start memorizing.")

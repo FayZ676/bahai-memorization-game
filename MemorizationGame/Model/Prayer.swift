@@ -52,6 +52,8 @@ enum PrayerLibrary {
 
     static let collections: [Collection] = buildCollections()
 
+    static let hiddenWordsCollection = "The Hidden Words"
+
     struct Category: Identifiable, Hashable {
         let name: String
         let prayers: [Prayer]

@@ -4,6 +4,7 @@ struct PrayerBrowseView: View {
     var focusSection: String? = nil
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.tour) private var tour
     @Environment(AppStore.self) private var store
     @State private var query = ""
     @State private var searchResults: [SearchHit] = []
@@ -11,6 +12,11 @@ struct PrayerBrowseView: View {
     @State private var searchTask: Task<Void, Never>?
 
     private var trimmedQuery: String { query.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+    private var isChoosingTourPassage: Bool {
+        guard let tour else { return false }
+        return tour.step.rawValue <= TourStep.pickPrayer.rawValue
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -117,7 +123,7 @@ struct PrayerBrowseView: View {
                 title: "My Writings",
                 font: Typography.passageTitle,
                 color: Theme.ink,
-                initiallyExpanded: true
+                initiallyExpanded: !isChoosingTourPassage
             ) {
                 if !store.savedWritings.isEmpty {
                     writingsRow(
@@ -154,7 +160,8 @@ struct PrayerBrowseView: View {
                 title: collection.name,
                 font: Typography.passageTitle,
                 color: Theme.ink,
-                initiallyExpanded: true
+                initiallyExpanded: !isChoosingTourPassage
+                    || collection.name == PrayerLibrary.hiddenWordsCollection
             ) {
                 ForEach(collection.sections) { section in
                     sectionNode(section)

@@ -51,6 +51,7 @@ struct SessionView: View {
                     RecitationBar(
                         voice: voice,
                         hasHiddenWords: !(vm.current?.hiddenWords.isEmpty ?? true),
+                        showsHint: !vm.passageHasHiddenWords,
                         micDeniedAlert: $showingMicDenied,
                         onStart: startRecitation
                     )
@@ -92,6 +93,13 @@ struct SessionView: View {
             voice.onCompleted = { completeChunk() }
             voice.onAttemptFinished = { recordAttempt($0) }
             voice.prepare(for: vm.passageText)
+        }
+        .onChange(of: vm.step) {
+            tour?.complete(.nextSection, onlyIfCurrent: true)
+        }
+        .onChange(of: tour?.step) { _, step in
+            guard step == .nextSection, !vm.hasMultipleSections else { return }
+            tour?.complete(.nextSection)
         }
         .onChange(of: vm.presentationEpoch) {
             voice.stop()
