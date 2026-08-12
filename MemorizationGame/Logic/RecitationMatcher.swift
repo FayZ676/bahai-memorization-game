@@ -149,12 +149,10 @@ struct RecitationMatcher {
                 }
                 continue
             }
-            if isFinal {
-                RecitationTrace.emit(
-                    "skipped",
-                    "\(index) \"\(spelling[index])\" unheard=\(Self.seconds(unheard))"
-                )
-            }
+            RecitationTrace.emit(
+                "skipped",
+                "\(index) \"\(spelling[index])\" unheard=\(Self.seconds(unheard))"
+            )
             missed.insert(index)
             record(index, spoken: spoken, alignment: alignment)
             events.append(.missed(index: index, movedOn: true))
