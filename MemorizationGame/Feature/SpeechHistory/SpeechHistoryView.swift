@@ -45,7 +45,10 @@ struct SpeechHistoryView: View {
 
 struct AttemptRow: View {
     @Environment(\.fontScale) private var scale
+    @State private var overflow = OverflowEdges()
     let attempt: RecitationAttempt
+
+    private static let fadeWidth: CGFloat = 26
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -56,7 +59,27 @@ struct AttemptRow: View {
                 .padding(.horizontal, Spacing.lg)
         }
         .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+        .onScrollGeometryChange(for: OverflowEdges.self) { geometry in
+            OverflowEdges(
+                offset: geometry.contentOffset.x,
+                reach: geometry.contentSize.width - geometry.containerSize.width
+            )
+        } action: { _, edges in
+            overflow = edges
+        }
+        .mask(fade)
+        .animation(.easeOut(duration: 0.16), value: overflow)
         .padding(.vertical, Spacing.sm)
+    }
+
+    private var fade: some View {
+        HStack(spacing: 0) {
+            LinearGradient(colors: [.clear, .black], startPoint: .leading, endPoint: .trailing)
+                .frame(width: overflow.leading ? Self.fadeWidth : 0)
+            Color.black
+            LinearGradient(colors: [.black, .clear], startPoint: .leading, endPoint: .trailing)
+                .frame(width: overflow.trailing ? Self.fadeWidth : 0)
+        }
     }
 
     private var header: String {
@@ -84,4 +107,14 @@ struct AttemptRow: View {
     }
 
     private var missFont: Font { Typography.caption.font(scale: scale) }
+}
+
+private struct OverflowEdges: Equatable {
+    var offset: CGFloat = 0
+    var reach: CGFloat = 0
+
+    private static let slack: CGFloat = 1
+
+    var leading: Bool { offset > Self.slack }
+    var trailing: Bool { offset < reach - Self.slack }
 }

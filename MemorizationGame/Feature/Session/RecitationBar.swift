@@ -8,22 +8,33 @@ struct RecitationBar: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if isVisible {
-                micButton
-                    .padding(.top, Spacing.md)
-                    .transition(.opacity.combined(with: .scale(scale: 0.85)))
-            }
+            micButton
+                .padding(.top, Spacing.md)
             if voice.isListening {
                 heardRow
+            } else if !hasHiddenWords {
+                hint
             }
         }
         .padding(.bottom, Spacing.md)
-        .animation(.easeInOut(duration: 0.2), value: isVisible)
+        .animation(.easeInOut(duration: 0.2), value: hasHiddenWords)
         .animation(.easeInOut(duration: 0.2), value: voice.isListening)
     }
 
-    private var isVisible: Bool {
-        voice.isListening || hasHiddenWords
+    private var isDisabled: Bool {
+        !hasHiddenWords && !voice.isListening
+    }
+
+    private var hint: some View {
+        InfoNote(Typography.micro, color: Theme.faint) {
+            Text("Hide a word to recite from memory")
+                .appFont(Typography.micro)
+                .foregroundStyle(Theme.faint)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 26)
+        .padding(.top, Spacing.sm)
+        .transition(.opacity)
     }
 
     private var heardRow: some View {
@@ -53,7 +64,9 @@ struct RecitationBar: View {
                 .contentShape(Circle())
         }
         .buttonStyle(.haptic)
+        .disabled(isDisabled)
         .animation(.easeInOut(duration: 0.18), value: voice.state)
+        .animation(.easeInOut(duration: 0.18), value: isDisabled)
     }
 
     @ViewBuilder
@@ -72,7 +85,7 @@ struct RecitationBar: View {
         case .idle, .failed, .micDenied:
             Image(systemName: denied ? "mic.slash" : "mic")
                 .font(.system(size: 21, weight: .regular))
-                .foregroundStyle(denied ? Theme.muted.opacity(0.5) : Theme.navIcon)
+                .foregroundStyle(denied || isDisabled ? Theme.muted.opacity(0.5) : Theme.navIcon)
                 .contentTransition(.symbolEffect(.replace.magic(fallback: .replace.offUp)))
                 .transition(.opacity)
         }
@@ -83,10 +96,12 @@ struct RecitationBar: View {
     }
 
     private var fill: Color {
-        voice.state == .listening ? Theme.accent.opacity(0.18) : Theme.surface
+        if voice.state == .listening { return Theme.accent.opacity(0.18) }
+        return isDisabled ? Theme.surface.opacity(0.5) : Theme.surface
     }
 
     private var stroke: Color {
-        voice.state == .listening ? Theme.accent.opacity(0.7) : Theme.hairline
+        if voice.state == .listening { return Theme.accent.opacity(0.7) }
+        return isDisabled ? Theme.hairline.opacity(0.6) : Theme.hairline
     }
 }
