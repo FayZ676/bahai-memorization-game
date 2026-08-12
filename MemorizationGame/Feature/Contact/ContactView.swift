@@ -221,7 +221,7 @@ private struct AttemptRow: View {
     }
 
     private var header: String {
-        let stamp = attempt.date.formatted(date: .abbreviated, time: .shortened)
+        let stamp = attempt.date.formatted(.dateTime.month(.abbreviated).day().hour().minute())
         return "\(stamp) · \(attempt.passageTitle) · \(attempt.summary)"
     }
 
