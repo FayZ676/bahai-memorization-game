@@ -205,27 +205,19 @@ struct ContactView: View {
 }
 
 private struct AttemptRow: View {
+    @Environment(\.fontScale) private var scale
     let attempt: RecitationAttempt
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(header)
-                .appFont(Typography.micro)
-                .foregroundStyle(Theme.faint)
+        ScrollView(.horizontal, showsIndicators: false) {
+            (Text(header).font(Typography.micro.font(scale: scale)).foregroundStyle(Theme.faint)
+                + Text("   ")
+                + misses)
                 .lineLimit(1)
-            if attempt.misses.isEmpty {
-                Text("Every word was heard")
-                    .appFont(Typography.caption)
-                    .foregroundStyle(Theme.muted)
-            } else {
-                misses
-                    .appFont(Typography.caption)
-                    .lineSpacing(2)
-            }
+                .padding(.horizontal, Spacing.lg)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
         .padding(.vertical, Spacing.sm)
-        .padding(.horizontal, Spacing.lg)
     }
 
     private var header: String {
@@ -234,16 +226,24 @@ private struct AttemptRow: View {
     }
 
     private var misses: Text {
-        attempt.misses
+        guard !attempt.misses.isEmpty else {
+            return Text("Every word was heard").font(missFont).foregroundStyle(Theme.muted)
+        }
+        return attempt.misses
             .map { miss in
-                Text(miss.expected).foregroundStyle(Theme.ink)
-                    + Text(" → ").foregroundStyle(Theme.faint)
+                Text(miss.expected).font(missFont).foregroundStyle(Theme.ink)
+                    + Text(" → ").font(missFont).foregroundStyle(Theme.faint)
                     + Text(miss.heardSomething ? miss.heard : "nothing")
+                        .font(missFont)
                         .foregroundStyle(miss.heardSomething ? Theme.warn : Theme.muted)
             }
             .enumerated()
             .reduce(Text("")) { line, pair in
-                pair.offset == 0 ? pair.element : line + Text("   ").foregroundStyle(Theme.faint) + pair.element
+                pair.offset == 0
+                    ? pair.element
+                    : line + Text("   ").font(missFont).foregroundStyle(Theme.faint) + pair.element
             }
     }
+
+    private var missFont: Font { Typography.caption.font(scale: scale) }
 }
