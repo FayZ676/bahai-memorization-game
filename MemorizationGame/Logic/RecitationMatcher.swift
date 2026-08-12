@@ -93,11 +93,12 @@ struct RecitationMatcher {
         let spoken = settled + pending
         guard !spoken.isEmpty else { return [] }
         let alignStarted = Date()
-        let entry = hiddenIndices.first ?? 0
-        let horizon = min(words.count, entry + spoken.count + Self.lookahead)
+        let budget = spoken.count + Self.lookahead
+        let horizon = hiddenIndices.count > budget ? hiddenIndices[budget] + 1 : words.count
         let alignment = Self.align(
             spoken: spoken.map(\.key),
-            reference: Array(words[0..<horizon])
+            reference: Array(words[0..<horizon]),
+            required: Set(hiddenIndices)
         )
         let reached = alignment.reference
         RecitationTrace.emit(
@@ -237,7 +238,11 @@ struct RecitationMatcher {
         var reference: Set<Int> { Set(pairs.keys) }
     }
 
-    private static func align(spoken: [String], reference: [String]) -> Alignment {
+    private static func align(
+        spoken: [String],
+        reference: [String],
+        required: Set<Int>
+    ) -> Alignment {
         let spokenCount = spoken.count
         let referenceCount = reference.count
         guard spokenCount > 0, referenceCount > 0 else { return Alignment(pairs: [:], spoken: []) }
@@ -266,7 +271,7 @@ struct RecitationMatcher {
                 cost[row][column] = min(
                     cost[row - 1][column - 1] + (aligns(row - 1, column - 1) ? 0 : 1),
                     cost[row - 1][column] + 1,
-                    cost[row][column - 1] + 1
+                    cost[row][column - 1] + (required.contains(column - 1) ? 1 : 0)
                 )
             }
         }
