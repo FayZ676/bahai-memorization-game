@@ -121,23 +121,24 @@ struct ContactView: View {
 
     @ViewBuilder
     private var record: some View {
-        if !attempts.isEmpty {
-            OptionSection(label: "Recent recitations", icon: "waveform") {
+        if attempts.isEmpty {
+            Text("No recitations recorded yet.")
+                .appFont(Typography.caption)
+                .foregroundStyle(Theme.faint)
+                .lineSpacing(2)
+                .padding(.horizontal, 6)
+        } else {
+            OptionSection(
+                label: "Recent recitations",
+                icon: "waveform",
+                footer: "Recitation info is automatically included."
+            ) {
                 ForEach(Array(attempts.enumerated()), id: \.element.id) { index, attempt in
                     if index > 0 { HairlineDivider() }
                     AttemptRow(attempt: attempt)
                 }
             }
         }
-
-        InfoNote(Typography.micro, color: Theme.faint) {
-            Text(attempts.isEmpty
-                ? "No recitations recorded yet."
-                : "Recitation info is automatically included.")
-                .appFont(Typography.micro)
-                .foregroundStyle(Theme.faint)
-        }
-        .padding(.horizontal, 6)
     }
 
     private var thanks: some View {
