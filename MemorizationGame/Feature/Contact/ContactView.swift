@@ -241,7 +241,7 @@ private struct AttemptRow: View {
             .reduce(Text("")) { line, pair in
                 pair.offset == 0
                     ? pair.element
-                    : line + Text("   ").font(missFont).foregroundStyle(Theme.faint) + pair.element
+                    : line + Text("  |  ").font(missFont).foregroundStyle(Theme.hairline) + pair.element
             }
     }
 

@@ -92,9 +92,7 @@ struct RecitationAttempt: Codable, Hashable, Identifiable {
     }
 
     var summary: String {
-        misses.isEmpty
-            ? "\(matchedCount) of \(expectedCount) — no misses"
-            : "\(misses.count) missed of \(expectedCount)"
+        misses.isEmpty ? "no misses" : "\(misses.count) missed of \(expectedCount)"
     }
 }
 
