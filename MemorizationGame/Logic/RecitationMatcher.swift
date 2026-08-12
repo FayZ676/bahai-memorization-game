@@ -120,19 +120,17 @@ struct RecitationMatcher {
 
         let advanced = reached.max() ?? -1
         let progressed = advanced > frontier
+        let judgeable = isFinal ? spoken.count : spoken.count - 1
         if progressed {
             frontier = advanced
             attempts = 0
             unexplainedSinceProgress = false
-        } else {
-            let judgeable = isFinal ? spoken.count : spoken.count - 1
-            if judged < judgeable {
-                unexplainedSinceProgress = unexplainedSinceProgress || (judged..<judgeable).contains {
-                    spoken[$0].confidence >= Self.confidenceFloor && !alignment.spoken.contains($0)
-                }
+        } else if judged < judgeable {
+            unexplainedSinceProgress = unexplainedSinceProgress || (judged..<judgeable).contains {
+                spoken[$0].confidence >= Self.confidenceFloor && !alignment.spoken.contains($0)
             }
         }
-        judged = max(judged, spoken.count)
+        judged = max(judged, judgeable)
 
         let margin = isFinal ? Self.movedOnMargin : Self.unsettledMovedOnMargin
         for index in hiddenIndices where index + margin < frontier {
