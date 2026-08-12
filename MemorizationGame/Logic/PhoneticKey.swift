@@ -11,7 +11,6 @@ enum PhoneticKey {
     static func matches(_ spoken: String, _ reference: String) -> Bool {
         guard !spoken.isEmpty, !reference.isEmpty else { return false }
         guard spoken != reference else { return true }
-        if acceptedRenderings[reference]?.contains(spoken) == true { return true }
         guard sharesOnset(spoken, reference) else { return false }
         let tolerance: Int
         switch reference.count {
@@ -26,26 +25,6 @@ enum PhoneticKey {
         guard !vowels.contains(first), !vowels.contains(second) else { return true }
         return first == second
     }
-
-    private static let archaicRenderings: [(written: String, spoken: [String])] = [
-        ("thou", ["our", "be", "they", "though"]),
-        ("thee", ["the", "be", "they"]),
-        ("thy", ["the", "they", "my"]),
-        ("thine", ["mine"]),
-        ("thyself", ["myself"]),
-        ("my", ["thy", "thee", "thou"]),
-    ]
-
-    private static let acceptedRenderings: [String: Set<String>] = {
-        var result: [String: Set<String>] = [:]
-        for entry in archaicRenderings {
-            result[encode(entry.written), default: []].formUnion(entry.spoken.map(encode))
-        }
-        for (written, spoken) in result {
-            result[written] = spoken.subtracting([written])
-        }
-        return result
-    }()
 
     private static let foldingLocale = Locale(identifier: "en_US")
     private static let vowels: Set<Character> = ["a", "e", "i", "o", "u"]
