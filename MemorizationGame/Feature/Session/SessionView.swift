@@ -71,11 +71,11 @@ struct SessionView: View {
         }
         .navigationDestination(isPresented: $showingReportIssue) {
             if let card = vm.current {
-                ReportIssueView(chunkID: card.id)
+                ContactView(purpose: .reportIssue, chunkID: card.id)
             }
         }
         .navigationDestination(isPresented: $showingFeedback) {
-            FeedbackView()
+            ContactView(purpose: .feedback)
         }
         .onChange(of: showingEdit) { _, isEditing in
             guard !isEditing else { return }

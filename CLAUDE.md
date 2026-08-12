@@ -16,11 +16,13 @@ Xcode project `MemorizationGame.xcodeproj`, scheme `MemorizationGame`. Tested li
 - `Store/AppStore.swift` — single `@Observable` source of truth (`passages`, `reviewables`), persisted to JSON in documents dir on every mutation. Views call methods on it; never mutate models directly.
 - `Model/Models.swift` — `Passage` and `Reviewable` (a chunk with `expectedText` + `hiddenWords: Set<Int>`). Hand-written `Codable` for backward compat with old snapshots — use `decodeIfPresent` + fallback when adding fields.
 - `Logic/` — pure, view-free rules: `HiddenWordAlignment` (remap hidden indices when a passage is edited), `PracticeLog` (words-per-day + streak), `RecitationMatcher`/`RecitationContext` (speech matching), `StreakReminder`, `Tunables` (`AppSettings`).
-- `Feature/` — one folder per screen (`Library`, `Session`, `Import`, `Settings`, `Achievements`, `Onboarding`, `ReportIssue`).
-- Report Issue — `RecitationMatcher` records every burnt word (expected word, what was heard in
-  its place, both phonetic keys); `Store/RecitationLog.swift` persists the last few attempts per
-  chunk to `recitation-log.json`. The screen shows that record in plain language and sends it to
-  the feedback form in one tap, with an optional note.
+- `Feature/` — one folder per screen (`Library`, `Session`, `Import`, `Settings`, `Achievements`, `Onboarding`, `Contact`).
+- Contact — `Feature/Contact/ContactView.swift` is the one screen behind both "Report Issue" and
+  "Send Feedback"; `ContactPurpose` supplies the title, copy, form kind, and whether the recitation
+  record shows. Both are reachable from Settings and from the session options menu. `RecitationMatcher`
+  records every burnt word (expected word, what was heard in its place, both phonetic keys);
+  `Store/RecitationLog.swift` persists the last few attempts per chunk to `recitation-log.json`, and
+  the report purpose shows that record in plain language and sends it along with the note.
 - `Theme/` — all colors/type/spacing as design tokens (`Theme.swift`, `Typography.swift`, etc.); never hardcode values in views. `design-theme.html` at repo root is the canonical visual reference.
 - `Design/` — generators for art that ships as an asset, one folder per thing, each with a README that is the source of truth for it: `AppIcon/` (the nine-pointed star, rasterised into `Assets.xcassets`) and `StoreFrames/` (App Store screenshots). The asset is the artefact — edit the generator, never the output. Read the folder's README before changing anything there.
 

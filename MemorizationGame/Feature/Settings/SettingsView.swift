@@ -44,7 +44,7 @@ struct SettingsView: View {
                         HairlineDivider()
 
                         NavigationLink {
-                            ReportIssueView()
+                            ContactView(purpose: .reportIssue)
                         } label: {
                             DisclosureRow("Report Issue")
                         }
@@ -53,7 +53,7 @@ struct SettingsView: View {
                         HairlineDivider()
 
                         NavigationLink {
-                            FeedbackView()
+                            ContactView(purpose: .feedback)
                         } label: {
                             DisclosureRow("Send feedback")
                         }
