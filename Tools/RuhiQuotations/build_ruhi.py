@@ -359,7 +359,7 @@ def entries_for(book, refresh):
             "tags": ["Ruhi", f"Book {book}", f"Unit {index + 1}", quotation["division"], label],
             "primaryTag": f"Unit {index + 1}: {spec['units'][index]}",
             "collection": "Ruhi",
-            "section": f"Book {book}: {spec['title']}",
+            "section": f"Book {book}",
         })
     return entries
 
@@ -371,7 +371,7 @@ def main():
     args = parser.parse_args()
 
     existing = json.loads(RUHI_PATH.read_text(encoding="utf-8")) if RUHI_PATH.exists() else []
-    entries = [entry for entry in existing if entry["section"].startswith("Book 1:")]
+    entries = [entry for entry in existing if entry["section"] == "Book 1"]
     if not entries:
         raise SystemExit("ruhi.json is missing Book 1, which has no machine-readable source")
 

@@ -61,8 +61,9 @@ rather than the full publication citation.
 ## Shape
 
 The app browses `collection → section → category → entry`, which here is
-`Ruhi → Book 3: Teaching Children's Classes, Grade 1 → Unit 2: Lessons for Children's
-Classes, Grade 1 → the passage`. All seven books sit under the one `Ruhi` collection. The
+`Ruhi → Book 3 → Unit 2: Lessons for Children's Classes, Grade 1 → the passage`. All seven
+books sit under the one `Ruhi` collection, named by number alone — the unit beneath says
+what the book is about. The full titles stay in `BOOKS` in the script, unused by the app. The
 section or lesson the passage was drawn from is kept as a tag rather than a level, because
 the hierarchy has no room for a fourth.
 
