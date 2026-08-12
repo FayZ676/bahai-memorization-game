@@ -21,7 +21,7 @@ struct SpeechHistoryView: View {
             OptionSection(
                 label: "Recent recitations",
                 icon: "waveform",
-                footer: "What the app heard in place of each word you missed."
+                footer: "Tap a recitation to see what the app heard in place of each word you missed."
             ) {
                 ForEach(Array(log.newestFirst.enumerated()), id: \.element.id) { index, attempt in
                     if index > 0 { HairlineDivider() }
@@ -44,41 +44,52 @@ struct SpeechHistoryView: View {
 }
 
 struct AttemptRow: View {
-    @Environment(\.fontScale) private var scale
-    @State private var overflow = OverflowEdges()
+    @State private var expanded = false
     let attempt: RecitationAttempt
 
-    private static let fadeWidth: CGFloat = 26
-
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            (Text(header).font(Typography.micro.font(scale: scale)).foregroundStyle(Theme.faint)
-                + Text("   ")
-                + misses)
-                .lineLimit(1)
-                .padding(.horizontal, Spacing.lg)
+        Button {
+            withAnimation(Motion.toggle) { expanded.toggle() }
+        } label: {
+            VStack(alignment: .leading, spacing: 10) {
+                summary
+                if expanded { misses }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .optionRow()
+            .contentShape(Rectangle())
         }
-        .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
-        .onScrollGeometryChange(for: OverflowEdges.self) { geometry in
-            OverflowEdges(
-                offset: geometry.contentOffset.x,
-                reach: geometry.contentSize.width - geometry.containerSize.width
-            )
-        } action: { _, edges in
-            overflow = edges
-        }
-        .mask(fade)
-        .animation(.easeOut(duration: 0.16), value: overflow)
-        .padding(.vertical, Spacing.sm)
+        .buttonStyle(.haptic)
+        .disabled(attempt.misses.isEmpty)
     }
 
-    private var fade: some View {
-        HStack(spacing: 0) {
-            LinearGradient(colors: [.clear, .black], startPoint: .leading, endPoint: .trailing)
-                .frame(width: overflow.leading ? Self.fadeWidth : 0)
-            Color.black
-            LinearGradient(colors: [.black, .clear], startPoint: .leading, endPoint: .trailing)
-                .frame(width: overflow.trailing ? Self.fadeWidth : 0)
+    private var summary: some View {
+        HStack(alignment: .firstTextBaseline, spacing: Spacing.sm) {
+            Text(header)
+                .appFont(Typography.micro)
+                .foregroundStyle(Theme.faint)
+                .multilineTextAlignment(.leading)
+            Spacer(minLength: 0)
+            if !attempt.misses.isEmpty {
+                Image(systemName: "chevron.down")
+                    .appIcon(11, weight: .semibold)
+                    .foregroundStyle(Theme.faint)
+                    .rotationEffect(.degrees(expanded ? 180 : 0))
+            }
+        }
+    }
+
+    private var misses: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            ForEach(attempt.misses) { miss in
+                (Text(miss.expected).foregroundStyle(Theme.ink)
+                    + Text("  →  ").foregroundStyle(Theme.faint)
+                    + Text(miss.heardSomething ? miss.heard : "nothing")
+                        .foregroundStyle(miss.heardSomething ? Theme.warn : Theme.muted))
+                    .appFont(Typography.caption)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 
@@ -88,33 +99,4 @@ struct AttemptRow: View {
         let stamp = "\(day), \(time)"
         return "\(stamp) · \(attempt.passageTitle) · \(attempt.summary)"
     }
-
-    private var misses: Text {
-        attempt.misses
-            .map { miss in
-                Text(miss.expected).font(missFont).foregroundStyle(Theme.ink)
-                    + Text(" → ").font(missFont).foregroundStyle(Theme.faint)
-                    + Text(miss.heardSomething ? miss.heard : "nothing")
-                        .font(missFont)
-                        .foregroundStyle(miss.heardSomething ? Theme.warn : Theme.muted)
-            }
-            .enumerated()
-            .reduce(Text("")) { line, pair in
-                pair.offset == 0
-                    ? pair.element
-                    : line + Text("  |  ").font(missFont).foregroundStyle(Theme.faint) + pair.element
-            }
-    }
-
-    private var missFont: Font { Typography.caption.font(scale: scale) }
-}
-
-private struct OverflowEdges: Equatable {
-    var offset: CGFloat = 0
-    var reach: CGFloat = 0
-
-    private static let slack: CGFloat = 1
-
-    var leading: Bool { offset > Self.slack }
-    var trailing: Bool { offset < reach - Self.slack }
 }
