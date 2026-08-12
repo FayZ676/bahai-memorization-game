@@ -1,6 +1,11 @@
 import Foundation
 
 enum FeedbackForm {
+    enum Kind {
+        static let problem = "Problem"
+        static let feedback = "Idea"
+    }
+
     private static let formID = "1FAIpQLSe3wZs_Ya_cS4kcqYBTX-fOsLi9MpvD9S90RwKAfWqBt5uEiA"
 
     private enum Field {

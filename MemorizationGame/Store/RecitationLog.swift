@@ -10,7 +10,6 @@ final class RecitationLog {
 
     private static let perChunkLimit = 3
     private static let totalLimit = 40
-    private static let diagnosticsLimit = 6
 
     private let storeURL: URL
 
@@ -36,10 +35,6 @@ final class RecitationLog {
 
     func attempts(for chunkID: UUID) -> [RecitationAttempt] {
         attempts.filter { $0.chunkID == chunkID }.reversed()
-    }
-
-    var diagnostics: String {
-        Self.trace(of: Array(attempts.suffix(Self.diagnosticsLimit)).reversed())
     }
 
     static func trace(of attempts: [RecitationAttempt]) -> String {

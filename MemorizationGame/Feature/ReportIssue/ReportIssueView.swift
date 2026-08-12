@@ -95,27 +95,7 @@ struct ReportIssueView: View {
             .padding(.vertical, Spacing.md)
             .transition(.opacity)
         } else {
-            Button(action: send) {
-                Group {
-                    if sending {
-                        ProgressView().tint(Theme.bg)
-                    } else {
-                        HStack(spacing: 8) {
-                            Image(systemName: "paperplane.fill")
-                                .appIcon(15, weight: .semibold)
-                            Text("Send Report")
-                                .appFont(Typography.button)
-                        }
-                        .foregroundStyle(Theme.bg)
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, Spacing.md)
-                .background(canSend ? Theme.accent : Theme.accentMuted, in: Capsule(style: .continuous))
-                .contentShape(Capsule(style: .continuous))
-            }
-            .buttonStyle(.haptic)
-            .disabled(!canSend)
+            SendButton(title: "Send Report", sending: sending, enabled: canSend, action: send)
         }
     }
 
@@ -145,7 +125,7 @@ struct ReportIssueView: View {
         let trace = RecitationLog.trace(of: attempts)
         Task {
             let delivered = await FeedbackForm.submit(
-                kind: FeedbackKind.problem.rawValue,
+                kind: FeedbackForm.Kind.problem,
                 message: note.isEmpty ? "Reported from the Report Issue screen." : note,
                 email: "",
                 trace: trace

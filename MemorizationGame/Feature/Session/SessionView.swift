@@ -22,6 +22,7 @@ struct SessionView: View {
     @State private var showingFullText = false
     @State private var showingEdit = false
     @State private var showingReportIssue = false
+    @State private var showingFeedback = false
     @State private var recitingChunkID: UUID?
     let passage: Passage
     private let store: AppStore
@@ -72,6 +73,9 @@ struct SessionView: View {
             if let card = vm.current {
                 ReportIssueView(chunkID: card.id)
             }
+        }
+        .navigationDestination(isPresented: $showingFeedback) {
+            FeedbackView()
         }
         .onChange(of: showingEdit) { _, isEditing in
             guard !isEditing else { return }
@@ -470,14 +474,19 @@ struct SessionView: View {
                     systemImage: "eyeglasses"
                 ) { vm.togglePeek() }
             }
-            Button("Report Issue", systemImage: "exclamationmark.bubble") {
-                showingReportIssue = true
-            }
             Section("Change What's Hidden") {
                 Button("Hide Every Word", systemImage: "eye.slash") {
                     vm.setAllWords(hidden: true)
                 }
                 Button("Show Every Word", systemImage: "eye") { vm.setAllWords(hidden: false) }
+            }
+            Section {
+                Button("Report Issue", systemImage: "exclamationmark.bubble") {
+                    showingReportIssue = true
+                }
+                Button("Send Feedback", systemImage: "paperplane") {
+                    showingFeedback = true
+                }
             }
         } label: {
             Image(systemName: "ellipsis")
