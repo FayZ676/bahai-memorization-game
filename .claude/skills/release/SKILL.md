@@ -19,6 +19,7 @@ git status --porcelain                              # must be clean
 git tag --list 'v*' --sort=-creatordate | head -1   # the diff base
 python3 scripts/project_version.py --get marketing
 python3 scripts/project_version.py --get build
+grep -c INFOPLIST_KEY_ITSAppUsesNonExemptEncryption MemorizationGame.xcodeproj/project.pbxproj
 ```
 
 - **Dirty tree** — stop and show what's uncommitted. Committing it is the user's call.
@@ -28,6 +29,18 @@ python3 scripts/project_version.py --get build
   and confirm it with the user before leaning on it. Do not diff the whole history.
 - **No `scripts/release.env` or no `.p8` key** — phases 1–4 still work. Say up front that
   phase 5 will not be possible until the key is set up per `scripts/README.md`.
+- **Encryption key missing** (the grep returns 0) — a build without
+  `INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO` lands in App Store Connect as "Missing
+  Compliance" and cannot be submitted until someone answers the export questionnaire by
+  hand. Restore it on both the Debug and Release configurations of the app target before
+  archiving. It must stay a build setting, not a hand-answered prompt: Xcode coerces it to
+  a real boolean in the generated `Info.plist`, which is what Apple reads.
+
+  The declaration is only honest while the app's only encryption is Apple's own
+  HTTPS — today that is `Support/FeedbackForm.swift` posting to the Google Form, and
+  nothing else. If a release ever adds custom cryptography, its own TLS stack, or ships an
+  encryption library, this answer stops being true and the exemption has to be re-decided
+  rather than carried forward.
 
 ## Phase 1 — Gather
 
@@ -124,3 +137,9 @@ Then tell the user what is left by hand, because none of it is automatable from 
 - Any screenshot or copy fix phase 3 flagged.
 - If this is the first release that ships the feedback screen, the privacy nutrition label
   must be updated from "Data Not Collected" — `store-listing.md` records the exact answers.
+
+Export compliance is **not** on that list: phase 0 verified the build carries the
+exemption, so the build should arrive submittable rather than "Missing Compliance". If it
+still shows that status, the key did not reach the archive — check it survived in both
+configurations rather than answering the prompt by hand, since a hand-answered build fixes
+one upload and leaves the next one broken.
