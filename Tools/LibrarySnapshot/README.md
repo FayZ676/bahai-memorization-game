@@ -21,8 +21,10 @@ the single-file XHTML edition of each book rather than the paginated web view:
   and 'Abdu'l-Bahá*
 - **The Hidden Words** — *The Hidden Words of Bahá'u'lláh*
 
-`Ruhi Book 1` is not from bahai.org. It is carried through unchanged from whatever is
-already in `library.json`, so it survives a rebuild untouched.
+The `Ruhi` collection is not from bahai.org. It is read from
+`Tools/RuhiQuotations/ruhi.json`, which has its own generator and its own README; rebuild
+that first if the Ruhi books have changed. Any other collection already in `library.json` is
+carried through unchanged, so it survives a rebuild untouched.
 
 ## How the structure is derived
 
@@ -65,7 +67,9 @@ servant…") sit outside the table of contents entirely. They are kept, under a 
 ## Ids
 
 `id` is the first four bytes of `sha1(collection + "\n" + text)`, so an entry keeps its id
-across rebuilds and ids do not shift when entries are added or reordered. This matters
+across rebuilds and ids do not shift when entries are added or reordered. Ruhi entries put
+the section in the seed as well, because the same passage is memorized in more than one book
+and the two would otherwise hash alike. This matters
 because ids are referenced from outside this file: `Model/Achievement.swift` hardcodes them,
 and saved passages persist them as `sourceID`. The script fails loudly on a collision.
 

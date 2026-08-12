@@ -22,8 +22,11 @@ BAHAI_ORG = "https://www.bahai.org/library/authoritative-texts"
 PRAYERS_URL = f"{BAHAI_ORG}/prayers/bahai-prayers/bahai-prayers.xhtml"
 HIDDEN_WORDS_URL = f"{BAHAI_ORG}/bahaullah/hidden-words/hidden-words.xhtml"
 
+RUHI_PATH = REPO_ROOT / "Tools/RuhiQuotations/ruhi.json"
+
 PRAYERS = "Prayers"
 HIDDEN_WORDS = "The Hidden Words"
+RUHI = "Ruhi"
 OPENING = "Opening Words"
 BAHAULLAH = "Bahá’u’lláh"
 REVEALERS = {BAHAULLAH, "The Báb", "‘Abdu’l-Bahá", "‘Abdu’l‑Bahá"}
@@ -240,8 +243,9 @@ def build_hidden_words(refresh):
 
 
 def stable_id(entry):
-    seed = f"{entry['collection']}\n{entry['text']}".encode("utf-8")
-    return int.from_bytes(hashlib.sha1(seed).digest()[:4], "big")
+    parts = [entry["collection"], entry["section"], entry["text"]] if entry["collection"] == RUHI \
+        else [entry["collection"], entry["text"]]
+    return int.from_bytes(hashlib.sha1("\n".join(parts).encode("utf-8")).digest()[:4], "big")
 
 
 def main():
@@ -255,9 +259,11 @@ def main():
         {key: entry[key] for key in FIELDS if key in entry}
         for entry in existing
         if entry["collection"] not in {PRAYERS, HIDDEN_WORDS, "Writings"}
+        and not entry["collection"].startswith(RUHI)
     ]
+    ruhi = json.loads(RUHI_PATH.read_text(encoding="utf-8"))
 
-    entries = build_prayers(args.refresh) + build_hidden_words(args.refresh) + carried
+    entries = build_prayers(args.refresh) + build_hidden_words(args.refresh) + ruhi + carried
     for entry in entries:
         entry["id"] = stable_id(entry)
     entries = [{key: entry.get(key) for key in FIELDS} for entry in entries]
