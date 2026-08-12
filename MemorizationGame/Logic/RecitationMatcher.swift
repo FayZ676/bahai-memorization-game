@@ -21,6 +21,7 @@ struct RecitationMatcher {
     private static let attemptBudget = 3
     private static let confidenceFloor = 0.25
     private static let movedOnMargin = 2
+    private static let unsettledMovedOnMargin = 6
     private static let lookahead = 12
     private static let heardWindow = 6
 
@@ -122,13 +123,12 @@ struct RecitationMatcher {
         }
         judged = max(judged, spoken.count)
 
-        if isFinal {
-            for index in hiddenIndices where index + Self.movedOnMargin < frontier {
-                guard !matched.contains(index), !missed.contains(index) else { continue }
-                missed.insert(index)
-                record(index, spoken: spoken, alignment: alignment)
-                events.append(.missed(index: index, movedOn: true))
-            }
+        let margin = isFinal ? Self.movedOnMargin : Self.unsettledMovedOnMargin
+        for index in hiddenIndices where index + margin < frontier {
+            guard !matched.contains(index), !missed.contains(index) else { continue }
+            missed.insert(index)
+            record(index, spoken: spoken, alignment: alignment)
+            events.append(.missed(index: index, movedOn: true))
         }
 
         RecitationTrace.emit(
