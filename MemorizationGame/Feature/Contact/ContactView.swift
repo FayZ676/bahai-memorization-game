@@ -228,10 +228,7 @@ private struct AttemptRow: View {
     }
 
     private var misses: Text {
-        guard !attempt.misses.isEmpty else {
-            return Text("Every word was heard").font(missFont).foregroundStyle(Theme.muted)
-        }
-        return attempt.misses
+        attempt.misses
             .map { miss in
                 Text(miss.expected).font(missFont).foregroundStyle(Theme.ink)
                     + Text(" → ").font(missFont).foregroundStyle(Theme.faint)
