@@ -14,15 +14,50 @@ then asserts each is 1024×1024 with the correct alpha. Needs headless Chrome to
 ## The mark
 
 A nine-pointed star, drawn as a **band** rather than a filled shape: a thick green enamel
-stroke with metallic gold piping along both edges and a hollow centre. Colour is held at full
-strength through the exact horizontal centre, then fades out, reaching zero just before the
+stroke with metallic gold piping along both edges and a hollow centre. Colour is full at the
+leftmost point and thins all the way across, gaining pace as it goes and reaching zero at the
 rightmost point — learned things fade, and you come back to them.
+
+The fade is deliberately uneven. `FADE_STOPS` is the underlying ramp — solid at the left,
+shedding slowly at first and steeply past the middle — but that ramp is never used straight.
+A filter warps it before it becomes a mask, so no two arms of the star fade at the same rate
+or end in the same place.
 
 Geometry is the nonagram `{9/3}` — nine points at 40°, inner radius ratio 0.6527. That is the
 three-overlapping-triangles construction, the canonical Bahá'í form. Do not eyeball the inner
 radius; the ratio is `cos(60°)/cos(40°)`.
 
+## How the fade is warped
+
+Two layers of `feTurbulence`, both applied to the ramp inside the `organic` filter:
+
+- **Drift** displaces the ramp horizontally, so the fade front wanders instead of running down
+  a straight vertical line. `DRIFT_FREQ` is anisotropic on purpose — coarser across than down,
+  so variation reads arm-to-arm rather than as ripple. The drift map is itself pulled back to
+  neutral 0.5 by the ramp (`driftHeld`), because a displacement that stays live at the left
+  drags faded pixels inward and eats the solid arm the design depends on.
+- **Mottle** eats patches out of what survives, windowed by the ramp itself (`opened` is
+  `1 - ramp`), so the patches are absent at the left and strongest at the right. That window is
+  what keeps the left edge solid without a second gradient.
+
+`fractalNoise` clusters tightly around 0.5, so raw turbulence moves almost nothing. Both layers
+are stretched by a `feComponentTransfer` first — `DRIFT_CONTRAST` and `MOTTLE_DEPTH` are the
+dials worth turning. Turning `DRIFT` alone mostly does nothing.
+
+Both layers run at **two** octaves and low frequencies. The icon is judged at 40px, and extra
+octaves only add fine grain that averages back to a flat wash at that size. Bigger, fewer,
+higher-contrast shapes are what survive the downscale.
+
 ## Things that will bite you
+
+**Do not combine mask layers with `feComposite operator="arithmetic"`.** It runs on alpha too,
+so `k1="-1" k2="1"` over two opaque layers yields alpha `1·(1-1) = 0`, the mask goes black, and
+the star disappears from all three icons with no error anywhere. Multiply with
+`feBlend mode="multiply"`, which leaves alpha alone.
+
+**The mask rect is bled `BLEED` px past the plate.** The displacement pulls pixels in from
+outside the star, and if it samples past the rect it pulls in transparency — which reads as
+*hidden*, punching holes in the solid left side.
 
 **The gold only reads as metal because the foil gradient repeats.** It is a
 `spreadMethod="reflect"` gradient with a ~150px period, so bright and dark bands cycle several
