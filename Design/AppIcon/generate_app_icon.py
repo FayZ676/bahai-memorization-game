@@ -42,27 +42,8 @@ FOIL_GREY = [
 FOIL_PERIOD = 150.0
 FOIL_DIR = (1.0, 0.85)
 
-FADE_STOPS = [
-    (0.00, 1.00), (0.22, 0.95), (0.42, 0.82),
-    (0.60, 0.60), (0.76, 0.34), (0.90, 0.12), (1.00, 0.00),
-]
-
-DRIFT = 330.0
-DRIFT_FREQ = (0.0021, 0.0044)
-DRIFT_OCTAVES = 2
-DRIFT_SEED = 11
-DRIFT_CONTRAST = 3.2
-MOTTLE_FREQ = (0.0062, 0.0090)
-MOTTLE_OCTAVES = 3
-MOTTLE_SEED = 29
-MOTTLE_CONTRAST = 3.0
-MOTTLE_LIFT = 0.50
-MOTTLE_DEPTH = 0.85
-MOTTLE_ONSET = 0.62
-BLEED = 420
-
-GREY_MATRIX = ("0.34 0.33 0.33 0 0  0.34 0.33 0.33 0 0  "
-               "0.34 0.33 0.33 0 0  0 0 0 0 1")
+FADE_START, FADE_MID, FADE_END = 0.50, 0.76, 0.92
+FADE_MID_ALPHA = 0.16
 
 _COS = [math.cos(math.radians(-90 + (360 / POINTS) * k)) for k in range(POINTS)]
 XMIN = CX + min(_COS) * RADIUS - STROKE_HALF
@@ -99,10 +80,9 @@ def render_svg(uid, green, foil, ground, shadow):
     length = math.hypot(dx, dy)
     dx, dy = dx / length * FOIL_PERIOD, dy / length * FOIL_PERIOD
 
-    fade_stops = "".join(
-        '<stop offset="%.3f" stop-color="#%02X%02X%02X"/>' % ((o,) + (round(v * 255),) * 3)
-        for o, v in FADE_STOPS
-    )
+    x1, x2 = XMIN + FADE_START * SPAN, XMIN + FADE_END * SPAN
+    mid_offset = (FADE_MID - FADE_START) / (FADE_END - FADE_START)
+    mid_hex = "%02X" % round(FADE_MID_ALPHA * 255)
 
     if ground is None:
         ground_def = ground_use = ""
@@ -125,74 +105,13 @@ def render_svg(uid, green, foil, ground, shadow):
   {ground_def}
   <linearGradient id="foil{uid}" gradientUnits="userSpaceOnUse" spreadMethod="reflect"
     x1="{XMIN:.1f}" y1="0" x2="{XMIN + dx:.1f}" y2="{dy:.1f}">{foil_stops}</linearGradient>
-  <linearGradient id="fadeG{uid}" gradientUnits="userSpaceOnUse"
-    x1="{XMIN:.1f}" y1="0" x2="{XMIN + SPAN:.1f}" y2="0">{fade_stops}</linearGradient>
-  <filter id="organic{uid}" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">
-    <feTurbulence type="fractalNoise" baseFrequency="{DRIFT_FREQ[0]} {DRIFT_FREQ[1]}"
-      numOctaves="{DRIFT_OCTAVES}" seed="{DRIFT_SEED}" result="drift"/>
-    <feColorMatrix in="drift" type="matrix" values="{GREY_MATRIX}" result="driftGrey"/>
-    <feComponentTransfer in="driftGrey" result="driftWide">
-      <feFuncR type="linear" slope="{DRIFT_CONTRAST}" intercept="{0.5 - DRIFT_CONTRAST / 2}"/>
-      <feFuncG type="linear" slope="{DRIFT_CONTRAST}" intercept="{0.5 - DRIFT_CONTRAST / 2}"/>
-      <feFuncB type="linear" slope="{DRIFT_CONTRAST}" intercept="{0.5 - DRIFT_CONTRAST / 2}"/>
-    </feComponentTransfer>
-    <feComponentTransfer in="SourceGraphic" result="right">
-      <feFuncR type="linear" slope="-1" intercept="1"/>
-      <feFuncG type="linear" slope="-1" intercept="1"/>
-      <feFuncB type="linear" slope="-1" intercept="1"/>
-    </feComponentTransfer>
-    <feComponentTransfer in="SourceGraphic" result="halfLeft">
-      <feFuncR type="linear" slope="0.5"/>
-      <feFuncG type="linear" slope="0.5"/>
-      <feFuncB type="linear" slope="0.5"/>
-    </feComponentTransfer>
-    <feBlend in="driftWide" in2="right" mode="multiply" result="driftRight"/>
-    <feComposite in="driftRight" in2="halfLeft" operator="arithmetic"
-      k1="0" k2="1" k3="1" k4="0" result="driftHeld"/>
-    <feDisplacementMap in="SourceGraphic" in2="driftHeld" scale="{DRIFT}"
-      xChannelSelector="R" yChannelSelector="G" result="wander"/>
-    <feTurbulence type="fractalNoise" baseFrequency="{MOTTLE_FREQ[0]} {MOTTLE_FREQ[1]}"
-      numOctaves="{MOTTLE_OCTAVES}" seed="{MOTTLE_SEED}" result="grain"/>
-    <feColorMatrix in="grain" type="matrix" values="{GREY_MATRIX}" result="grainGrey"/>
-    <feComponentTransfer in="grainGrey" result="grainWide">
-      <feFuncR type="linear" slope="{MOTTLE_CONTRAST}" intercept="{0.5 - MOTTLE_CONTRAST / 2}"/>
-      <feFuncG type="linear" slope="{MOTTLE_CONTRAST}" intercept="{0.5 - MOTTLE_CONTRAST / 2}"/>
-      <feFuncB type="linear" slope="{MOTTLE_CONTRAST}" intercept="{0.5 - MOTTLE_CONTRAST / 2}"/>
-    </feComponentTransfer>
-    <feComponentTransfer in="grainWide" result="holding">
-      <feFuncR type="linear" slope="{2 * MOTTLE_LIFT}" intercept="-{MOTTLE_LIFT}"/>
-      <feFuncG type="linear" slope="{2 * MOTTLE_LIFT}" intercept="-{MOTTLE_LIFT}"/>
-      <feFuncB type="linear" slope="{2 * MOTTLE_LIFT}" intercept="-{MOTTLE_LIFT}"/>
-    </feComponentTransfer>
-    <feComponentTransfer in="grainWide" result="thinning">
-      <feFuncR type="linear" slope="-{2 * MOTTLE_DEPTH}" intercept="{MOTTLE_DEPTH}"/>
-      <feFuncG type="linear" slope="-{2 * MOTTLE_DEPTH}" intercept="{MOTTLE_DEPTH}"/>
-      <feFuncB type="linear" slope="-{2 * MOTTLE_DEPTH}" intercept="{MOTTLE_DEPTH}"/>
-    </feComponentTransfer>
-    <feComponentTransfer in="wander" result="past">
-      <feFuncR type="linear" slope="-1" intercept="1"/>
-      <feFuncG type="linear" slope="-1" intercept="1"/>
-      <feFuncB type="linear" slope="-1" intercept="1"/>
-    </feComponentTransfer>
-    <feComponentTransfer in="past" result="opened">
-      <feFuncR type="gamma" amplitude="1" exponent="{MOTTLE_ONSET}" offset="0"/>
-      <feFuncG type="gamma" amplitude="1" exponent="{MOTTLE_ONSET}" offset="0"/>
-      <feFuncB type="gamma" amplitude="1" exponent="{MOTTLE_ONSET}" offset="0"/>
-    </feComponentTransfer>
-    <feBlend in="holding" in2="opened" mode="multiply" result="boost"/>
-    <feBlend in="thinning" in2="opened" mode="multiply" result="bite"/>
-    <feComposite in="wander" in2="boost" operator="arithmetic"
-      k1="0" k2="1" k3="1" k4="0" result="lifted"/>
-    <feComponentTransfer in="bite" result="keep">
-      <feFuncR type="linear" slope="-1" intercept="1"/>
-      <feFuncG type="linear" slope="-1" intercept="1"/>
-      <feFuncB type="linear" slope="-1" intercept="1"/>
-    </feComponentTransfer>
-    <feBlend in="lifted" in2="keep" mode="multiply"/>
-  </filter>
+  <linearGradient id="fadeG{uid}" gradientUnits="userSpaceOnUse" x1="{x1:.1f}" y1="0" x2="{x2:.1f}" y2="0">
+    <stop offset="0" stop-color="#FFFFFF"/>
+    <stop offset="{mid_offset:.3f}" stop-color="#{mid_hex}{mid_hex}{mid_hex}"/>
+    <stop offset="1" stop-color="#000000"/>
+  </linearGradient>
   <mask id="fade{uid}" maskUnits="userSpaceOnUse" x="0" y="0" width="{PLATE}" height="{PLATE}">
-    <rect x="-{BLEED}" y="-{BLEED}" width="{PLATE + 2 * BLEED}" height="{PLATE + 2 * BLEED}"
-      fill="url(#fadeG{uid})" filter="url(#organic{uid})"/>
+    <rect width="{PLATE}" height="{PLATE}" fill="url(#fadeG{uid})"/>
   </mask>
   {shadow_def}
 </defs>
