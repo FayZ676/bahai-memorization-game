@@ -15,6 +15,10 @@ then asserts each is 1024×1024 with the correct alpha. Needs headless Chrome to
 the two treatments. Those four are review artefacts only; nothing reads them at build time, and
 the iconset itself always ships the faded star.
 
+The default run also writes `Assets.xcassets/SplashStar.imageset` — the **unfaded** star on a
+transparent ground, light and dark. The splash screen animates the fade itself, so it needs the
+star whole; it sits on `Theme.bg`, not on the icon's warm cream.
+
 ## The mark
 
 A nine-pointed star, drawn as a **band** rather than a filled shape: a thick green enamel
@@ -40,6 +44,10 @@ shifted by `FADE_S_AMPLITUDE * sin` of its height — one sine period top to bot
 count that leaves a fractional height the rect edges land off the pixel grid and antialias into
 visible seams across the solid green; keep the count a power of two and the rects on
 `crispEdges`.
+
+**`StarFadeMask.swift` mirrors the fade constants, and nothing enforces that.** The splash
+animates this same S front in SwiftUI, so `StarFadeGeometry` restates the geometry and the
+`FADE_*` values. Change them here and the splash stops landing on the shipped icon — update both.
 
 **The ground is warm cream, and that contradicts the design system on purpose.**
 `design-theme.html` specifies paper as `#ECEEE8`, explicitly "cool luminous paper (not warm

@@ -161,6 +161,39 @@ VARIANTS = {
 }
 
 
+SPLASH = {
+    "SplashStar": dict(uid="spl", green=GREEN_LIGHT, foil=FOIL,
+                       ground=None, shadow=0.07, fade=False, opaque=False),
+    "SplashStar-Dark": dict(uid="spd", green=GREEN_DARK, foil=FOIL,
+                            ground=None, shadow=0.0, fade=False, opaque=False),
+}
+
+SPLASH_SET = REPO / "MemorizationGame/Assets.xcassets/SplashStar.imageset"
+
+SPLASH_CONTENTS = """{
+  "images" : [
+    {
+      "filename" : "SplashStar.png",
+      "idiom" : "universal"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "SplashStar-Dark.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
+"""
+
 PREVIEWS = {
     "Light-Fade": dict(VARIANTS["AppIcon"], uid="pltf", fade=True),
     "Light-Plain": dict(VARIANTS["AppIcon"], uid="pltp", fade=False),
@@ -247,8 +280,25 @@ def main():
 
         print(f"  {name}.png  {width}x{height}  alpha={'yes' if has_alpha else 'no'}")
 
+    if not args.svg_only:
+        SPLASH_SET.mkdir(parents=True, exist_ok=True)
+        (SPLASH_SET / "Contents.json").write_text(SPLASH_CONTENTS)
+        for name, spec in SPLASH.items():
+            spec = dict(spec)
+            spec.pop("opaque")
+            svg_path = work / f"{name}.svg"
+            svg_path.write_text(render_svg(**spec))
+            png_path = SPLASH_SET / f"{name}.png"
+            rasterise(chrome, svg_path, png_path, transparent=True)
+            width, height, has_alpha = png_info(png_path)
+            if not has_alpha:
+                sys.exit(f"{name}: splash star must be transparent")
+            print(f"  {name}.png  {width}x{height}  alpha=yes")
+
     shutil.rmtree(work, ignore_errors=True)
     print(f"\nWrote to {ICONSET.relative_to(REPO)}")
+    if not args.svg_only:
+        print(f"Wrote to {SPLASH_SET.relative_to(REPO)}")
 
 
 if __name__ == "__main__":

@@ -3,6 +3,7 @@ import SwiftUI
 @main
 struct MemorizationGameApp: App {
     @State private var store = AppStore()
+    @State private var splashFinished = false
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
@@ -15,16 +16,26 @@ struct MemorizationGameApp: App {
 
     var body: some Scene {
         WindowGroup {
-            LibraryView()
-                .environment(store)
-                .environment(\.fontScale, store.settings.fontSize.scale)
-                .tint(Theme.accent)
-                .preferredColorScheme(store.settings.appTheme.colorScheme)
-                .task { ReminderScheduler.sync(store.settings) }
-                .onChange(of: scenePhase, initial: true) { _, phase in
-                    guard phase == .active else { return }
-                    store.syncStreakReminder()
+            ZStack {
+                LibraryView()
+                    .environment(store)
+                    .environment(\.fontScale, store.settings.fontSize.scale)
+                    .task { ReminderScheduler.sync(store.settings) }
+                    .onChange(of: scenePhase, initial: true) { _, phase in
+                        guard phase == .active else { return }
+                        store.syncStreakReminder()
+                    }
+
+                if !splashFinished {
+                    SplashView {
+                        withAnimation(Motion.fade) { splashFinished = true }
+                    }
+                    .transition(.opacity)
+                    .zIndex(1)
                 }
+            }
+            .tint(Theme.accent)
+            .preferredColorScheme(store.settings.appTheme.colorScheme)
         }
     }
 }
