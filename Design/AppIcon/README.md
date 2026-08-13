@@ -15,8 +15,9 @@ then asserts each is 1024×1024 with the correct alpha. Needs headless Chrome to
 
 A nine-pointed star, drawn as a **band** rather than a filled shape: a thick green enamel
 stroke with metallic gold piping along both edges and a hollow centre. Colour is held at full
-strength through the exact horizontal centre, then fades out, reaching zero just before the
-rightmost point — learned things fade, and you come back to them.
+strength across the left third, then fades out, reaching zero just before the rightmost point —
+learned things fade, and you come back to them. The fade front is not a vertical line: it bows
+left through the upper half and right through the lower half, an S leaning across the star.
 
 Geometry is the nonagram `{9/3}` — nine points at 40°, inner radius ratio 0.6527. That is the
 three-overlapping-triangles construction, the canonical Bahá'í form. Do not eyeball the inner
@@ -28,6 +29,13 @@ radius; the ratio is `cos(60°)/cos(40°)`.
 `spreadMethod="reflect"` gradient with a ~150px period, so bright and dark bands cycle several
 times around the star. A single gradient stretched across the whole shape puts each 12px length
 of piping on one flat tone, and it goes back to looking like dull bronze.
+
+**The S fade is a stack of strips, and the strip height must divide 1024.** SVG has no curved
+gradient, so the mask is `FADE_STRIPS` horizontal rects, each carrying the same fade gradient
+shifted by `FADE_S_AMPLITUDE * sin` of its height — one sine period top to bottom. At a strip
+count that leaves a fractional height the rect edges land off the pixel grid and antialias into
+visible seams across the solid green; keep the count a power of two and the rects on
+`crispEdges`.
 
 **The ground is warm cream, and that contradicts the design system on purpose.**
 `design-theme.html` specifies paper as `#ECEEE8`, explicitly "cool luminous paper (not warm

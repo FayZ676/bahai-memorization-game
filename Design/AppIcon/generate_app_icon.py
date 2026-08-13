@@ -42,12 +42,18 @@ FOIL_GREY = [
 FOIL_PERIOD = 150.0
 FOIL_DIR = (1.0, 0.85)
 
-FADE_START, FADE_MID, FADE_END = 0.50, 0.76, 0.92
+FADE_START, FADE_MID, FADE_END = 0.30, 0.68, 0.92
 FADE_MID_ALPHA = 0.16
+FADE_S_AMPLITUDE = 0.11
+FADE_S_PHASE = 0.5
+FADE_STRIPS = 128
 
 _COS = [math.cos(math.radians(-90 + (360 / POINTS) * k)) for k in range(POINTS)]
+_SIN = [math.sin(math.radians(-90 + (360 / POINTS) * k)) for k in range(POINTS)]
 XMIN = CX + min(_COS) * RADIUS - STROKE_HALF
 SPAN = (CX + max(_COS) * RADIUS + STROKE_HALF) - XMIN
+YMIN = CY + min(_SIN) * RADIUS - STROKE_HALF
+YSPAN = (CY + max(_SIN) * RADIUS + STROKE_HALF) - YMIN
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
 ICONSET = REPO / "MemorizationGame/Assets.xcassets/AppIcon.appiconset"
@@ -72,6 +78,32 @@ def star_points(radius=RADIUS, ratio=RATIO, rotation=-90.0, n=POINTS):
     return " ".join("%.2f,%.2f" % p for p in pts)
 
 
+def fade_mask(uid):
+    mid_offset = (FADE_MID - FADE_START) / (FADE_END - FADE_START)
+    mid_hex = "%02X" % round(FADE_MID_ALPHA * 255)
+    stops = (f'<stop offset="0" stop-color="#FFFFFF"/>'
+             f'<stop offset="{mid_offset:.3f}" stop-color="#{mid_hex}{mid_hex}{mid_hex}"/>'
+             f'<stop offset="1" stop-color="#000000"/>')
+
+    height = PLATE / FADE_STRIPS
+    defs, rects = [], []
+    for k in range(FADE_STRIPS):
+        y = (k + 0.5) * height
+        t = min(1.0, max(0.0, (y - YMIN) / YSPAN))
+        shift = FADE_S_AMPLITUDE * SPAN * math.sin(2 * math.pi * (t + FADE_S_PHASE))
+        x1 = XMIN + FADE_START * SPAN + shift
+        x2 = XMIN + FADE_END * SPAN + shift
+        defs.append(f'<linearGradient id="fadeG{uid}{k}" gradientUnits="userSpaceOnUse" '
+                    f'x1="{x1:.1f}" y1="0" x2="{x2:.1f}" y2="0">{stops}</linearGradient>')
+        rects.append(f'<rect x="0" y="{k * height:.2f}" width="{PLATE}" '
+                     f'height="{height + 1:.2f}" shape-rendering="crispEdges" '
+                     f'fill="url(#fadeG{uid}{k})"/>')
+
+    return ("".join(defs)
+            + f'<mask id="fade{uid}" maskUnits="userSpaceOnUse" x="0" y="0" '
+              f'width="{PLATE}" height="{PLATE}">' + "".join(rects) + '</mask>')
+
+
 def render_svg(uid, green, foil, ground, shadow):
     pts = star_points()
     foil_stops = "".join(f'<stop offset="{o}" stop-color="{c}"/>' for o, c in foil)
@@ -79,10 +111,6 @@ def render_svg(uid, green, foil, ground, shadow):
     dx, dy = FOIL_DIR
     length = math.hypot(dx, dy)
     dx, dy = dx / length * FOIL_PERIOD, dy / length * FOIL_PERIOD
-
-    x1, x2 = XMIN + FADE_START * SPAN, XMIN + FADE_END * SPAN
-    mid_offset = (FADE_MID - FADE_START) / (FADE_END - FADE_START)
-    mid_hex = "%02X" % round(FADE_MID_ALPHA * 255)
 
     if ground is None:
         ground_def = ground_use = ""
@@ -105,14 +133,7 @@ def render_svg(uid, green, foil, ground, shadow):
   {ground_def}
   <linearGradient id="foil{uid}" gradientUnits="userSpaceOnUse" spreadMethod="reflect"
     x1="{XMIN:.1f}" y1="0" x2="{XMIN + dx:.1f}" y2="{dy:.1f}">{foil_stops}</linearGradient>
-  <linearGradient id="fadeG{uid}" gradientUnits="userSpaceOnUse" x1="{x1:.1f}" y1="0" x2="{x2:.1f}" y2="0">
-    <stop offset="0" stop-color="#FFFFFF"/>
-    <stop offset="{mid_offset:.3f}" stop-color="#{mid_hex}{mid_hex}{mid_hex}"/>
-    <stop offset="1" stop-color="#000000"/>
-  </linearGradient>
-  <mask id="fade{uid}" maskUnits="userSpaceOnUse" x="0" y="0" width="{PLATE}" height="{PLATE}">
-    <rect width="{PLATE}" height="{PLATE}" fill="url(#fadeG{uid})"/>
-  </mask>
+  {fade_mask(uid)}
   {shadow_def}
 </defs>
 {ground_use}
