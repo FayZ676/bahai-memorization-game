@@ -11,6 +11,10 @@ Writes `AppIcon.png`, `AppIcon-Dark.png` and `AppIcon-Tinted.png` straight into 
 then asserts each is 1024×1024 with the correct alpha. Needs headless Chrome to rasterise
 (`CHROME=/path/to/chrome` to override the search). `--svg-only` dumps the SVGs here instead.
 
+`--previews` writes `previews/` — light and dark, each with and without the fade — for comparing
+the two treatments. Those four are review artefacts only; nothing reads them at build time, and
+the iconset itself always ships the faded star.
+
 ## The mark
 
 A nine-pointed star, drawn as a **band** rather than a filled shape: a thick green enamel

@@ -104,7 +104,7 @@ def fade_mask(uid):
               f'width="{PLATE}" height="{PLATE}">' + "".join(rects) + '</mask>')
 
 
-def render_svg(uid, green, foil, ground, shadow):
+def render_svg(uid, green, foil, ground, shadow, fade=True):
     pts = star_points()
     foil_stops = "".join(f'<stop offset="{o}" stop-color="{c}"/>' for o, c in foil)
 
@@ -128,16 +128,19 @@ def render_svg(uid, green, foil, ground, shadow):
     else:
         shadow_def = shadow_use = ""
 
+    fade_def = fade_mask(uid) if fade else ""
+    fade_use = f' mask="url(#fade{uid})"' if fade else ""
+
     return f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {PLATE} {PLATE}" width="{PLATE}" height="{PLATE}">
 <defs>
   {ground_def}
   <linearGradient id="foil{uid}" gradientUnits="userSpaceOnUse" spreadMethod="reflect"
     x1="{XMIN:.1f}" y1="0" x2="{XMIN + dx:.1f}" y2="{dy:.1f}">{foil_stops}</linearGradient>
-  {fade_mask(uid)}
+  {fade_def}
   {shadow_def}
 </defs>
 {ground_use}
-<g mask="url(#fade{uid})">
+<g{fade_use}>
   <g{shadow_use}>
     <polygon points="{pts}" fill="none" stroke="url(#foil{uid})"
       stroke-width="{BAND + 2 * PIPE}" stroke-linejoin="miter" stroke-miterlimit="12"/>
@@ -156,6 +159,16 @@ VARIANTS = {
     "AppIcon-Tinted": dict(uid="tn", green=GREY_ENAMEL, foil=FOIL_GREY,
                            ground=None, shadow=0.0, opaque=False),
 }
+
+
+PREVIEWS = {
+    "Light-Fade": dict(VARIANTS["AppIcon"], uid="pltf", fade=True),
+    "Light-Plain": dict(VARIANTS["AppIcon"], uid="pltp", fade=False),
+    "Dark-Fade": dict(VARIANTS["AppIcon-Dark"], uid="pdkf", fade=True),
+    "Dark-Plain": dict(VARIANTS["AppIcon-Dark"], uid="pdkp", fade=False),
+}
+
+PREVIEW_DIR = pathlib.Path(__file__).resolve().parent / "previews"
 
 
 def find_chrome():
@@ -187,11 +200,28 @@ def png_info(path):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--svg-only", action="store_true")
+    parser.add_argument("--previews", action="store_true")
     args = parser.parse_args()
 
-    ICONSET.mkdir(parents=True, exist_ok=True)
     work = pathlib.Path(tempfile.mkdtemp(prefix="verses-icon-"))
     chrome = None if args.svg_only else find_chrome()
+
+    if args.previews:
+        PREVIEW_DIR.mkdir(parents=True, exist_ok=True)
+        for name, spec in PREVIEWS.items():
+            spec = dict(spec)
+            opaque = spec.pop("opaque")
+            svg_path = work / f"{name}.svg"
+            svg_path.write_text(render_svg(**spec))
+            png_path = PREVIEW_DIR / f"AppIcon-{name}.png"
+            rasterise(chrome, svg_path, png_path, transparent=not opaque)
+            width, height, has_alpha = png_info(png_path)
+            print(f"  AppIcon-{name}.png  {width}x{height}  alpha={'yes' if has_alpha else 'no'}")
+        shutil.rmtree(work, ignore_errors=True)
+        print(f"\nWrote to {PREVIEW_DIR.relative_to(REPO)}")
+        return
+
+    ICONSET.mkdir(parents=True, exist_ok=True)
 
     for name, spec in VARIANTS.items():
         opaque = spec.pop("opaque")
