@@ -47,15 +47,18 @@ FADE_STOPS = [
     (0.60, 0.60), (0.76, 0.34), (0.90, 0.12), (1.00, 0.00),
 ]
 
-DRIFT = 430.0
-DRIFT_FREQ = (0.0013, 0.0029)
+DRIFT = 330.0
+DRIFT_FREQ = (0.0021, 0.0044)
 DRIFT_OCTAVES = 2
 DRIFT_SEED = 11
-DRIFT_CONTRAST = 3.4
-MOTTLE_FREQ = (0.0020, 0.0036)
-MOTTLE_OCTAVES = 2
+DRIFT_CONTRAST = 3.2
+MOTTLE_FREQ = (0.0062, 0.0090)
+MOTTLE_OCTAVES = 3
 MOTTLE_SEED = 29
-MOTTLE_DEPTH = 3.6
+MOTTLE_CONTRAST = 3.0
+MOTTLE_LIFT = 0.50
+MOTTLE_DEPTH = 0.85
+MOTTLE_ONSET = 0.62
 BLEED = 420
 
 GREY_MATRIX = ("0.34 0.33 0.33 0 0  0.34 0.33 0.33 0 0  "
@@ -151,23 +154,41 @@ def render_svg(uid, green, foil, ground, shadow):
     <feTurbulence type="fractalNoise" baseFrequency="{MOTTLE_FREQ[0]} {MOTTLE_FREQ[1]}"
       numOctaves="{MOTTLE_OCTAVES}" seed="{MOTTLE_SEED}" result="grain"/>
     <feColorMatrix in="grain" type="matrix" values="{GREY_MATRIX}" result="grainGrey"/>
-    <feComponentTransfer in="grainGrey" result="thinning">
-      <feFuncR type="linear" slope="-{MOTTLE_DEPTH}" intercept="{MOTTLE_DEPTH / 2}"/>
-      <feFuncG type="linear" slope="-{MOTTLE_DEPTH}" intercept="{MOTTLE_DEPTH / 2}"/>
-      <feFuncB type="linear" slope="-{MOTTLE_DEPTH}" intercept="{MOTTLE_DEPTH / 2}"/>
+    <feComponentTransfer in="grainGrey" result="grainWide">
+      <feFuncR type="linear" slope="{MOTTLE_CONTRAST}" intercept="{0.5 - MOTTLE_CONTRAST / 2}"/>
+      <feFuncG type="linear" slope="{MOTTLE_CONTRAST}" intercept="{0.5 - MOTTLE_CONTRAST / 2}"/>
+      <feFuncB type="linear" slope="{MOTTLE_CONTRAST}" intercept="{0.5 - MOTTLE_CONTRAST / 2}"/>
     </feComponentTransfer>
-    <feComponentTransfer in="wander" result="opened">
+    <feComponentTransfer in="grainWide" result="holding">
+      <feFuncR type="linear" slope="{2 * MOTTLE_LIFT}" intercept="-{MOTTLE_LIFT}"/>
+      <feFuncG type="linear" slope="{2 * MOTTLE_LIFT}" intercept="-{MOTTLE_LIFT}"/>
+      <feFuncB type="linear" slope="{2 * MOTTLE_LIFT}" intercept="-{MOTTLE_LIFT}"/>
+    </feComponentTransfer>
+    <feComponentTransfer in="grainWide" result="thinning">
+      <feFuncR type="linear" slope="-{2 * MOTTLE_DEPTH}" intercept="{MOTTLE_DEPTH}"/>
+      <feFuncG type="linear" slope="-{2 * MOTTLE_DEPTH}" intercept="{MOTTLE_DEPTH}"/>
+      <feFuncB type="linear" slope="-{2 * MOTTLE_DEPTH}" intercept="{MOTTLE_DEPTH}"/>
+    </feComponentTransfer>
+    <feComponentTransfer in="wander" result="past">
       <feFuncR type="linear" slope="-1" intercept="1"/>
       <feFuncG type="linear" slope="-1" intercept="1"/>
       <feFuncB type="linear" slope="-1" intercept="1"/>
     </feComponentTransfer>
-    <feBlend in="opened" in2="thinning" mode="multiply" result="bite"/>
+    <feComponentTransfer in="past" result="opened">
+      <feFuncR type="gamma" amplitude="1" exponent="{MOTTLE_ONSET}" offset="0"/>
+      <feFuncG type="gamma" amplitude="1" exponent="{MOTTLE_ONSET}" offset="0"/>
+      <feFuncB type="gamma" amplitude="1" exponent="{MOTTLE_ONSET}" offset="0"/>
+    </feComponentTransfer>
+    <feBlend in="holding" in2="opened" mode="multiply" result="boost"/>
+    <feBlend in="thinning" in2="opened" mode="multiply" result="bite"/>
+    <feComposite in="wander" in2="boost" operator="arithmetic"
+      k1="0" k2="1" k3="1" k4="0" result="lifted"/>
     <feComponentTransfer in="bite" result="keep">
       <feFuncR type="linear" slope="-1" intercept="1"/>
       <feFuncG type="linear" slope="-1" intercept="1"/>
       <feFuncB type="linear" slope="-1" intercept="1"/>
     </feComponentTransfer>
-    <feBlend in="wander" in2="keep" mode="multiply"/>
+    <feBlend in="lifted" in2="keep" mode="multiply"/>
   </filter>
   <mask id="fade{uid}" maskUnits="userSpaceOnUse" x="0" y="0" width="{PLATE}" height="{PLATE}">
     <rect x="-{BLEED}" y="-{BLEED}" width="{PLATE + 2 * BLEED}" height="{PLATE + 2 * BLEED}"

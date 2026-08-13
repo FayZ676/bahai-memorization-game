@@ -36,17 +36,25 @@ Two layers of `feTurbulence`, both applied to the ramp inside the `organic` filt
   so variation reads arm-to-arm rather than as ripple. The drift map is itself pulled back to
   neutral 0.5 by the ramp (`driftHeld`), because a displacement that stays live at the left
   drags faded pixels inward and eats the solid arm the design depends on.
-- **Mottle** eats patches out of what survives, windowed by the ramp itself (`opened` is
-  `1 - ramp`), so the patches are absent at the left and strongest at the right. That window is
-  what keeps the left edge solid without a second gradient.
+- **Mottle** pushes the ramp *both* ways: `holding` patches keep more colour than the ramp
+  alone, `thinning` patches lose more. It is windowed by the ramp itself (`past` is `1 - ramp`,
+  softened by `MOTTLE_ONSET`), so the patches are absent at the left and strongest at the right.
+  That window is what keeps the left edge solid without a second gradient.
+
+A mottle that only subtracts does not read as mottling. Multiplying a ramp that is already
+heading to zero just makes a faint area fainter — the eye sees a smooth fade with a wavy edge.
+The patches that hold *more* than the ramp are what make it look like worn enamel, so
+`MOTTLE_LIFT` matters at least as much as `MOTTLE_DEPTH`.
 
 `fractalNoise` clusters tightly around 0.5, so raw turbulence moves almost nothing. Both layers
-are stretched by a `feComponentTransfer` first — `DRIFT_CONTRAST` and `MOTTLE_DEPTH` are the
-dials worth turning. Turning `DRIFT` alone mostly does nothing.
+are stretched by a `feComponentTransfer` first — `DRIFT_CONTRAST` and `MOTTLE_CONTRAST` are
+what give the noise a usable range, and turning `DRIFT` alone mostly does nothing.
 
-Both layers run at **two** octaves and low frequencies. The icon is judged at 40px, and extra
-octaves only add fine grain that averages back to a flat wash at that size. Bigger, fewer,
-higher-contrast shapes are what survive the downscale.
+Feature size is the thing to get right, and it is judged at 40px, not at 1024. Too fine and
+every blotch averages back into a flat wash on the home screen; too coarse and the star loses
+whole arms and stops reading as a nine-pointed star at all. The frequencies here sit between
+those two failures — keep octaves low, since the extra ones only contribute grain that the
+downscale eats.
 
 ## Things that will bite you
 
