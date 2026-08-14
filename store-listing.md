@@ -83,8 +83,12 @@ Upload the `-framed/` folders in filename order — 4 × iPhone 6.9" (1320×2868
 `Design/StoreFrames/`. They read as one pass through the app: choose a prayer, hide a
 word, hide more, know it. The closing tile is dark, which is where the app's dark
 appearance gets shown. The bare folders in `store-screenshots/` are the raw captures those
-are built from, with regeneration instructions. The recitation screen is not among them; speech
-recognition can't reach its listening state in a simulator.
+are built from, with regeneration instructions.
+
+A fifth iPhone tile, `4-recite.png` ("Then say it out loud."), is defined in
+`Design/StoreFrames/` but has no raw capture: speech recognition can't reach its listening
+state in a simulator, so it must be shot on a physical 16/17 Pro Max. Until then the tile is
+skipped and the uploaded set stays at four.
 
 ## Notes / decisions still open
 - **Pricing** — description says "no ads, no sign-in" but deliberately does NOT claim "free" or "no subscription", since pricing isn't decided. Add if free.

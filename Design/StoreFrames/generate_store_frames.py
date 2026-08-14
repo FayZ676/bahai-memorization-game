@@ -55,12 +55,13 @@ IPAD = dict(size=(2064, 2752), folder="ipad-13", geometry=dict(
     radius=0.0520,
 ))
 
-# One pass through the app, in order: pick a prayer, hide a word, hide more, know it.
-# Tiles 2 and 3 are deliberately the same chunk of the same passage at two stages, so the
-# sequence shows the thing getting harder instead of describing it. The closing tile is
-# dark because that is the only place a theme can be shown without spending a tile on it;
-# the iPad was never shot in dark, so it falls back to the light library through
-# per_device rather than dropping the beat entirely.
+# One pass through the app, in order: pick a prayer, hide a word, hide more, say it aloud,
+# know it. Tiles 2 and 3 are deliberately the same chunk of the same passage at two stages,
+# so the sequence shows the thing getting harder instead of describing it — the recitation
+# beat follows that pair rather than splitting it. The closing tile is dark because that is
+# the only place a theme can be shown without spending a tile on it; the iPad was never
+# shot in dark, so it falls back to the light library through per_device rather than
+# dropping the beat entirely.
 TILES = [
     dict(name="1-choose.png", source="3-built-in-library.png",
          headline="Start with any\nof 225 prayers."),
@@ -68,7 +69,9 @@ TILES = [
          headline="Tap a word\nto hide it."),
     dict(name="3-hide-more.png", source="9-hide-more.png",
          headline="Hide more\neach time you return."),
-    dict(name="4-know.png", source="6-library-dark.png", theme="dark",
+    dict(name="4-recite.png", source="recite-aloud.png",
+         headline="Then say it\nout loud."),
+    dict(name="5-know.png", source="6-library-dark.png", theme="dark",
          headline="Until you know it\nby heart.",
          per_device={"ipad-13": dict(source="1-library.png", theme="light")}),
 ]

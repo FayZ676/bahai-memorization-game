@@ -14,7 +14,7 @@ those are built from — reshoot here, then regenerate the tiles.
 Both simulators must be on the **iOS 26** runtime — the app's deployment target refuses
 to install on the 18.6 iPad Pro that carries the same name.
 
-These are the raw captures. What gets uploaded is the four tiles in `-framed/`, which
+These are the raw captures. What gets uploaded is the five tiles in `-framed/`, which
 read in order as one pass through the app — see `Design/StoreFrames/README.md`.
 
 | Raw capture | Becomes | Shows |
@@ -22,10 +22,15 @@ read in order as one pass through the app — see `Design/StoreFrames/README.md`
 | `3-built-in-library.png` | `1-choose.png` | the Writings surface: search, My Writings, bundled collections with counts |
 | `2-hide-words.png` | `2-hide.png` | the hero prayer's second section, 24% hidden |
 | `9-hide-more.png` | `3-hide-more.png` | the *same* section at 33%, which is what makes the set a sequence rather than a gallery |
-| `6-library-dark.png` | `4-know.png` | the library in dark, streak and progress ramps, several passages finished |
+| `recite-aloud.png` | `4-recite.png` | the session listening, mic active, words marking as they are spoken |
+| `6-library-dark.png` | `5-know.png` | the library in dark, streak and progress ramps, several passages finished |
 
-Every raw here feeds a tile; there are no spares left. The iPad has no dark capture, so its
-`4-know.png` falls back to `ipad-13/1-library.png` through the tile's `per_device` override.
+`recite-aloud.png` does not exist yet and cannot be shot here — see **Not captured** below.
+Until it does, `generate_store_frames.py` skips its tile and the uploaded set is four.
+
+Every other raw here feeds a tile; there are no spares left. The iPad has no dark capture,
+so its `5-know.png` falls back to `ipad-13/1-library.png` through the tile's `per_device`
+override.
 
 Two captures are stage-dependent and must be reshot as a pair if the hero passage changes:
 `2-hide-words.png` from the default seed and `9-hide-more.png` from `HERO_LATE=1`, which
@@ -41,10 +46,16 @@ If you drop the iPad build (`TARGETED_DEVICE_FAMILY = 1`), `ipad-13/` is no long
 
 ## Not captured
 
-The **recitation** screen. Speech recognition never reaches its listening state in a
-simulator — no on-device speech model and no audio input — so the microphone reverts to
-idle and there is nothing to photograph. To include it, capture on a physical iPhone whose
-screen is 1320 × 2868 (a 16/17 Pro Max); a smaller phone produces the wrong pixel size.
+The **recitation** screen, which tile `4-recite.png` is waiting on. Speech recognition
+never reaches its listening state in a simulator — no on-device speech model and no audio
+input — so the microphone reverts to idle and there is nothing to photograph. Capture it on
+a physical iPhone whose screen is 1320 × 2868 (a 16/17 Pro Max); a smaller phone produces
+the wrong pixel size, and App Store Connect rejects the upload rather than scaling it.
+
+Shoot it mid-recitation, not at rest: the mic active and part of the section already marked,
+so the tile shows the app following along rather than a page with a button on it. Save it as
+`iphone-6.9/recite-aloud.png`, then regenerate. There is no iPad equivalent — the tile is
+skipped there, the same way the session stage already is.
 
 ## Regenerating
 
