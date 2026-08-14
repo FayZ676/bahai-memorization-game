@@ -14,7 +14,6 @@ enum StarFadeGeometry {
     static let fadeMidOpacity = 0.16
     static let sAmplitude = 0.11
     static let sPhase = 0.5
-    static let strips = 48
 
     private static let cosines = (0..<points).map { cos(Angle(degrees: -90 + 40 * Double($0)).radians) }
     private static let sines = (0..<points).map { sin(Angle(degrees: -90 + 40 * Double($0)).radians) }
@@ -27,9 +26,10 @@ enum StarFadeGeometry {
     static let gradientWidth = (fadeEnd - fadeStart) * xSpan
     static let untouchedEdge = xMin + xSpan * (1 + sAmplitude)
     static let clearedEdge = xMin - gradientWidth - sAmplitude * xSpan
+    static let midLocation = (fadeMid - fadeStart) / (fadeEnd - fadeStart)
 
-    static func shift(atHeight t: Double) -> Double {
-        sAmplitude * xSpan * sin(2 * .pi * (t + sPhase))
+    static func leadingEdge(at progress: Double) -> Double {
+        untouchedEdge + (clearedEdge - untouchedEdge) * progress
     }
 }
 
@@ -41,36 +41,20 @@ struct StarFadeMask: View, Animatable {
         set { progress = newValue }
     }
 
-    private var stops: [Gradient.Stop] {
-        let midLocation = (StarFadeGeometry.fadeMid - StarFadeGeometry.fadeStart)
-            / (StarFadeGeometry.fadeEnd - StarFadeGeometry.fadeStart)
-        return [
-            .init(color: .white, location: 0),
-            .init(color: .white.opacity(StarFadeGeometry.fadeMidOpacity), location: midLocation),
-            .init(color: .white.opacity(0), location: 1),
-        ]
-    }
-
     var body: some View {
-        Canvas { context, size in
-            let gradient = Gradient(stops: stops)
-            let leadingEdge = StarFadeGeometry.untouchedEdge
-                + (StarFadeGeometry.clearedEdge - StarFadeGeometry.untouchedEdge) * progress
-            let stripHeight = size.height / Double(StarFadeGeometry.strips)
-
-            for index in 0..<StarFadeGeometry.strips {
-                let midY = (Double(index) + 0.5) * stripHeight
-                let heightFraction = min(1, max(0, (midY / size.height - StarFadeGeometry.yMin)
-                    / StarFadeGeometry.ySpan))
-                let start = (leadingEdge + StarFadeGeometry.shift(atHeight: heightFraction)) * size.width
-                let strip = Path(CGRect(x: 0, y: Double(index) * stripHeight,
-                                        width: size.width, height: stripHeight + 1))
-
-                context.fill(strip, with: .linearGradient(
-                    gradient,
-                    startPoint: CGPoint(x: start, y: midY),
-                    endPoint: CGPoint(x: start + StarFadeGeometry.gradientWidth * size.width, y: midY)))
-            }
+        GeometryReader { proxy in
+            Rectangle()
+                .fill(.white)
+                .colorEffect(ShaderLibrary.starFade(
+                    .float2(proxy.size),
+                    .float4(Float(StarFadeGeometry.leadingEdge(at: progress)),
+                            Float(StarFadeGeometry.gradientWidth),
+                            Float(StarFadeGeometry.sAmplitude * StarFadeGeometry.xSpan),
+                            Float(StarFadeGeometry.sPhase)),
+                    .float4(Float(StarFadeGeometry.yMin),
+                            Float(StarFadeGeometry.ySpan),
+                            Float(StarFadeGeometry.midLocation),
+                            Float(StarFadeGeometry.fadeMidOpacity))))
         }
     }
 }
