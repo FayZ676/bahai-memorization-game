@@ -7,7 +7,7 @@ Verses
 Memorize Bahá'í prayers
 
 ## Keywords (100)
-bahai,writings,hidden,words,ruhi,quotes,bahaullah,abdulbaha,obligatory,faith,scripture,recite
+bahai,hidden,words,ruhi,quotes,writings,obligatory,bahaullah,abdul,baha,scripture,memory,bab
 
 ## Promotional text (170)
 225 prayers, all 153 Hidden Words, and 249 Ruhi quotations — built in. Hide a word, recite what's left, and let the passage teach itself to you.
@@ -104,4 +104,17 @@ has no recitation tile.
   Contact Info → Email Address (optional); User Content → Customer Support (the message);
   Diagnostics → Other Diagnostic Data (app version, device model, iOS version).
   Nothing else is collected — passages, progress and audio stay on device.
-- **Revisit keywords** after ~1 month of App Store Connect search-term data.
+- **Revisit keywords** after ~1 month of App Store Connect search-term data. The current set
+  is reasoned, not measured — there is no impressions data behind it yet.
+  Only the name, subtitle and keyword field are indexed; the description is not, so nothing
+  is gained by wording it for search. Apple combines tokens across those fields into
+  phrases, so a keyword's job is to complete a phrase rather than to stand alone: `verses`
+  comes from the name and `memorize`/`bahai`/`prayers` from the subtitle, which is why none
+  of them are repeated here and why `obligatory` alone buys "obligatory prayers".
+  Matching is by whole token, so a run-together spelling cannot match a spaced query —
+  `abdul,baha` covers "abdul baha", `abdulbaha` never did.
+  `faith` and `recite` were dropped: "bahai faith" is high volume but wants an
+  informational app, and recitation is the mechanic rather than the thing people search for.
+  `bahai` is kept despite the subtitle already carrying "Bahá'í", since it is the one term
+  the app cannot afford to miss if diacritic folding behaves unexpectedly — drop it for a
+  wider term only once search data shows the subtitle is covering it.
