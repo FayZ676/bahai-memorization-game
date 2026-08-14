@@ -69,27 +69,30 @@ struct SpeechHistoryView: View {
                 }
             }
         } label: {
-            HStack(spacing: 4) {
-                Image(systemName: filters.isEmpty
-                    ? "line.3.horizontal.decrease.circle"
-                    : "line.3.horizontal.decrease.circle.fill")
-                    .appIcon(13, weight: .semibold)
-                if !filters.isEmpty {
-                    Text(filterLabel)
-                        .appFont(Typography.footnote)
-                        .tracking(0.3)
-                }
+            HStack(spacing: 6) {
+                Image(systemName: "line.3.horizontal.decrease")
+                    .appIcon(14, weight: .semibold)
+                Text(filters.isEmpty ? "Filter" : filterLabel)
+                    .appFont(Typography.label)
             }
-            .foregroundStyle(filters.isEmpty ? Theme.faint : Theme.ink)
-            .contentShape(Rectangle())
+            .foregroundStyle(filters.isEmpty ? Theme.muted : Theme.accent)
+            .padding(.horizontal, Spacing.md)
+            .frame(height: 36)
+            .background(Theme.surface, in: Capsule())
+            .overlay(
+                Capsule().stroke(
+                    filters.isEmpty ? Theme.hairline : Theme.accent.opacity(0.4),
+                    lineWidth: 1
+                )
+            )
+            .contentShape(Capsule())
         }
+        .simultaneousGesture(TapGesture().onEnded { Feedback.tap() })
     }
 
     private var filterLabel: String {
-        RecitationFilter.allCases
-            .filter { filters.contains($0) }
-            .map(\.label)
-            .joined(separator: " · ")
+        guard filters.count == 1, let only = filters.first else { return "\(filters.count) filters" }
+        return only.label
     }
 
     private func toggle(_ filter: RecitationFilter) {
