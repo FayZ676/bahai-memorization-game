@@ -46,6 +46,13 @@ QUIET BY DESIGN
 
 Verses is built around one belief: memorization isn't a test to pass, it's a way of carrying words with you. Hide what you know. Read what you don't. Come back tomorrow.
 
+## What's New — 1.5 (4000)
+Verses now opens on the nine-pointed star from the app icon, which fades away and hands off to your library.
+
+The app icon itself has been redrawn, with the star fading more gently across the face.
+
+Small fixes and refinements.
+
 ## What's New — 1.4 (4000)
 Ruhi is now all eight books. Where there was only Book 1, there are 249 quotations — every passage the courses ask you to memorize, through to The Covenant of Bahá'u'lláh.
 
