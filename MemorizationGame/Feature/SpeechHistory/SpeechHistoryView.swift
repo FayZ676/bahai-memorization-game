@@ -72,8 +72,15 @@ struct SpeechHistoryView: View {
             HStack(spacing: 6) {
                 Image(systemName: "line.3.horizontal.decrease")
                     .appIcon(14, weight: .semibold)
-                Text(filters.isEmpty ? "Filter" : filterLabel)
+                Text(filterLabel)
                     .appFont(Typography.label)
+                if !filters.isEmpty {
+                    Text("\(filters.count)")
+                        .appFont(Typography.micro)
+                        .foregroundStyle(Theme.raised)
+                        .frame(minWidth: 18, minHeight: 18)
+                        .background(Theme.accent, in: Circle())
+                }
             }
             .foregroundStyle(filters.isEmpty ? Theme.muted : Theme.accent)
             .padding(.horizontal, Spacing.md)
@@ -91,7 +98,9 @@ struct SpeechHistoryView: View {
     }
 
     private var filterLabel: String {
-        guard filters.count == 1, let only = filters.first else { return "\(filters.count) filters" }
+        guard let only = filters.first, filters.count == 1 else {
+            return filters.isEmpty ? "Filter" : "Filters"
+        }
         return only.label
     }
 
