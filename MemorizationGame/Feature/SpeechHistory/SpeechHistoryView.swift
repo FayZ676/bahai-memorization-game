@@ -56,7 +56,10 @@ struct SpeechHistoryView: View {
                     Feedback.tap()
                     withAnimation(Motion.toggle) { toggle(filter) }
                 } label: {
-                    Label(filter.label, systemImage: filters.contains(filter) ? "checkmark" : filter.icon)
+                    Label(
+                        filters.contains(filter) ? "\(filter.label)  ✓" : filter.label,
+                        systemImage: filter.icon
+                    )
                 }
             }
             if !filters.isEmpty {
