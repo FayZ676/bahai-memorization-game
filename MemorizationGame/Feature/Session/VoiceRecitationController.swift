@@ -194,10 +194,12 @@ final class VoiceRecitationController {
     }
 
     private func reportAttempt() {
+        matcher.finish()
         let draft = RecitationDraft(
             expectedCount: matcher.expectedCount,
             matchedCount: matcher.matchedCount,
             misses: matcher.misses,
+            tries: matcher.tries,
             transcript: matcher.transcript
         )
         guard !draft.isEmpty else { return }

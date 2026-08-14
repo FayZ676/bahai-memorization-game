@@ -225,6 +225,92 @@ check("the burnt word is recorded", stalled.misses.map(\.expected) == ["Son"], "
 check("what was heard instead is recorded",
       stalled.misses.first.map { !$0.heard.isEmpty } == true, "\(stalled.misses)")
 
+print("\nEvery settled utterance while a word is owed is recorded as a try")
+var tried = RecitationMatcher(words: words, hiddenIndices: [1, 3, 6])
+_ = tried.ingest(heard("O"), isFinal: true)
+_ = tried.ingest(heard("banana"), isFinal: true)
+_ = tried.ingest(heard("banana bread"), isFinal: true)
+check("a try per utterance", tried.tries.count == 3, "\(tried.tries)")
+check("each try names the word that was owed", tried.tries.map(\.wordIndex) == [1, 1, 1],
+      "\(tried.tries.map(\.wordIndex))")
+check("only the tokens settled since the last try are attributed",
+      tried.tries.map(\.heard) == ["O", "banana", "banana bread"], "\(tried.tries.map(\.heard))")
+check("none of them were accepted", tried.tries.allSatisfy { !$0.accepted }, "\(tried.tries)")
+
+print("\nSaying the word right after failed tries marks the try accepted")
+var eventually = RecitationMatcher(words: words, hiddenIndices: [1, 3, 6])
+_ = eventually.ingest(heard("banana"), isFinal: true)
+_ = eventually.ingest(heard("Son"), isFinal: true)
+check("the last try was accepted", eventually.tries.last?.accepted == true, "\(eventually.tries)")
+check("the earlier try stays rejected", eventually.tries.first?.accepted == false,
+      "\(eventually.tries)")
+
+print("\nLow-confidence junk does not manufacture a try")
+var quiet = RecitationMatcher(words: words, hiddenIndices: [1, 3, 6])
+_ = quiet.ingest(heard(".", confidence: 0.0), isFinal: true)
+check("no try from a zero-confidence token", quiet.tries.isEmpty, "\(quiet.tries)")
+
+print("\nVolatile text never records a try")
+var unsettledTries = RecitationMatcher(words: words, hiddenIndices: [1, 3, 6])
+_ = unsettledTries.ingest(heard("O banana"), isFinal: false)
+check("no try while volatile", unsettledTries.tries.isEmpty, "\(unsettledTries.tries)")
+
+print("\nRevealing an owed word after failed tries records it")
+var revealed = RecitationMatcher(words: words, hiddenIndices: [1, 3, 6])
+_ = revealed.ingest(heard("O"), isFinal: true)
+_ = revealed.ingest(heard("banana"), isFinal: true)
+revealed.replaceHidden(with: [3, 6])
+check("the revealed word is recorded", revealed.misses.map(\.wordIndex) == [1], "\(revealed.misses)")
+check("recorded as revealed", revealed.misses.first?.outcome == .revealed, "\(revealed.misses)")
+check("what was said before revealing is kept",
+      revealed.misses.first?.heard.contains("banana") == true, "\(revealed.misses)")
+
+print("\nHiding more words does not manufacture a reveal")
+var extended = RecitationMatcher(words: words, hiddenIndices: [1])
+_ = extended.ingest(heard("O Son"), isFinal: true)
+extended.replaceHidden(with: [3, 6])
+check("a matched word leaving the hidden set is not a miss", extended.misses.isEmpty,
+      "\(extended.misses)")
+
+print("\nStopping while a word is still owed records it")
+var abandoned = RecitationMatcher(words: words, hiddenIndices: [1, 3, 6])
+_ = abandoned.ingest(heard("O"), isFinal: true)
+_ = abandoned.ingest(heard("banana"), isFinal: true)
+abandoned.finish()
+check("the owed word is recorded", abandoned.misses.map(\.wordIndex) == [1], "\(abandoned.misses)")
+check("recorded as abandoned", abandoned.misses.first?.outcome == .abandoned, "\(abandoned.misses)")
+
+print("\nStopping without ever trying records nothing")
+var untouched = RecitationMatcher(words: words, hiddenIndices: [1, 3, 6])
+untouched.finish()
+check("silence is not a miss", untouched.misses.isEmpty, "\(untouched.misses)")
+
+print("\nA stalled attempt is no longer an empty draft")
+var salvaged = RecitationMatcher(words: words, hiddenIndices: [1, 3, 6])
+_ = salvaged.ingest(heard("banana"), isFinal: true)
+salvaged.finish()
+let salvagedDraft = RecitationDraft(
+    expectedCount: salvaged.expectedCount,
+    matchedCount: salvaged.matchedCount,
+    misses: salvaged.misses,
+    tries: salvaged.tries,
+    transcript: salvaged.transcript
+)
+check("the attempt survives to the log", !salvagedDraft.isEmpty, "\(salvagedDraft)")
+
+print("\nThe log groups tries and the verdict under each word")
+let review = salvagedDraft
+    .attempt(chunkID: UUID(), passageTitle: "Hidden Words", excerpt: "O Son of Spirit")
+    .wordReviews
+check("one word reviewed", review.count == 1, "\(review)")
+check("its tries are attached", review.first?.tries.count == 1, "\(review)")
+check("its verdict is named", review.first?.verdict == RecitationOutcome.abandoned.label,
+      "\(String(describing: review.first?.verdict))")
+
+print("\nBurnt words still carry their outcome")
+check("a stalled-out word is exhausted", stalled.misses.first?.outcome == .exhausted,
+      "\(stalled.misses)")
+
 print("\nTranscript and counts survive for the log")
 check("transcript is the spoken text", recorded.transcript == "O banana of Spirit My first counsel",
       recorded.transcript)

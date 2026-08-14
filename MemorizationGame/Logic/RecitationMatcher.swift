@@ -37,10 +37,14 @@ struct RecitationMatcher {
     private static let lookahead = 12
     private static let heardWindow = 6
 
+    private static let tryBudget = 60
+
     private let words: [String]
     private let spelling: [String]
     private var hiddenIndices: [Int]
     private(set) var misses: [RecitationMiss] = []
+    private(set) var tries: [RecitationTry] = []
+    private var triedThrough = 0
     private var settled: [HeardToken] = []
     private var pending: [HeardToken] = []
     private var matched: Set<Int> = []
@@ -78,11 +82,28 @@ struct RecitationMatcher {
     }
 
     mutating func replaceHidden(with indices: [Int]) {
-        hiddenIndices = indices.filter { $0 >= 0 && $0 < words.count }.sorted()
+        let replacement = indices.filter { $0 >= 0 && $0 < words.count }.sorted()
+        let dropped = hiddenIndices.filter {
+            !replacement.contains($0) && !matched.contains($0) && !missed.contains($0)
+        }
+        for index in dropped {
+            missed.insert(index)
+            record(index, outcome: .revealed)
+        }
+        hiddenIndices = replacement
         attempts = 0
     }
 
+    mutating func finish() {
+        guard let owed = nextExpectedIndex, tries.contains(where: { $0.wordIndex == owed }) else {
+            return
+        }
+        missed.insert(owed)
+        record(owed, outcome: .abandoned)
+    }
+
     mutating func ingest(_ tokens: [HeardToken], isFinal: Bool) -> [Event] {
+        let owedBefore = nextExpectedIndex
         let usable = tokens.filter { !$0.key.isEmpty }
         if isFinal {
             settled.append(contentsOf: usable)
@@ -157,8 +178,16 @@ struct RecitationMatcher {
                 "\(index) \"\(spelling[index])\" unheard=\(Self.seconds(unheard))"
             )
             missed.insert(index)
-            record(index, spoken: spoken, alignment: alignment)
+            record(index, spoken: spoken, alignment: alignment, outcome: .skipped)
             events.append(.missed(index: index, movedOn: true))
+        }
+
+        if isFinal {
+            let fresh = Array(settled[min(triedThrough, settled.count)...])
+            triedThrough = settled.count
+            if let owedBefore {
+                recordTry(owed: owedBefore, spoken: fresh, accepted: matched.contains(owedBefore))
+            }
         }
 
         RecitationTrace.emit(
@@ -177,7 +206,7 @@ struct RecitationMatcher {
         if attempts >= Self.attemptBudget {
             missed.insert(expected)
             attempts = 0
-            record(expected, spoken: spoken, alignment: alignment)
+            record(expected, spoken: spoken, alignment: alignment, outcome: .exhausted)
             events.append(.missed(index: expected, movedOn: true))
         } else {
             events.append(.missed(index: expected, movedOn: false))
@@ -185,7 +214,12 @@ struct RecitationMatcher {
         return events
     }
 
-    private mutating func record(_ index: Int, spoken: [HeardToken], alignment: Alignment) {
+    private mutating func record(
+        _ index: Int,
+        spoken: [HeardToken],
+        alignment: Alignment,
+        outcome: RecitationOutcome
+    ) {
         guard spelling.indices.contains(index) else { return }
         let instead = Self.tokens(displacing: index, spoken: spoken, alignment: alignment)
         misses.append(
@@ -194,7 +228,49 @@ struct RecitationMatcher {
                 expected: spelling[index],
                 heard: instead.map(\.text).joined(separator: " "),
                 expectedKey: words[index],
-                heardKeys: instead.map(\.key)
+                heardKeys: instead.map(\.key),
+                outcome: outcome
+            )
+        )
+    }
+
+    private mutating func record(_ index: Int, outcome: RecitationOutcome) {
+        guard spelling.indices.contains(index) else { return }
+        let attempted = tries.filter { $0.wordIndex == index }
+        RecitationTrace.emit(
+            "\(outcome.rawValue)",
+            "\(index) \"\(spelling[index])\" after \(attempted.count) tr\(attempted.count == 1 ? "y" : "ies")"
+        )
+        misses.append(
+            RecitationMiss(
+                wordIndex: index,
+                expected: spelling[index],
+                heard: attempted.map(\.heard).filter { !$0.isEmpty }.joined(separator: " / "),
+                expectedKey: words[index],
+                heardKeys: attempted.flatMap(\.heardKeys),
+                outcome: outcome
+            )
+        )
+    }
+
+    private mutating func recordTry(owed: Int, spoken: [HeardToken], accepted: Bool) {
+        let fresh = spoken.filter { $0.confidence >= Self.confidenceFloor }
+        guard spelling.indices.contains(owed), tries.count < Self.tryBudget, !fresh.isEmpty else {
+            return
+        }
+        RecitationTrace.emit(
+            "try",
+            "\(owed) \"\(spelling[owed])\" heard [\(fresh.map(\.text).joined(separator: " "))] "
+                + "accepted=\(accepted)"
+        )
+        tries.append(
+            RecitationTry(
+                wordIndex: owed,
+                expected: spelling[owed],
+                heard: fresh.map(\.text).joined(separator: " "),
+                expectedKey: words[owed],
+                heardKeys: fresh.map(\.key),
+                accepted: accepted
             )
         )
     }

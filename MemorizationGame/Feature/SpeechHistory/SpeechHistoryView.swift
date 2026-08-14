@@ -21,7 +21,8 @@ struct SpeechHistoryView: View {
             OptionSection(
                 label: "Recent recitations",
                 icon: "waveform",
-                footer: "Tap a recitation to see what the app heard in place of each word you missed."
+                footer: "Tap a recitation to see every word you were owed — what the app heard on "
+                    + "each try, and how the word ended up."
             ) {
                 ForEach(Array(log.newestFirst.enumerated()), id: \.element.id) { index, attempt in
                     if index > 0 { HairlineDivider() }
@@ -53,14 +54,14 @@ struct AttemptRow: View {
         } label: {
             VStack(alignment: .leading, spacing: 10) {
                 summary
-                if expanded { misses }
+                if expanded { reviews }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .optionRow()
             .contentShape(Rectangle())
         }
         .buttonStyle(.haptic)
-        .disabled(attempt.misses.isEmpty)
+        .disabled(!attempt.hasDetail)
     }
 
     private var summary: some View {
@@ -70,7 +71,7 @@ struct AttemptRow: View {
                 .foregroundStyle(Theme.faint)
                 .multilineTextAlignment(.leading)
             Spacer(minLength: 0)
-            if !attempt.misses.isEmpty {
+            if attempt.hasDetail {
                 Image(systemName: "chevron.down")
                     .appIcon(11, weight: .semibold)
                     .foregroundStyle(Theme.faint)
@@ -79,16 +80,10 @@ struct AttemptRow: View {
         }
     }
 
-    private var misses: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            ForEach(attempt.misses) { miss in
-                (Text(miss.expected).foregroundStyle(Theme.ink)
-                    + Text("  →  ").foregroundStyle(Theme.faint)
-                    + Text(miss.heardSomething ? miss.heard : "nothing")
-                        .foregroundStyle(miss.heardSomething ? Theme.warn : Theme.muted))
-                    .appFont(Typography.caption)
-                    .multilineTextAlignment(.leading)
-                    .fixedSize(horizontal: false, vertical: true)
+    private var reviews: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            ForEach(attempt.wordReviews) { review in
+                WordReviewBlock(review: review)
             }
         }
     }
@@ -98,5 +93,54 @@ struct AttemptRow: View {
         let time = attempt.date.formatted(date: .omitted, time: .shortened)
         let stamp = "\(day), \(time)"
         return "\(stamp) · \(attempt.passageTitle) · \(attempt.summary)"
+    }
+}
+
+struct WordReviewBlock: View {
+    let review: RecitationWordReview
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            headline
+            ForEach(review.tries) { entry in
+                line(
+                    lead: entry.accepted ? "took" : "heard",
+                    heard: entry.heard,
+                    tint: entry.accepted ? Theme.ink : Theme.warn
+                )
+            }
+            if review.tries.isEmpty, let miss = review.miss {
+                line(
+                    lead: "heard",
+                    heard: miss.heard,
+                    tint: miss.heardSomething ? Theme.warn : Theme.muted
+                )
+            }
+        }
+    }
+
+    private var headline: some View {
+        (Text(review.expected).foregroundStyle(Theme.ink)
+            + Text(" · ").foregroundStyle(Theme.faint)
+            + Text(detail).foregroundStyle(Theme.faint))
+            .appFont(Typography.caption)
+            .multilineTextAlignment(.leading)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private func line(lead: String, heard: String, tint: Color) -> some View {
+        (Text("\(lead)  ").foregroundStyle(Theme.faint)
+            + Text(heard.isEmpty ? "nothing" : "“\(heard)”")
+                .foregroundStyle(heard.isEmpty ? Theme.muted : tint))
+            .appFont(Typography.micro)
+            .multilineTextAlignment(.leading)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.leading, 12)
+    }
+
+    private var detail: String {
+        let count = review.tries.count
+        guard count > 0 else { return review.verdict }
+        return "\(review.verdict) after \(count) tr\(count == 1 ? "y" : "ies")"
     }
 }

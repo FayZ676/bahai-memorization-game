@@ -40,9 +40,19 @@ final class RecitationLog {
             let header = "\(stamp.string(from: attempt.date)) \(attempt.passageTitle) "
                 + "chunk \(attempt.chunkID.uuidString.prefix(8)) "
                 + "matched \(attempt.matchedCount)/\(attempt.expectedCount)"
-            let lines = attempt.misses.map { miss in
-                "  [\(miss.wordIndex)] expected \"\(miss.expected)\" (\(miss.expectedKey)) "
-                    + "heard \"\(miss.heard)\" (\(miss.heardKeys.joined(separator: " ")))"
+            let lines = attempt.wordReviews.flatMap { review -> [String] in
+                let heading = "  [\(review.wordIndex)] expected \"\(review.expected)\" "
+                    + "(\(review.miss?.expectedKey ?? review.tries.first?.expectedKey ?? "")) "
+                    + "— \(review.verdict), \(review.tries.count) tried"
+                let attempts = review.tries.map { entry in
+                    "      try \(entry.accepted ? "accepted" : "rejected") "
+                        + "heard \"\(entry.heard)\" (\(entry.heardKeys.joined(separator: " ")))"
+                }
+                let instead = review.miss.map { miss in
+                    ["      instead heard \"\(miss.heard)\" "
+                        + "(\(miss.heardKeys.joined(separator: " ")))"]
+                } ?? []
+                return [heading] + attempts + instead
             }
             return ([header] + lines + ["  transcript: \(attempt.transcript)"]).joined(separator: "\n")
         }
