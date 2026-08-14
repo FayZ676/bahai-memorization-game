@@ -3,7 +3,8 @@ import SwiftUI
 enum Motion {
     static let toggle   = Animation.easeInOut(duration: 0.22)
     static let standard = Animation.easeInOut(duration: 0.28)
-    static let handoff  = Animation.easeInOut(duration: 0.95)
+    static let handoffDuration = 0.95
+    static let handoff  = Animation.easeInOut(duration: handoffDuration)
     static let fadeDuration = 0.35
     static let fade     = Animation.easeInOut(duration: fadeDuration)
     static let lineFadeIn = Animation.easeInOut(duration: fadeDuration).delay(0.5)

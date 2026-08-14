@@ -4,6 +4,7 @@ import SwiftUI
 struct MemorizationGameApp: App {
     @State private var store = AppStore()
     @State private var splashFinished = false
+    @State private var splashCleared = false
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
@@ -27,13 +28,18 @@ struct MemorizationGameApp: App {
                         store.syncStreakReminder()
                     }
 
-                if !splashFinished {
-                    SplashView {
-                        withAnimation(Motion.handoff) { splashFinished = true }
-                    }
-                    .transition(.opacity)
-                    .zIndex(1)
+                if !splashCleared {
+                    SplashView { splashFinished = true }
+                        .opacity(splashFinished ? 0 : 1)
+                        .allowsHitTesting(!splashFinished)
+                        .zIndex(1)
                 }
+            }
+            .animation(Motion.handoff, value: splashFinished)
+            .task(id: splashFinished) {
+                guard splashFinished else { return }
+                try? await Task.sleep(for: .seconds(Motion.handoffDuration))
+                splashCleared = true
             }
             .tint(Theme.accent)
             .preferredColorScheme(store.settings.appTheme.colorScheme)
