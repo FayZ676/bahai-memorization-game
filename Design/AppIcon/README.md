@@ -16,8 +16,9 @@ the two treatments. Those four are review artefacts only; nothing reads them at 
 the iconset itself always ships the faded star.
 
 The default run also writes `Assets.xcassets/SplashStar.imageset` — the **unfaded** star on a
-transparent ground, light and dark. The splash holds the star whole for a beat and then fades it
-out, so it wants the unfaded variant; it sits on `Theme.bg`, not on the icon's warm cream.
+transparent ground, light and dark. The splash holds the star whole for a beat and then sweeps the
+fade across it until nothing is left, so it wants the unfaded variant; it sits on `Theme.bg`, not
+on the icon's warm cream.
 
 ## The mark
 
@@ -44,6 +45,10 @@ shifted by `FADE_S_AMPLITUDE * sin` of its height — one sine period top to bot
 count that leaves a fractional height the rect edges land off the pixel grid and antialias into
 visible seams across the solid green; keep the count a power of two and the rects on
 `crispEdges`.
+
+**`StarFadeMask.swift` mirrors the fade constants, and nothing enforces that.** The splash sweeps
+this same S front across the star to blow it away, so `StarFadeGeometry` restates the geometry and
+the `FADE_*` values. Change them here and the splash stops matching the icon — update both.
 
 **The ground is warm cream, and that contradicts the design system on purpose.**
 `design-theme.html` specifies paper as `#ECEEE8`, explicitly "cool luminous paper (not warm
