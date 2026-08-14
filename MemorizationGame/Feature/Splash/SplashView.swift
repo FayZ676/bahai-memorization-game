@@ -14,7 +14,7 @@ struct SplashView: View {
     private static let lift = 0.5
     private static let carry = 0.62
     private static let gust = lift + carry
-    private static let settle = 0.12
+    private static let handoffLead = 0.28
 
     var body: some View {
         ZStack {
@@ -54,7 +54,7 @@ struct SplashView: View {
 
         Feedback.cascadeRipple(delays: [0.05, 0.26, 0.47, 0.68, 0.89])
         stirring = true
-        try? await Task.sleep(for: .seconds(Self.gust + Self.settle))
+        try? await Task.sleep(for: .seconds(Self.gust - Self.handoffLead))
         finish()
     }
 
