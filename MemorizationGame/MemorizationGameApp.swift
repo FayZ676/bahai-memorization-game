@@ -20,6 +20,7 @@ struct MemorizationGameApp: App {
                 LibraryView()
                     .environment(store)
                     .environment(\.fontScale, store.settings.fontSize.scale)
+                    .opacity(splashFinished ? 1 : 0)
                     .task { ReminderScheduler.sync(store.settings) }
                     .onChange(of: scenePhase, initial: true) { _, phase in
                         guard phase == .active else { return }
@@ -28,7 +29,7 @@ struct MemorizationGameApp: App {
 
                 if !splashFinished {
                     SplashView {
-                        withAnimation(Motion.fade) { splashFinished = true }
+                        withAnimation(Motion.handoff) { splashFinished = true }
                     }
                     .transition(.opacity)
                     .zIndex(1)
