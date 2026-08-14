@@ -21,12 +21,17 @@ two stages, so the set demonstrates the loop instead of describing it. Reorderin
 breaks that; the story is the point, not the coverage. The recitation beat sits after that
 pair rather than between them, for the same reason.
 
-`4-recite.png` sets its own `phone_top` through a per-tile `geometry` override, which merges
-over the device's. It is the one tile whose subject — the mic and the heard line — sits at
-the very bottom of the screen, so the usual bleed crops away the whole point of it and
-leaves a page of blanks. Lowering the phone shows the full screen while keeping the phone
-the same width as its siblings, so the set still reads as one device throughout. Raise
-`phone_top` back and the mic goes over the edge again.
+`phone_top` is what makes the recitation tile possible. It used to sit at `0.251`, which
+showed 2133px of a screenshot that scales to 2379px — fine for four tiles whose subject is
+in the upper half, fatal for one whose subject is the mic at the very bottom. At `0.165` the
+whole screen fits, so tiles 2, 3 and 4 now show the same screen with the mic going idle,
+idle, then active.
+
+It is a property of the device, not of one tile: a single tile framed differently reads as a
+different, larger phone, which is the one thing a set like this cannot afford. A tile *can*
+override `geometry` the way it overrides `source` and `theme` — the key merges over the
+device's — but nothing uses it, and a per-tile `phone_top` in particular should be treated
+as a bug rather than a feature.
 
 The closing tile is dark. It is the one place a theme can be shown without spending a tile
 on it, and it lands on the library, where the ramps and the streak carry the same reading
@@ -67,8 +72,11 @@ feature claims match the app (reminders exist, so "no notifications" is false; t
 achievement tile names a count that `AchievementCatalog.all` has to still agree with).
 
 **The phone bleeds off the bottom on purpose.** Fitting the whole device on the canvas
-would shrink the UI to the point where nothing in it can be read. The screenshot is scaled
-to the bezel's inner width and whatever runs past the bottom edge is cropped.
+would shrink the UI to the point where nothing in it can be read, so the bezel runs to the
+canvas edge with no bottom rim. The screenshot is scaled to the bezel's inner width, and at
+the current `phone_top` the full 1320×2868 capture lands within a pixel of the visible
+screen — so nothing is cropped today, but the margin is one pixel. Raising `phone_top`, or
+feeding in a taller raw, starts eating the bottom of the screenshot again.
 
 **A black bezel disappears on the dark ground.** Dark tiles draw the phone's silhouette
 with an inset rim highlight instead. Without it the screenshot appears to float in a void.

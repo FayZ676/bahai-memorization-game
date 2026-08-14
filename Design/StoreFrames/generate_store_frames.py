@@ -38,7 +38,7 @@ GEOMETRY = dict(
     headline_lift=0.022,    # optical bias above dead centre of the band
     headline_size=0.089,    # em, as a fraction of canvas width
     headline_leading=1.06,
-    phone_top=0.251,
+    phone_top=0.165,
     phone_width=0.852,
     bezel=0.0114,           # bezel thickness, fraction of canvas width
     radius=0.0742,          # outer corner radius, fraction of canvas width
@@ -70,8 +70,7 @@ TILES = [
     dict(name="3-hide-more.png", source="9-hide-more.png",
          headline="Hide more\neach time you return."),
     dict(name="4-recite.png", source="recite-aloud.png",
-         headline="Then say it\nout loud.",
-         geometry=dict(phone_top=0.165)),
+         headline="Then say it\nout loud."),
     dict(name="5-know.png", source="6-library-dark.png", theme="dark",
          headline="Until you know it\nby heart.",
          per_device={"ipad-13": dict(source="1-library.png", theme="light")}),
