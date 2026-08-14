@@ -225,6 +225,42 @@ check("the burnt word is recorded", stalled.misses.map(\.expected) == ["Son"], "
 check("what was heard instead is recorded",
       stalled.misses.first.map { !$0.heard.isEmpty } == true, "\(stalled.misses)")
 
+print("\nDevice 2026-08-14: a word owed behind the frontier can still be said")
+let seestLine = "O God my God Thou seest me detached from all save Thee and cleaving unto Thee"
+let seestWords = seestLine.split(separator: " ").map(String.init)
+check("seest and cyst are the same key",
+      PhoneticKey.encode("seest") == PhoneticKey.encode("cyst"),
+      "[\(PhoneticKey.encode("seest")) vs \(PhoneticKey.encode("cyst"))]")
+var behind = RecitationMatcher(words: seestWords, hiddenIndices: [5, 11, 15])
+let recited = behind.ingest(
+    heard("O God my God that is me detached from all save and cleaving unto the"),
+    isFinal: true
+)
+check("the misheard word is not credited by the recitation", !recited.contains(.matched(index: 5)),
+      "\(recited)")
+check("a neighbouring word must not be reclaimed for it", behind.nextExpectedIndex == 5,
+      "\(String(describing: behind.nextExpectedIndex))")
+let retried = behind.ingest(heard("seest"), isFinal: true)
+check("saying it again after passing it now lands", retried.contains(.matched(index: 5)),
+      "\(retried)")
+check("and the cursor moves to the next owed word", behind.nextExpectedIndex == 11,
+      "\(String(describing: behind.nextExpectedIndex))")
+
+print("\nReclaiming demands the same key, not a near one")
+var nearby = RecitationMatcher(words: seestWords, hiddenIndices: [5])
+_ = nearby.ingest(heard("O God my God that is me detached from all"), isFinal: true)
+let wrongWord = nearby.ingest(heard("save"), isFinal: true)
+check("a word one edit away does not reclaim the owed word",
+      !wrongWord.contains(.matched(index: 5)), "\(wrongWord)")
+check("the word is still owed", nearby.nextExpectedIndex == 5,
+      "\(String(describing: nearby.nextExpectedIndex))")
+
+print("\nReclaiming never fires on an utterance that moves forward")
+var forward = RecitationMatcher(words: seestWords, hiddenIndices: [5, 11])
+let flowing = forward.ingest(heard("O God my God that is me detached"), isFinal: true)
+check("a skipped word is not reclaimed from speech that progressed",
+      !flowing.contains(.matched(index: 5)), "\(flowing)")
+
 print("\nEvery settled utterance while a word is owed is recorded as a try")
 var tried = RecitationMatcher(words: words, hiddenIndices: [1, 3, 6])
 _ = tried.ingest(heard("O"), isFinal: true)

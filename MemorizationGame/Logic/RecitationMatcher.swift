@@ -183,8 +183,13 @@ struct RecitationMatcher {
         }
 
         if isFinal {
-            let fresh = Array(settled[min(triedThrough, settled.count)...])
+            let start = min(triedThrough, settled.count)
+            let fresh = Array(settled[start...])
+            let unexplained = (start..<settled.count)
+                .filter { !alignment.spoken.contains($0) }
+                .map { settled[$0] }
             triedThrough = settled.count
+            if !progressed { events += reclaim(using: unexplained) }
             if let owedBefore {
                 recordTry(owed: owedBefore, spoken: fresh, accepted: matched.contains(owedBefore))
             }
@@ -210,6 +215,26 @@ struct RecitationMatcher {
             events.append(.missed(index: expected, movedOn: true))
         } else {
             events.append(.missed(index: expected, movedOn: false))
+        }
+        return events
+    }
+
+    private mutating func reclaim(using tokens: [HeardToken]) -> [Event] {
+        var offered = tokens.filter { $0.confidence >= Self.confidenceFloor }
+        guard !offered.isEmpty else { return [] }
+        var events: [Event] = []
+        for index in hiddenIndices where index < frontier {
+            guard !matched.contains(index), !missed.contains(index) else { continue }
+            guard let taken = offered.firstIndex(where: { $0.key == words[index] }) else { continue }
+            RecitationTrace.emit(
+                "reclaimed",
+                "\(index) \"\(spelling[index])\" from \"\(offered[taken].text)\" behind frontier \(frontier)"
+            )
+            offered.remove(at: taken)
+            matched.insert(index)
+            attempts = 0
+            unexplainedSinceProgress = false
+            events.append(.matched(index: index))
         }
         return events
     }

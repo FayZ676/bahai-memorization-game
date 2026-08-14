@@ -45,6 +45,13 @@ Exits non-zero on any failure. Run it from the repo root after touching either l
   was accepted. Tries are what make a word you said repeatedly — and that never registered —
   visible; without them the log only ever showed words the matcher was confident enough to
   burn, which is the minority of real failures.
+- **Reclaiming a word behind the frontier** — the alignment is monotonic over the whole
+  accumulated transcript, so once speech has aligned past a word, nothing said afterwards can
+  ever map back to it: retrying an owed word was futile by construction, however cleanly it
+  was transcribed. Unexplained tokens from an utterance that made no forward progress are now
+  offered to owed words behind the frontier, and only on an exact key match — the fuzzy
+  tolerance is earned by positional evidence, which a reclaim does not have. Without that
+  bar, "save" (`sf`) reclaims "seest" (`st`) at one edit apart.
 - **Silent exits** — a word revealed by hand mid-recitation, or still owed when listening
   stops, is recorded rather than dropped. Both used to leave no trace at all, and an attempt
   with no matches and no burns used to be discarded wholesale as "empty".
