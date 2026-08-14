@@ -200,6 +200,7 @@ final class VoiceRecitationController {
             matchedCount: matcher.matchedCount,
             misses: matcher.misses,
             tries: matcher.tries,
+            credits: matcher.credits,
             transcript: matcher.transcript
         )
         guard !draft.isEmpty else { return }

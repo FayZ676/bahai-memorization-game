@@ -106,21 +106,81 @@ struct RecitationTry: Codable, Hashable, Identifiable {
     var heardSomething: Bool { !heard.isEmpty }
 }
 
+struct RecitationCredit: Codable, Hashable, Identifiable {
+    var id = UUID()
+    var wordIndex: Int
+    var expected: String
+
+    enum CodingKeys: String, CodingKey {
+        case id, wordIndex, expected
+    }
+
+    init(id: UUID = UUID(), wordIndex: Int, expected: String) {
+        self.id = id
+        self.wordIndex = wordIndex
+        self.expected = expected
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        wordIndex = try container.decode(Int.self, forKey: .wordIndex)
+        expected = try container.decodeIfPresent(String.self, forKey: .expected) ?? ""
+    }
+}
+
 struct RecitationWordReview: Identifiable {
     var id: Int { wordIndex }
     var wordIndex: Int
     var expected: String
     var tries: [RecitationTry]
     var miss: RecitationMiss?
+    var credited: Bool
 
-    var wasAccepted: Bool { tries.contains(where: \.accepted) }
+    var rejectedTries: [RecitationTry] { tries.filter { !$0.accepted } }
+
+    var isMiss: Bool { miss != nil }
+
+    var isRetried: Bool { !rejectedTries.isEmpty }
+
+    var isPass: Bool { credited && miss == nil }
 
     var verdict: String {
         if let miss { return miss.outcome.label }
-        return wasAccepted ? "matched" : "still owed"
+        return credited ? "matched" : "still owed"
+    }
+}
+
+enum RecitationFilter: String, CaseIterable, Identifiable {
+    case misses
+    case retries
+    case passes
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .misses: "Misses"
+        case .retries: "Retries"
+        case .passes: "Passes"
+        }
     }
 
-    var rejectedTries: [RecitationTry] { tries.filter { !$0.accepted } }
+    var icon: String {
+        switch self {
+        case .misses: "xmark"
+        case .retries: "arrow.clockwise"
+        case .passes: "checkmark"
+        }
+    }
+
+    func admits(_ review: RecitationWordReview) -> Bool {
+        switch self {
+        case .misses: review.isMiss
+        case .retries: review.isRetried
+        case .passes: review.isPass
+        }
+    }
 }
 
 struct RecitationAttempt: Codable, Hashable, Identifiable {
@@ -133,11 +193,12 @@ struct RecitationAttempt: Codable, Hashable, Identifiable {
     var matchedCount: Int
     var misses: [RecitationMiss]
     var tries: [RecitationTry]
+    var credits: [RecitationCredit]
     var transcript: String
 
     enum CodingKeys: String, CodingKey {
         case id, chunkID, date, passageTitle, excerpt, expectedCount, matchedCount, misses, tries,
-             transcript
+             credits, transcript
     }
 
     init(
@@ -150,6 +211,7 @@ struct RecitationAttempt: Codable, Hashable, Identifiable {
         matchedCount: Int,
         misses: [RecitationMiss],
         tries: [RecitationTry],
+        credits: [RecitationCredit],
         transcript: String
     ) {
         self.id = id
@@ -161,6 +223,7 @@ struct RecitationAttempt: Codable, Hashable, Identifiable {
         self.matchedCount = matchedCount
         self.misses = misses
         self.tries = tries
+        self.credits = credits
         self.transcript = transcript
     }
 
@@ -175,6 +238,7 @@ struct RecitationAttempt: Codable, Hashable, Identifiable {
         matchedCount = try container.decodeIfPresent(Int.self, forKey: .matchedCount) ?? 0
         misses = try container.decodeIfPresent([RecitationMiss].self, forKey: .misses) ?? []
         tries = try container.decodeIfPresent([RecitationTry].self, forKey: .tries) ?? []
+        credits = try container.decodeIfPresent([RecitationCredit].self, forKey: .credits) ?? []
         transcript = try container.decodeIfPresent(String.self, forKey: .transcript) ?? ""
     }
 
@@ -185,33 +249,39 @@ struct RecitationAttempt: Codable, Hashable, Identifiable {
         return "\(missed) · \(rejected) unheard \(rejected == 1 ? "try" : "tries")"
     }
 
-    var hasDetail: Bool { !misses.isEmpty || !tries.isEmpty }
+    var hasDetail: Bool { !misses.isEmpty || !tries.isEmpty || !credits.isEmpty }
 
     var wordReviews: [RecitationWordReview] {
-        var order: [Int] = []
         var triesByWord: [Int: [RecitationTry]] = [:]
         var expectedByWord: [Int: String] = [:]
         for entry in tries {
-            if triesByWord[entry.wordIndex] == nil { order.append(entry.wordIndex) }
             triesByWord[entry.wordIndex, default: []].append(entry)
             expectedByWord[entry.wordIndex] = entry.expected
         }
         var missByWord: [Int: RecitationMiss] = [:]
         for miss in misses {
-            if triesByWord[miss.wordIndex] == nil, missByWord[miss.wordIndex] == nil {
-                order.append(miss.wordIndex)
-            }
             missByWord[miss.wordIndex] = miss
             expectedByWord[miss.wordIndex] = miss.expected
         }
-        return order.map { index in
+        var creditedWords: Set<Int> = []
+        for credit in credits {
+            creditedWords.insert(credit.wordIndex)
+            expectedByWord[credit.wordIndex] = credit.expected
+        }
+        return expectedByWord.keys.sorted().map { index in
             RecitationWordReview(
                 wordIndex: index,
                 expected: expectedByWord[index] ?? "",
                 tries: triesByWord[index] ?? [],
-                miss: missByWord[index]
+                miss: missByWord[index],
+                credited: creditedWords.contains(index)
             )
         }
+    }
+
+    func wordReviews(matching filters: Set<RecitationFilter>) -> [RecitationWordReview] {
+        guard !filters.isEmpty else { return wordReviews }
+        return wordReviews.filter { review in filters.contains { $0.admits(review) } }
     }
 }
 
@@ -220,6 +290,7 @@ struct RecitationDraft {
     var matchedCount: Int
     var misses: [RecitationMiss]
     var tries: [RecitationTry]
+    var credits: [RecitationCredit]
     var transcript: String
 
     var isEmpty: Bool { misses.isEmpty && tries.isEmpty && matchedCount == 0 }
@@ -233,6 +304,7 @@ struct RecitationDraft {
             matchedCount: matchedCount,
             misses: misses,
             tries: tries,
+            credits: credits,
             transcript: transcript
         )
     }

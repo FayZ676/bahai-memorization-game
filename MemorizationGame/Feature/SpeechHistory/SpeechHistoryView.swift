@@ -3,17 +3,22 @@ import SwiftUI
 struct SpeechHistoryView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var log = RecitationLog.shared
+    @State private var filters: Set<RecitationFilter> = []
 
     var body: some View {
         Screen {
             ScreenHeader(title: "Speech History", onBack: { dismiss() })
         } content: {
             if log.attempts.isEmpty {
-                empty
+                empty("No recitations recorded yet.")
             } else {
                 attempts
             }
         }
+    }
+
+    private var visible: [RecitationAttempt] {
+        log.newestFirst.filter { !$0.wordReviews(matching: filters).isEmpty }
     }
 
     private var attempts: some View {
@@ -22,20 +27,81 @@ struct SpeechHistoryView: View {
                 label: "Recent recitations",
                 icon: "waveform",
                 footer: "Tap a recitation to see every word you were owed — what the app heard on "
-                    + "each try, and how the word ended up."
-            ) {
-                ForEach(Array(log.newestFirst.enumerated()), id: \.element.id) { index, attempt in
-                    if index > 0 { HairlineDivider() }
-                    AttemptRow(attempt: attempt)
-                }
-            }
+                    + "each try, and how the word ended up.",
+                content: {
+                    if visible.isEmpty {
+                        Text("Nothing matches this filter.")
+                            .appFont(Typography.caption)
+                            .foregroundStyle(Theme.muted)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .optionRow()
+                    } else {
+                        ForEach(Array(visible.enumerated()), id: \.element.id) { index, attempt in
+                            if index > 0 { HairlineDivider() }
+                            AttemptRow(attempt: attempt, filters: filters)
+                        }
+                    }
+                },
+                accessory: { filterMenu }
+            )
             .padding(.horizontal, 18)
             .padding(.bottom, Spacing.screen)
         }
     }
 
-    private var empty: some View {
-        Text("No recitations recorded yet.")
+    private var filterMenu: some View {
+        Menu {
+            ForEach(RecitationFilter.allCases) { filter in
+                Button {
+                    Feedback.tap()
+                    withAnimation(Motion.toggle) { toggle(filter) }
+                } label: {
+                    Label(filter.label, systemImage: filters.contains(filter) ? "checkmark" : filter.icon)
+                }
+            }
+            if !filters.isEmpty {
+                Divider()
+                Button {
+                    Feedback.tap()
+                    withAnimation(Motion.toggle) { filters = [] }
+                } label: {
+                    Label("Show All", systemImage: "line.3.horizontal.decrease")
+                }
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: filters.isEmpty
+                    ? "line.3.horizontal.decrease.circle"
+                    : "line.3.horizontal.decrease.circle.fill")
+                    .appIcon(13, weight: .semibold)
+                if !filters.isEmpty {
+                    Text(filterLabel)
+                        .appFont(Typography.footnote)
+                        .tracking(0.3)
+                }
+            }
+            .foregroundStyle(filters.isEmpty ? Theme.faint : Theme.ink)
+            .contentShape(Rectangle())
+        }
+    }
+
+    private var filterLabel: String {
+        RecitationFilter.allCases
+            .filter { filters.contains($0) }
+            .map(\.label)
+            .joined(separator: " · ")
+    }
+
+    private func toggle(_ filter: RecitationFilter) {
+        if filters.contains(filter) {
+            filters.remove(filter)
+        } else {
+            filters.insert(filter)
+        }
+    }
+
+    private func empty(_ message: String) -> some View {
+        Text(message)
             .appFont(Typography.subtitle)
             .foregroundStyle(Theme.muted)
             .multilineTextAlignment(.center)
@@ -47,6 +113,9 @@ struct SpeechHistoryView: View {
 struct AttemptRow: View {
     @State private var expanded = false
     let attempt: RecitationAttempt
+    var filters: Set<RecitationFilter> = []
+
+    private var shown: [RecitationWordReview] { attempt.wordReviews(matching: filters) }
 
     var body: some View {
         Button {
@@ -62,6 +131,10 @@ struct AttemptRow: View {
         }
         .buttonStyle(.haptic)
         .disabled(!attempt.hasDetail)
+        .onAppear { expanded = !filters.isEmpty }
+        .onChange(of: filters) { _, active in
+            withAnimation(Motion.toggle) { expanded = !active.isEmpty }
+        }
     }
 
     private var summary: some View {
@@ -82,7 +155,7 @@ struct AttemptRow: View {
 
     private var reviews: some View {
         VStack(alignment: .leading, spacing: 12) {
-            ForEach(attempt.wordReviews) { review in
+            ForEach(shown) { review in
                 WordReviewBlock(review: review)
             }
         }

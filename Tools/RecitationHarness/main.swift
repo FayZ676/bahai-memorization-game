@@ -330,6 +330,7 @@ let salvagedDraft = RecitationDraft(
     matchedCount: salvaged.matchedCount,
     misses: salvaged.misses,
     tries: salvaged.tries,
+    credits: salvaged.credits,
     transcript: salvaged.transcript
 )
 check("the attempt survives to the log", !salvagedDraft.isEmpty, "\(salvagedDraft)")
@@ -346,6 +347,68 @@ check("its verdict is named", review.first?.verdict == RecitationOutcome.abandon
 print("\nBurnt words still carry their outcome")
 check("a stalled-out word is exhausted", stalled.misses.first?.outcome == .exhausted,
       "\(stalled.misses)")
+
+print("\nEvery credited word is recorded, not just the one that was owed")
+var credited = RecitationMatcher(words: words, hiddenIndices: [1, 3, 6])
+_ = credited.ingest(heard(line), isFinal: true)
+check("all three credits recorded", credited.credits.map(\.wordIndex) == [1, 3, 6],
+      "\(credited.credits.map(\.wordIndex))")
+check("credits name the word verbatim", credited.credits.map(\.expected) == ["Son", "Spirit", "counsel"],
+      "\(credited.credits.map(\.expected))")
+
+print("\nThe three filters sort each word into the right bucket")
+var sorted = RecitationMatcher(words: words, hiddenIndices: [1, 3, 6])
+_ = sorted.ingest(heard("O"), isFinal: true)
+for _ in 0..<3 { _ = sorted.ingest(heard("banana"), isFinal: true) }
+_ = sorted.ingest(heard("banana of Spirit My first counsel"), isFinal: true)
+let sortedAttempt = RecitationDraft(
+    expectedCount: sorted.expectedCount,
+    matchedCount: sorted.matchedCount,
+    misses: sorted.misses,
+    tries: sorted.tries,
+    credits: sorted.credits,
+    transcript: sorted.transcript
+).attempt(chunkID: UUID(), passageTitle: "Hidden Words", excerpt: "O Son of Spirit")
+check("reviews are listed in scripture order",
+      sortedAttempt.wordReviews.map(\.wordIndex) == [1, 3, 6],
+      "\(sortedAttempt.wordReviews.map(\.wordIndex))")
+check("the burnt word is a miss",
+      sortedAttempt.wordReviews(matching: [.misses]).map(\.wordIndex) == [1],
+      "\(sortedAttempt.wordReviews(matching: [.misses]).map(\.wordIndex))")
+check("the word said in vain is a retry",
+      sortedAttempt.wordReviews(matching: [.retries]).map(\.wordIndex) == [1],
+      "\(sortedAttempt.wordReviews(matching: [.retries]).map(\.wordIndex))")
+check("the words that landed are passes",
+      sortedAttempt.wordReviews(matching: [.passes]).map(\.wordIndex) == [3, 6],
+      "\(sortedAttempt.wordReviews(matching: [.passes]).map(\.wordIndex))")
+check("a burnt word is never a pass",
+      sortedAttempt.wordReviews(matching: [.passes]).allSatisfy { !$0.isMiss },
+      "\(sortedAttempt.wordReviews(matching: [.passes]).map(\.wordIndex))")
+check("filters union rather than intersect",
+      sortedAttempt.wordReviews(matching: [.misses, .passes]).map(\.wordIndex) == [1, 3, 6],
+      "\(sortedAttempt.wordReviews(matching: [.misses, .passes]).map(\.wordIndex))")
+check("no filter shows everything",
+      sortedAttempt.wordReviews(matching: []).map(\.wordIndex) == [1, 3, 6],
+      "\(sortedAttempt.wordReviews(matching: []).map(\.wordIndex))")
+
+print("\nA clean recitation has passes and nothing else")
+var spotless = RecitationMatcher(words: words, hiddenIndices: [1, 3, 6])
+_ = spotless.ingest(heard(line), isFinal: true)
+let spotlessAttempt = RecitationDraft(
+    expectedCount: spotless.expectedCount,
+    matchedCount: spotless.matchedCount,
+    misses: spotless.misses,
+    tries: spotless.tries,
+    credits: spotless.credits,
+    transcript: spotless.transcript
+).attempt(chunkID: UUID(), passageTitle: "Hidden Words", excerpt: "O Son of Spirit")
+check("every hidden word is a pass",
+      spotlessAttempt.wordReviews(matching: [.passes]).map(\.wordIndex) == [1, 3, 6],
+      "\(spotlessAttempt.wordReviews(matching: [.passes]).map(\.wordIndex))")
+check("no misses to show", spotlessAttempt.wordReviews(matching: [.misses]).isEmpty,
+      "\(spotlessAttempt.wordReviews(matching: [.misses]).map(\.wordIndex))")
+check("no retries to show", spotlessAttempt.wordReviews(matching: [.retries]).isEmpty,
+      "\(spotlessAttempt.wordReviews(matching: [.retries]).map(\.wordIndex))")
 
 print("\nTranscript and counts survive for the log")
 check("transcript is the spoken text", recorded.transcript == "O banana of Spirit My first counsel",

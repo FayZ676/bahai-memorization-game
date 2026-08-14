@@ -52,6 +52,11 @@ Exits non-zero on any failure. Run it from the repo root after touching either l
   offered to owed words behind the frontier, and only on an exact key match — the fuzzy
   tolerance is earned by positional evidence, which a reclaim does not have. Without that
   bar, "save" (`sf`) reclaims "seest" (`st`) at one edit apart.
+- **Credits and the three filters** — every credited word is recorded, not only the one that
+  was owed when you spoke, because a try is written against the owed word alone and a clean
+  utterance credits several at once. Without credits the Passes filter would show one word per
+  utterance and call it the whole truth. Reviews sort into misses / retries / passes, and the
+  filters union rather than intersect.
 - **Silent exits** — a word revealed by hand mid-recitation, or still owed when listening
   stops, is recorded rather than dropped. Both used to leave no trace at all, and an attempt
   with no matches and no burns used to be discarded wholesale as "empty".

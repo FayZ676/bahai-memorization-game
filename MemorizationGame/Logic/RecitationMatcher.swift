@@ -44,6 +44,7 @@ struct RecitationMatcher {
     private var hiddenIndices: [Int]
     private(set) var misses: [RecitationMiss] = []
     private(set) var tries: [RecitationTry] = []
+    private(set) var credits: [RecitationCredit] = []
     private var triedThrough = 0
     private var settled: [HeardToken] = []
     private var pending: [HeardToken] = []
@@ -137,7 +138,7 @@ struct RecitationMatcher {
         var events: [Event] = []
         for index in hiddenIndices where reached.contains(index) {
             guard !matched.contains(index), !missed.contains(index) else { continue }
-            matched.insert(index)
+            credit(index)
             events.append(.matched(index: index))
         }
 
@@ -219,6 +220,12 @@ struct RecitationMatcher {
         return events
     }
 
+    private mutating func credit(_ index: Int) {
+        matched.insert(index)
+        guard spelling.indices.contains(index) else { return }
+        credits.append(RecitationCredit(wordIndex: index, expected: spelling[index]))
+    }
+
     private mutating func reclaim(using tokens: [HeardToken]) -> [Event] {
         var offered = tokens.filter { $0.confidence >= Self.confidenceFloor }
         guard !offered.isEmpty else { return [] }
@@ -231,7 +238,7 @@ struct RecitationMatcher {
                 "\(index) \"\(spelling[index])\" from \"\(offered[taken].text)\" behind frontier \(frontier)"
             )
             offered.remove(at: taken)
-            matched.insert(index)
+            credit(index)
             attempts = 0
             unexplainedSinceProgress = false
             events.append(.matched(index: index))
