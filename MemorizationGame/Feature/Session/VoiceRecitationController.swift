@@ -40,6 +40,15 @@ final class VoiceRecitationController {
 
     var isListening: Bool { state == .listening }
 
+    #if DEBUG
+    func stageListeningForCapture(cursor: Int?, heard: String) {
+        state = .listening
+        cursorIndex = cursor
+        nextExpectedIndex = cursor
+        heardText = heard
+    }
+    #endif
+
     private struct Ready {
         let transcriber: DictationTranscriber
         let analyzer: SpeechAnalyzer

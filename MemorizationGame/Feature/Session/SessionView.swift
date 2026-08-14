@@ -93,6 +93,12 @@ struct SessionView: View {
             voice.onCompleted = { completeChunk() }
             voice.onAttemptFinished = { recordAttempt($0) }
             voice.prepare(for: vm.passageText)
+            #if DEBUG
+            if ProcessInfo.processInfo.environment["SHOT_RECITING"] == "1" {
+                try? await Task.sleep(for: .seconds(3))
+                stageRecitationForCapture()
+            }
+            #endif
         }
         .onChange(of: vm.step) {
             tour?.complete(.nextSection, onlyIfCurrent: true)
@@ -176,6 +182,24 @@ struct SessionView: View {
     private var currentTitle: String {
         store.passages.first { $0.id == passage.id }?.title ?? passage.title
     }
+
+    #if DEBUG
+    private func stageRecitationForCapture() {
+        guard let card = vm.current else { return }
+        let hidden = card.hiddenWords.sorted()
+        guard !hidden.isEmpty else { return }
+        let spoken = Array(hidden.prefix((hidden.count + 1) / 2))
+        highlights.recite(spoken)
+        let words = card.words
+        let cursor = hidden.dropFirst(spoken.count).first
+        let spokenThrough = cursor ?? words.count
+        let heard = words[max(0, spokenThrough - 7)..<spokenThrough]
+            .map(String.init)
+            .filter { $0.contains(where: \.isLetter) }
+            .joined(separator: " ")
+        voice.stageListeningForCapture(cursor: cursor, heard: heard)
+    }
+    #endif
 
     private func registerRecited(_ indices: [Int]) {
         RecitationTrace.emit("ui", "recited \(indices)")

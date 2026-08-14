@@ -25,12 +25,10 @@ read in order as one pass through the app — see `Design/StoreFrames/README.md`
 | `recite-aloud.png` | `4-recite.png` | the session listening, mic active, words marking as they are spoken |
 | `6-library-dark.png` | `5-know.png` | the library in dark, streak and progress ramps, several passages finished |
 
-`recite-aloud.png` does not exist yet and cannot be shot here — see **Not captured** below.
-Until it does, `generate_store_frames.py` skips its tile and the uploaded set is four.
-
-Every other raw here feeds a tile; there are no spares left. The iPad has no dark capture,
-so its `5-know.png` falls back to `ipad-13/1-library.png` through the tile's `per_device`
-override.
+Every raw here feeds a tile; there are no spares left. The iPad has no dark capture, so its
+`5-know.png` falls back to `ipad-13/1-library.png` through the tile's `per_device`
+override. There is no iPad recitation tile — the raw was never shot there, so it is skipped
+the same way the later session stage already is.
 
 Two captures are stage-dependent and must be reshot as a pair if the hero passage changes:
 `2-hide-words.png` from the default seed and `9-hide-more.png` from `HERO_LATE=1`, which
@@ -44,18 +42,32 @@ read identically in both.
 
 If you drop the iPad build (`TARGETED_DEVICE_FAMILY = 1`), `ipad-13/` is no longer needed.
 
-## Not captured
+## Staging the recitation shot
 
-The **recitation** screen, which tile `4-recite.png` is waiting on. Speech recognition
-never reaches its listening state in a simulator — no on-device speech model and no audio
-input — so the microphone reverts to idle and there is nothing to photograph. Capture it on
-a physical iPhone whose screen is 1320 × 2868 (a 16/17 Pro Max); a smaller phone produces
-the wrong pixel size, and App Store Connect rejects the upload rather than scaling it.
+`recite-aloud.png` is the one capture the simulator cannot reach on its own. Speech
+recognition never enters its listening state there — no on-device speech model and no audio
+input — so the mic falls straight back to idle and there is nothing to photograph.
 
-Shoot it mid-recitation, not at rest: the mic active and part of the section already marked,
-so the tile shows the app following along rather than a page with a button on it. Save it as
-`iphone-6.9/recite-aloud.png`, then regenerate. There is no iPad equivalent — the tile is
-skipped there, the same way the session stage already is.
+`SHOT_RECITING=1` puts the session into that state without speaking: it marks the first half
+of the section's hidden words as recited, parks the cursor on the next one, and fills the
+heard line with the words leading up to it. The UI is the same one a real device draws; only
+the trigger is staged, the way `seed.py` stages persisted state. It is `#if DEBUG` in
+`SessionView` and `VoiceRecitationController`, so it cannot reach a release build.
+
+It must be passed through to the app, not to `simctl` itself:
+
+```sh
+SIMCTL_CHILD_SHOT_RECITING=1 xcrun simctl launch "$SIM_UDID" com.faizififita.MemorizationGame
+```
+
+The staging runs **three seconds after** the session appears, and that delay is load-bearing:
+`vm.start()` bumps `presentationEpoch`, whose `onChange` calls `voice.stop()` and
+`highlights.clear()`. Anything staged before that fires is wiped, which looks exactly like
+the flag not working. Wait ~9s after tapping in before shooting.
+
+Shooting it on a physical iPhone instead is still valid, and needs no flag — but the screen
+has to be 1320 × 2868 (a 16/17 Pro Max), since App Store Connect rejects other sizes rather
+than scaling them.
 
 ## Regenerating
 

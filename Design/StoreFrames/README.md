@@ -21,9 +21,12 @@ two stages, so the set demonstrates the loop instead of describing it. Reorderin
 breaks that; the story is the point, not the coverage. The recitation beat sits after that
 pair rather than between them, for the same reason.
 
-`4-recite.png` has no raw capture yet — the recitation screen cannot be shot in a simulator
-(`store-screenshots/README.md`). Its tile is skipped until one exists, so the set generates
-as four and uploads as four; nothing else has to change when the capture lands.
+`4-recite.png` sets its own `phone_top` through a per-tile `geometry` override, which merges
+over the device's. It is the one tile whose subject — the mic and the heard line — sits at
+the very bottom of the screen, so the usual bleed crops away the whole point of it and
+leaves a page of blanks. Lowering the phone shows the full screen while keeping the phone
+the same width as its siblings, so the set still reads as one device throughout. Raise
+`phone_top` back and the mic goes over the edge again.
 
 The closing tile is dark. It is the one place a theme can be shown without spending a tile
 on it, and it lands on the library, where the ramps and the streak carry the same reading

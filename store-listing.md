@@ -78,17 +78,16 @@ Small fixes and refinements.
 - Privacy: https://fayz676.github.io/bahai-memorization-game/privacy.html
 
 ## Screenshots
-Upload the `-framed/` folders in filename order — 4 × iPhone 6.9" (1320×2868) and
+Upload the `-framed/` folders in filename order — 5 × iPhone 6.9" (1320×2868) and
 3 × iPad 13" (2064×2752), each a screenshot composed under a headline by
 `Design/StoreFrames/`. They read as one pass through the app: choose a prayer, hide a
-word, hide more, know it. The closing tile is dark, which is where the app's dark
-appearance gets shown. The bare folders in `store-screenshots/` are the raw captures those
-are built from, with regeneration instructions.
+word, hide more, say it out loud, know it. The closing tile is dark, which is where the
+app's dark appearance gets shown. The bare folders in `store-screenshots/` are the raw
+captures those are built from, with regeneration instructions.
 
-A fifth iPhone tile, `4-recite.png` ("Then say it out loud."), is defined in
-`Design/StoreFrames/` but has no raw capture: speech recognition can't reach its listening
-state in a simulator, so it must be shot on a physical 16/17 Pro Max. Until then the tile is
-skipped and the uploaded set stays at four.
+The recitation tile is staged with a DEBUG-only `SHOT_RECITING=1`, since the simulator can
+never reach the listening state on its own — see `store-screenshots/README.md`. The iPad set
+has no recitation tile.
 
 ## Notes / decisions still open
 - **Pricing** — description says "no ads, no sign-in" but deliberately does NOT claim "free" or "no subscription", since pricing isn't decided. Add if free.

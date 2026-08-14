@@ -70,7 +70,8 @@ TILES = [
     dict(name="3-hide-more.png", source="9-hide-more.png",
          headline="Hide more\neach time you return."),
     dict(name="4-recite.png", source="recite-aloud.png",
-         headline="Then say it\nout loud."),
+         headline="Then say it\nout loud.",
+         geometry=dict(phone_top=0.165)),
     dict(name="5-know.png", source="6-library-dark.png", theme="dark",
          headline="Until you know it\nby heart.",
          per_device={"ipad-13": dict(source="1-library.png", theme="light")}),
@@ -165,7 +166,7 @@ def resolve(tile, device):
 def build_page(tile, device):
     tile = resolve(tile, device)
     width, height = device["size"]
-    geo = device["geometry"]
+    geo = dict(device["geometry"], **tile.get("geometry", {}))
     theme = DARK if tile.get("theme") == "dark" else LIGHT
     source = SHOTS / device["folder"] / tile["source"]
 
