@@ -452,6 +452,25 @@ check("together they account for every failed word",
       split.wordReviews(matching: [.misses, .skipped]).map(\.wordIndex) == [1, 3, 6, 8],
       "\(split.wordReviews(matching: [.misses, .skipped]).map(\.wordIndex))")
 
+print("\nA word with nothing wrong is never shown, whatever the file holds")
+let untroubled = attempt(
+    misses: [],
+    tries: [
+        RecitationTry(
+            wordIndex: 1,
+            expected: "Son",
+            heard: "Son",
+            expectedKey: PhoneticKey.encode("Son"),
+            heardKeys: [PhoneticKey.encode("Son")],
+            accepted: true
+        )
+    ]
+)
+check("a word that landed first time is not reviewed", untroubled.wordReviews.isEmpty,
+      "\(untroubled.wordReviews.map(\.wordIndex))")
+check("and the attempt offers nothing to expand", !untroubled.hasDetail,
+      "\(untroubled.hasDetail)")
+
 print("\nA word that was tried counts as voiced even if nothing was heard for it")
 let voiced = attempt(
     misses: [miss(1, "Son", heard: "", .abandoned)],

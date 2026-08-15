@@ -229,7 +229,7 @@ struct RecitationAttempt: Codable, Hashable, Identifiable {
         return tally.isEmpty ? "nothing missed" : tally.joined(separator: " · ")
     }
 
-    var hasDetail: Bool { !misses.isEmpty || !tries.isEmpty }
+    var hasDetail: Bool { !wordReviews.isEmpty }
 
     var wordReviews: [RecitationWordReview] {
         var triesByWord: [Int: [RecitationTry]] = [:]
@@ -251,6 +251,7 @@ struct RecitationAttempt: Codable, Hashable, Identifiable {
                 miss: missByWord[index]
             )
         }
+        .filter { review in RecitationFilter.allCases.contains { $0.admits(review) } }
     }
 
     func wordReviews(matching filters: Set<RecitationFilter>) -> [RecitationWordReview] {
