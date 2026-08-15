@@ -340,7 +340,8 @@ let review = salvagedDraft
     .wordReviews
 check("one word reviewed", review.count == 1, "\(review)")
 check("its tries are attached", review.first?.tries.count == 1, "\(review)")
-check("its verdict is named", review.first?.verdict == RecitationOutcome.abandoned.label,
+check("its verdict names the filters it answers to",
+      review.first?.verdict == "Missed · Retried",
       "\(String(describing: review.first?.verdict))")
 
 print("\nBurnt words still carry their outcome")
@@ -372,8 +373,8 @@ check("a word retried then matched still counts as a retry",
       "\(landedAttempt.wordReviews(matching: [.retries]).map(\.wordIndex))")
 check("and it is not a miss", landedAttempt.wordReviews(matching: [.misses]).isEmpty,
       "\(landedAttempt.wordReviews(matching: [.misses]).map(\.wordIndex))")
-check("its verdict says it landed in the end",
-      landedAttempt.wordReviews.first?.verdict == "matched",
+check("its verdict is the filter that would find it",
+      landedAttempt.wordReviews.first?.verdict == "Retried",
       "\(String(describing: landedAttempt.wordReviews.first?.verdict))")
 
 print("\nThe two filters sort each word into the right bucket")

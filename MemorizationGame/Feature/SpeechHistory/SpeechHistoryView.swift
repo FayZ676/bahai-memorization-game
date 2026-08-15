@@ -209,8 +209,6 @@ struct WordReviewBlock: View {
     private var detail: String {
         let count = review.tries.count
         guard count > 0 else { return review.verdict }
-        let tried = "\(count) tr\(count == 1 ? "y" : "ies")"
-        guard review.isMiss else { return tried }
-        return "\(review.verdict) after \(tried)"
+        return "\(review.verdict) · \(count) tr\(count == 1 ? "y" : "ies")"
     }
 }

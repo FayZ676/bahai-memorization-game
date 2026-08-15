@@ -8,7 +8,7 @@ enum RecitationOutcome: String, Codable, Hashable {
 
     var label: String {
         switch self {
-        case .skipped: "moved past it"
+        case .skipped: "skipped"
         case .exhausted: "gave up on it"
         case .revealed: "revealed"
         case .abandoned: "still owed at the end"
@@ -128,8 +128,8 @@ struct RecitationWordReview: Identifiable {
     var isRetried: Bool { !rejectedTries.isEmpty }
 
     var verdict: String {
-        if let miss { return miss.outcome.label }
-        return landed ? "matched" : "still owed"
+        let names = RecitationFilter.allCases.filter { $0.admits(self) }.map(\.label)
+        return names.isEmpty ? "matched" : names.joined(separator: " · ")
     }
 }
 
@@ -222,13 +222,10 @@ struct RecitationAttempt: Codable, Hashable, Identifiable {
 
     var summary: String {
         let reviews = wordReviews
-        let tally = [
-            ("missed", reviews.filter(\.isMiss).count),
-            ("skipped", reviews.filter(\.isSkipped).count),
-            ("retried", reviews.filter(\.isRetried).count),
-        ]
-        .filter { $0.1 > 0 }
-        .map { "\($0.1) \($0.0)" }
+        let tally = RecitationFilter.allCases
+            .map { ($0.label.lowercased(), reviews.filter($0.admits).count) }
+            .filter { $0.1 > 0 }
+            .map { "\($0.1) \($0.0)" }
         return tally.isEmpty ? "nothing missed" : tally.joined(separator: " · ")
     }
 
