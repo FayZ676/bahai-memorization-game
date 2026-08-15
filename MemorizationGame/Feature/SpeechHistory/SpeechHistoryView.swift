@@ -202,15 +202,15 @@ struct WordReviewBlock: View {
     }
 
     private var headline: some View {
+        let named = RecitationFilter.allCases.filter { $0 != .retries && $0.admits(review) }
         var line = Text(review.expected).foregroundStyle(Theme.ink)
-        for filter in RecitationFilter.allCases
-        where filter != .retries && filter.admits(review) {
+        for filter in named {
             line = line
                 + Text(" · ").foregroundStyle(Theme.faint)
                 + Text(filter.label).foregroundStyle(filter.tint)
         }
         let count = review.tries.count
-        if count > 0 {
+        if count > 1 || (named.isEmpty && count > 0) {
             line = line
                 + Text(" · ").foregroundStyle(Theme.faint)
                 + Text("\(count) tr\(count == 1 ? "y" : "ies")")
