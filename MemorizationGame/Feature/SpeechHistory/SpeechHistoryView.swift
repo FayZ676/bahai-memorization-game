@@ -203,7 +203,8 @@ struct WordReviewBlock: View {
 
     private var headline: some View {
         var line = Text(review.expected).foregroundStyle(Theme.ink)
-        for filter in RecitationFilter.allCases where filter.admits(review) {
+        for filter in RecitationFilter.allCases
+        where filter != .retries && filter.admits(review) {
             line = line
                 + Text(" · ").foregroundStyle(Theme.faint)
                 + Text(filter.label).foregroundStyle(filter.tint)
@@ -211,7 +212,9 @@ struct WordReviewBlock: View {
         let count = review.tries.count
         if count > 0 {
             line = line
-                + Text(" · \(count) tr\(count == 1 ? "y" : "ies")").foregroundStyle(Theme.faint)
+                + Text(" · ").foregroundStyle(Theme.faint)
+                + Text("\(count) tr\(count == 1 ? "y" : "ies")")
+                    .foregroundStyle(review.isRetried ? Theme.retried : Theme.faint)
         }
         return line
             .appFont(Typography.caption)
