@@ -21,6 +21,10 @@ enum Theme {
     static let gold        = adaptive(0xB9863F, 0xF0CE8A)
     static let warn        = adaptive(0xB4443A, 0xD98A80)
 
+    static let missed      = warn
+    static let skipped     = adaptive(0x3D6E8F, 0x7FB6DA)
+    static let retried     = adaptive(0x8A6BB0, 0xBFA3E0)
+
     private static func adaptive(_ light: UInt32, _ dark: UInt32) -> Color {
         Color(uiColor: UIColor { traits in
             UIColor(hex: traits.userInterfaceStyle == .dark ? dark : light)

@@ -1,5 +1,15 @@
 import SwiftUI
 
+extension RecitationFilter {
+    var tint: Color {
+        switch self {
+        case .misses: Theme.missed
+        case .skipped: Theme.skipped
+        case .retries: Theme.retried
+        }
+    }
+}
+
 struct SpeechHistoryView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var log = RecitationLog.shared
@@ -78,11 +88,11 @@ struct SpeechHistoryView: View {
                     .appFont(Typography.label)
                     .lineLimit(1)
             }
-            .foregroundStyle(on ? Theme.accent : Theme.muted)
+            .foregroundStyle(on ? filter.tint : Theme.muted)
             .padding(.horizontal, Spacing.md)
             .padding(.vertical, 9)
-            .background(on ? Theme.accent.opacity(0.12) : Theme.surface, in: Capsule())
-            .overlay(Capsule().stroke(on ? Theme.accent : Theme.hairline, lineWidth: 1))
+            .background(on ? filter.tint.opacity(0.12) : Theme.surface, in: Capsule())
+            .overlay(Capsule().stroke(on ? filter.tint : Theme.hairline, lineWidth: 1))
         }
         .buttonStyle(.haptic)
     }
@@ -134,9 +144,8 @@ struct AttemptRow: View {
 
     private var summary: some View {
         HStack(alignment: .firstTextBaseline, spacing: Spacing.sm) {
-            Text(header)
+            header
                 .appFont(Typography.micro)
-                .foregroundStyle(Theme.faint)
                 .multilineTextAlignment(.leading)
             Spacer(minLength: 0)
             if attempt.hasDetail {
@@ -156,11 +165,20 @@ struct AttemptRow: View {
         }
     }
 
-    private var header: String {
+    private var header: Text {
         let day = attempt.date.formatted(.dateTime.month(.abbreviated).day())
         let time = attempt.date.formatted(date: .omitted, time: .shortened)
-        let stamp = "\(day), \(time)"
-        return "\(stamp) · \(attempt.passageTitle) · \(attempt.summary)"
+        var line = Text("\(day), \(time) · \(attempt.passageTitle)")
+            .foregroundStyle(Theme.faint)
+        let reviews = attempt.wordReviews
+        for filter in RecitationFilter.allCases {
+            let count = reviews.filter(filter.admits).count
+            guard count > 0 else { continue }
+            line = line
+                + Text(" · ").foregroundStyle(Theme.faint)
+                + Text("\(count) \(filter.label.lowercased())").foregroundStyle(filter.tint)
+        }
+        return line
     }
 }
 
@@ -184,9 +202,18 @@ struct WordReviewBlock: View {
     }
 
     private var headline: some View {
-        (Text(review.expected).foregroundStyle(Theme.ink)
-            + Text(" · ").foregroundStyle(Theme.faint)
-            + Text(detail).foregroundStyle(Theme.faint))
+        var line = Text(review.expected).foregroundStyle(Theme.ink)
+        for filter in RecitationFilter.allCases where filter.admits(review) {
+            line = line
+                + Text(" · ").foregroundStyle(Theme.faint)
+                + Text(filter.label).foregroundStyle(filter.tint)
+        }
+        let count = review.tries.count
+        if count > 0 {
+            line = line
+                + Text(" · \(count) tr\(count == 1 ? "y" : "ies")").foregroundStyle(Theme.faint)
+        }
+        return line
             .appFont(Typography.caption)
             .multilineTextAlignment(.leading)
             .fixedSize(horizontal: false, vertical: true)
@@ -201,9 +228,4 @@ struct WordReviewBlock: View {
             .padding(.leading, 12)
     }
 
-    private var detail: String {
-        let count = review.tries.count
-        guard count > 0 else { return review.verdict }
-        return "\(review.verdict) · \(count) tr\(count == 1 ? "y" : "ies")"
-    }
 }

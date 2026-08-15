@@ -220,15 +220,6 @@ struct RecitationAttempt: Codable, Hashable, Identifiable {
         transcript = try container.decodeIfPresent(String.self, forKey: .transcript) ?? ""
     }
 
-    var summary: String {
-        let reviews = wordReviews
-        let tally = RecitationFilter.allCases
-            .map { ($0.label.lowercased(), reviews.filter($0.admits).count) }
-            .filter { $0.1 > 0 }
-            .map { "\($0.1) \($0.0)" }
-        return tally.isEmpty ? "nothing missed" : tally.joined(separator: " · ")
-    }
-
     var hasDetail: Bool { !wordReviews.isEmpty }
 
     var wordReviews: [RecitationWordReview] {
