@@ -88,11 +88,11 @@ struct SpeechHistoryView: View {
                     .appFont(Typography.label)
                     .lineLimit(1)
             }
-            .foregroundStyle(filter.tint.opacity(on ? 1 : 0.55))
+            .foregroundStyle(filter.tint)
             .padding(.horizontal, Spacing.md)
             .padding(.vertical, 9)
-            .background(on ? filter.tint.opacity(0.15) : Theme.surface, in: Capsule())
-            .overlay(Capsule().stroke(on ? filter.tint : Theme.hairline, lineWidth: 1))
+            .background(on ? filter.tint.opacity(0.18) : Theme.surface, in: Capsule())
+            .overlay(Capsule().stroke(on ? filter.tint : Theme.hairline, lineWidth: on ? 1.5 : 1))
         }
         .buttonStyle(.haptic)
     }

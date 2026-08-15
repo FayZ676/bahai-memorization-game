@@ -135,8 +135,8 @@ struct RecitationWordReview: Identifiable {
 
 enum RecitationFilter: String, CaseIterable, Identifiable {
     case misses
-    case skipped
     case retries
+    case skipped
 
     var id: String { rawValue }
 

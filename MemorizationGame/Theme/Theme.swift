@@ -22,8 +22,8 @@ enum Theme {
     static let warn        = adaptive(0xB4443A, 0xD98A80)
 
     static let missed      = adaptive(0xD32F2F, 0xFF6B6B)
-    static let skipped     = adaptive(0x8E8E93, 0x98989D)
-    static let retried     = adaptive(0xC49000, 0xFFD54F)
+    static let retried     = adaptive(0xE2650A, 0xFFA149)
+    static let skipped     = adaptive(0xC49000, 0xFFD54F)
 
     private static func adaptive(_ light: UInt32, _ dark: UInt32) -> Color {
         Color(uiColor: UIColor { traits in
