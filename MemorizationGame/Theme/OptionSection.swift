@@ -1,11 +1,10 @@
 import SwiftUI
 
-struct OptionSection<Content: View, Accessory: View>: View {
+struct OptionSection<Content: View>: View {
     var label: String? = nil
     var icon: String? = nil
     var footer: String? = nil
     @ViewBuilder let content: Content
-    @ViewBuilder let accessory: Accessory
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -18,10 +17,6 @@ struct OptionSection<Content: View, Accessory: View>: View {
                     Text(label)
                         .appFont(Typography.footnote)
                         .tracking(0.3)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                    Spacer(minLength: Spacing.sm)
-                    accessory
                 }
                 .foregroundStyle(Theme.faint)
                 .padding(.horizontal, 6)
@@ -43,17 +38,6 @@ struct OptionSection<Content: View, Accessory: View>: View {
                     .padding(.top, 8)
             }
         }
-    }
-}
-
-extension OptionSection where Accessory == EmptyView {
-    init(
-        label: String? = nil,
-        icon: String? = nil,
-        footer: String? = nil,
-        @ViewBuilder content: () -> Content
-    ) {
-        self.init(label: label, icon: icon, footer: footer, content: content) { EmptyView() }
     }
 }
 

@@ -23,12 +23,14 @@ struct SpeechHistoryView: View {
 
     private var attempts: some View {
         ScrollView {
-            OptionSection(
-                label: "Recent recitations",
-                icon: "waveform",
-                footer: "Tap a recitation to see every word you were owed — what the app heard on "
-                    + "each try, and how the word ended up.",
-                content: {
+            VStack(alignment: .leading, spacing: 14) {
+                chips
+                OptionSection(
+                    label: "Recent recitations",
+                    icon: "waveform",
+                    footer: "Tap a recitation to see every word you were owed — what the app heard "
+                        + "on each try, and how the word ended up."
+                ) {
                     if visible.isEmpty {
                         Text("Nothing matches this filter.")
                             .appFont(Typography.caption)
@@ -41,84 +43,45 @@ struct SpeechHistoryView: View {
                             AttemptRow(attempt: attempt, filters: filters)
                         }
                     }
-                },
-                accessory: { filterMenu }
-            )
+                }
+            }
             .padding(.horizontal, 18)
             .padding(.bottom, Spacing.screen)
         }
     }
 
-    private var filterMenu: some View {
-        Menu {
-            ForEach(RecitationFilter.allCases) { filter in
-                Button {
-                    Feedback.tap()
-                    toggle(filter)
-                } label: {
-                    Label(
-                        filters.contains(filter) ? "\(filter.label)  ✓" : filter.label,
-                        systemImage: filter.icon
-                    )
+    private var chips: some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: Spacing.sm) {
+                ForEach(RecitationFilter.allCases) { filter in
+                    chip(filter)
                 }
             }
-            if !filters.isEmpty {
-                Divider()
-                Button {
-                    Feedback.tap()
-                    filters = []
-                } label: {
-                    Label("Show All", systemImage: "line.3.horizontal.decrease")
-                }
-            }
-        } label: {
-            ViewThatFits(in: .horizontal) {
-                pill(naming: true)
-                pill(naming: false)
-            }
-            .transaction { $0.animation = nil }
+            .padding(.horizontal, 6)
         }
-        .buttonStyle(.plain)
-        .menuIndicator(.hidden)
-        .simultaneousGesture(TapGesture().onEnded { Feedback.tap() })
+        .scrollIndicators(.hidden)
+        .scrollBounceBehavior(.basedOnSize)
     }
 
-    private func pill(naming: Bool) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: "line.3.horizontal.decrease")
-                .appIcon(14, weight: .semibold)
-            if naming {
-                Text(filterLabel)
+    private func chip(_ filter: RecitationFilter) -> some View {
+        let on = filters.contains(filter)
+        return Button {
+            toggle(filter)
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: filter.icon)
+                    .appIcon(13, weight: .semibold)
+                Text(filter.label)
                     .appFont(Typography.label)
                     .lineLimit(1)
             }
-            if !filters.isEmpty {
-                Text("\(filters.count)")
-                    .appFont(Typography.micro)
-                    .foregroundStyle(Theme.raised)
-                    .lineLimit(1)
-                    .frame(minWidth: 18, minHeight: 18)
-                    .background(Theme.accent, in: Circle())
-            }
+            .foregroundStyle(on ? Theme.accent : Theme.muted)
+            .padding(.horizontal, Spacing.md)
+            .padding(.vertical, 9)
+            .background(on ? Theme.accent.opacity(0.12) : Theme.surface, in: Capsule())
+            .overlay(Capsule().stroke(on ? Theme.accent : Theme.hairline, lineWidth: 1))
         }
-        .foregroundStyle(filters.isEmpty ? Theme.muted : Theme.accent)
-        .padding(.horizontal, naming ? Spacing.md : Spacing.sm)
-        .frame(height: 36)
-        .background(Theme.surface, in: Capsule())
-        .overlay(
-            Capsule().stroke(
-                filters.isEmpty ? Theme.hairline : Theme.accent.opacity(0.4),
-                lineWidth: 1
-            )
-        )
-        .contentShape(Capsule())
-    }
-
-    private var filterLabel: String {
-        guard let only = filters.first, filters.count == 1 else {
-            return filters.isEmpty ? "Filter" : "Filters"
-        }
-        return only.label
+        .buttonStyle(.haptic)
     }
 
     private func toggle(_ filter: RecitationFilter) {
