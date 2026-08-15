@@ -22,8 +22,6 @@ struct OptionSection<Content: View, Accessory: View>: View {
                         .truncationMode(.tail)
                     Spacer(minLength: Spacing.sm)
                     accessory
-                        .fixedSize(horizontal: true, vertical: false)
-                        .layoutPriority(1)
                 }
                 .foregroundStyle(Theme.faint)
                 .padding(.horizontal, 6)

@@ -72,40 +72,45 @@ struct SpeechHistoryView: View {
                 }
             }
         } label: {
-            HStack(spacing: 6) {
-                Image(systemName: "line.3.horizontal.decrease")
-                    .appIcon(14, weight: .semibold)
-                Text(filterLabel)
-                    .appFont(Typography.label)
-                    .lineLimit(1)
-                    .fixedSize()
-                if !filters.isEmpty {
-                    Text("\(filters.count)")
-                        .appFont(Typography.micro)
-                        .foregroundStyle(Theme.raised)
-                        .lineLimit(1)
-                        .fixedSize()
-                        .frame(minWidth: 18, minHeight: 18)
-                        .background(Theme.accent, in: Circle())
-                }
+            ViewThatFits(in: .horizontal) {
+                pill(naming: true)
+                pill(naming: false)
             }
-            .foregroundStyle(filters.isEmpty ? Theme.muted : Theme.accent)
-            .padding(.horizontal, Spacing.md)
-            .frame(height: 36)
-            .fixedSize()
-            .background(Theme.surface, in: Capsule())
-            .overlay(
-                Capsule().stroke(
-                    filters.isEmpty ? Theme.hairline : Theme.accent.opacity(0.4),
-                    lineWidth: 1
-                )
-            )
-            .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .menuIndicator(.hidden)
-        .fixedSize()
         .simultaneousGesture(TapGesture().onEnded { Feedback.tap() })
+    }
+
+    private func pill(naming: Bool) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: "line.3.horizontal.decrease")
+                .appIcon(14, weight: .semibold)
+            if naming {
+                Text(filterLabel)
+                    .appFont(Typography.label)
+                    .lineLimit(1)
+            }
+            if !filters.isEmpty {
+                Text("\(filters.count)")
+                    .appFont(Typography.micro)
+                    .foregroundStyle(Theme.raised)
+                    .lineLimit(1)
+                    .frame(minWidth: 18, minHeight: 18)
+                    .background(Theme.accent, in: Circle())
+            }
+        }
+        .foregroundStyle(filters.isEmpty ? Theme.muted : Theme.accent)
+        .padding(.horizontal, naming ? Spacing.md : Spacing.sm)
+        .frame(height: 36)
+        .background(Theme.surface, in: Capsule())
+        .overlay(
+            Capsule().stroke(
+                filters.isEmpty ? Theme.hairline : Theme.accent.opacity(0.4),
+                lineWidth: 1
+            )
+        )
+        .contentShape(Capsule())
     }
 
     private var filterLabel: String {
