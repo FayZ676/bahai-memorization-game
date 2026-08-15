@@ -77,10 +77,14 @@ struct SpeechHistoryView: View {
                     .appIcon(14, weight: .semibold)
                 Text(filterLabel)
                     .appFont(Typography.label)
+                    .lineLimit(1)
+                    .fixedSize()
                 if !filters.isEmpty {
                     Text("\(filters.count)")
                         .appFont(Typography.micro)
                         .foregroundStyle(Theme.raised)
+                        .lineLimit(1)
+                        .fixedSize()
                         .frame(minWidth: 18, minHeight: 18)
                         .background(Theme.accent, in: Circle())
                 }

@@ -18,8 +18,12 @@ struct OptionSection<Content: View, Accessory: View>: View {
                     Text(label)
                         .appFont(Typography.footnote)
                         .tracking(0.3)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
                     Spacer(minLength: Spacing.sm)
                     accessory
+                        .fixedSize(horizontal: true, vertical: false)
+                        .layoutPriority(1)
                 }
                 .foregroundStyle(Theme.faint)
                 .padding(.horizontal, 6)
