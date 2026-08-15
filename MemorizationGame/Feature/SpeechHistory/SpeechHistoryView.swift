@@ -54,7 +54,7 @@ struct SpeechHistoryView: View {
             ForEach(RecitationFilter.allCases) { filter in
                 Button {
                     Feedback.tap()
-                    withAnimation(Motion.toggle) { toggle(filter) }
+                    toggle(filter)
                 } label: {
                     Label(
                         filters.contains(filter) ? "\(filter.label)  ✓" : filter.label,
@@ -66,7 +66,7 @@ struct SpeechHistoryView: View {
                 Divider()
                 Button {
                     Feedback.tap()
-                    withAnimation(Motion.toggle) { filters = [] }
+                    filters = []
                 } label: {
                     Label("Show All", systemImage: "line.3.horizontal.decrease")
                 }
@@ -76,6 +76,7 @@ struct SpeechHistoryView: View {
                 pill(naming: true)
                 pill(naming: false)
             }
+            .transaction { $0.animation = nil }
         }
         .buttonStyle(.plain)
         .menuIndicator(.hidden)
