@@ -1,5 +1,29 @@
 import SwiftUI
 
+struct SectionLabel: View {
+    private let text: String
+    private let icon: String?
+
+    init(_ text: String, icon: String? = nil) {
+        self.text = text
+        self.icon = icon
+    }
+
+    var body: some View {
+        HStack(spacing: 6) {
+            if let icon {
+                Image(systemName: icon)
+                    .appIcon(11, weight: .semibold)
+            }
+            Text(text)
+                .appFont(Typography.footnote)
+                .tracking(0.3)
+        }
+        .foregroundStyle(Theme.faint)
+        .padding(.horizontal, 6)
+    }
+}
+
 struct OptionSection<Content: View>: View {
     var label: String? = nil
     var icon: String? = nil
@@ -9,18 +33,8 @@ struct OptionSection<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if let label {
-                HStack(spacing: 6) {
-                    if let icon {
-                        Image(systemName: icon)
-                            .appIcon(11, weight: .semibold)
-                    }
-                    Text(label)
-                        .appFont(Typography.footnote)
-                        .tracking(0.3)
-                }
-                .foregroundStyle(Theme.faint)
-                .padding(.horizontal, 6)
-                .padding(.bottom, 8)
+                SectionLabel(label, icon: icon)
+                    .padding(.bottom, 8)
             }
 
             VStack(alignment: .leading, spacing: 0) {

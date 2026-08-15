@@ -51,16 +51,19 @@ struct SpeechHistoryView: View {
     }
 
     private var chips: some View {
-        ScrollView(.horizontal) {
-            HStack(spacing: Spacing.sm) {
-                ForEach(RecitationFilter.allCases) { filter in
-                    chip(filter)
+        VStack(alignment: .leading, spacing: 8) {
+            SectionLabel("Filter", icon: "line.3.horizontal.decrease")
+            ScrollView(.horizontal) {
+                HStack(spacing: Spacing.sm) {
+                    ForEach(RecitationFilter.allCases) { filter in
+                        chip(filter)
+                    }
                 }
+                .padding(.horizontal, 6)
             }
-            .padding(.horizontal, 6)
+            .scrollIndicators(.hidden)
+            .scrollBounceBehavior(.basedOnSize)
         }
-        .scrollIndicators(.hidden)
-        .scrollBounceBehavior(.basedOnSize)
     }
 
     private func chip(_ filter: RecitationFilter) -> some View {
