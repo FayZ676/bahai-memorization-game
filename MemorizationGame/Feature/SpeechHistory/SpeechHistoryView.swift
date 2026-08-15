@@ -177,12 +177,8 @@ struct WordReviewBlock: View {
                     tint: entry.accepted ? Theme.ink : Theme.warn
                 )
             }
-            if review.tries.isEmpty, let miss = review.miss {
-                line(
-                    lead: "heard",
-                    heard: miss.heard,
-                    tint: miss.heardSomething ? Theme.warn : Theme.muted
-                )
+            if review.tries.isEmpty, let miss = review.miss, miss.heardSomething {
+                line(lead: "heard", heard: miss.heard, tint: Theme.warn)
             }
         }
     }
@@ -198,8 +194,7 @@ struct WordReviewBlock: View {
 
     private func line(lead: String, heard: String, tint: Color) -> some View {
         (Text("\(lead)  ").foregroundStyle(Theme.faint)
-            + Text(heard.isEmpty ? "nothing" : "“\(heard)”")
-                .foregroundStyle(heard.isEmpty ? Theme.muted : tint))
+            + Text("“\(heard)”").foregroundStyle(tint))
             .appFont(Typography.micro)
             .multilineTextAlignment(.leading)
             .fixedSize(horizontal: false, vertical: true)
