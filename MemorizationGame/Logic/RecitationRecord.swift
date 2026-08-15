@@ -142,9 +142,9 @@ enum RecitationFilter: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .misses: "Misses"
+        case .misses: "Missed"
         case .skipped: "Skipped"
-        case .retries: "Retries"
+        case .retries: "Retried"
         }
     }
 
@@ -221,10 +221,15 @@ struct RecitationAttempt: Codable, Hashable, Identifiable {
     }
 
     var summary: String {
-        let missed = misses.isEmpty ? "no misses" : "\(misses.count) missed"
-        let rejected = tries.filter { !$0.accepted }.count
-        guard rejected > 0 else { return missed }
-        return "\(missed) · \(rejected) unheard \(rejected == 1 ? "try" : "tries")"
+        let reviews = wordReviews
+        let tally = [
+            ("missed", reviews.filter(\.isMiss).count),
+            ("skipped", reviews.filter(\.isSkipped).count),
+            ("retried", reviews.filter(\.isRetried).count),
+        ]
+        .filter { $0.1 > 0 }
+        .map { "\($0.1) \($0.0)" }
+        return tally.isEmpty ? "nothing missed" : tally.joined(separator: " · ")
     }
 
     var hasDetail: Bool { !misses.isEmpty || !tries.isEmpty }
