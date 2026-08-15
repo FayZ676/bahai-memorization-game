@@ -1,5 +1,21 @@
 import SwiftUI
 
+private let capHeightRatio: CGFloat = 0.72
+
+private func inlineSymbol(
+    _ name: String,
+    tint: Color,
+    alongside token: AppTextToken,
+    scale: CGFloat
+) -> Text {
+    let text = token.size * scale
+    let glyph = text * 0.66
+    return Text(Image(systemName: name))
+        .font(.system(size: glyph, weight: .regular))
+        .baselineOffset((text - glyph) * capHeightRatio / 2)
+        .foregroundStyle(tint)
+}
+
 extension RecitationFilter {
     var tint: Color {
         switch self {
@@ -7,6 +23,10 @@ extension RecitationFilter {
         case .skipped: Theme.skipped
         case .retries: Theme.retried
         }
+    }
+
+    func symbol(alongside token: AppTextToken, scale: CGFloat) -> Text {
+        inlineSymbol(icon, tint: tint, alongside: token, scale: scale)
     }
 }
 
@@ -92,7 +112,7 @@ struct SpeechHistoryView: View {
             .padding(.horizontal, Spacing.md)
             .padding(.vertical, 9)
             .background(on ? filter.tint.opacity(0.18) : Theme.surface, in: Capsule())
-            .overlay(Capsule().stroke(on ? filter.tint : Theme.hairline, lineWidth: on ? 1.5 : 1))
+            .overlay(Capsule().strokeBorder(on ? filter.tint : Theme.hairline, lineWidth: on ? 1.5 : 1))
         }
         .buttonStyle(.haptic)
     }
@@ -116,6 +136,7 @@ struct SpeechHistoryView: View {
 }
 
 struct AttemptRow: View {
+    @Environment(\.fontScale) private var fontScale
     @State private var expanded = false
     let attempt: RecitationAttempt
     var filters: Set<RecitationFilter> = []
@@ -147,6 +168,7 @@ struct AttemptRow: View {
             header
                 .appFont(Typography.micro)
                 .multilineTextAlignment(.leading)
+                .accessibilityLabel(spokenHeader)
             Spacer(minLength: 0)
             if attempt.hasDetail {
                 Image(systemName: "chevron.down")
@@ -166,37 +188,48 @@ struct AttemptRow: View {
     }
 
     private var header: Text {
-        let day = attempt.date.formatted(.dateTime.month(.abbreviated).day())
-        let time = attempt.date.formatted(date: .omitted, time: .shortened)
-        var line = Text("\(day), \(time) · \(attempt.passageTitle)")
-            .foregroundStyle(Theme.faint)
-        let reviews = attempt.wordReviews
-        for filter in RecitationFilter.allCases {
-            let count = reviews.filter(filter.admits).count
-            guard count > 0 else { continue }
+        var line = Text(occasion).foregroundStyle(Theme.faint)
+        for (filter, count) in tallies {
             line = line
                 + Text(" · ").foregroundStyle(Theme.faint)
-                + Text("\(count) \(filter.label.lowercased())").foregroundStyle(filter.tint)
+                + Text("\(count) ").foregroundStyle(filter.tint)
+                + filter.symbol(alongside: Typography.micro, scale: fontScale)
         }
         return line
+    }
+
+    private var spokenHeader: String {
+        let counts = tallies.map { "\($0.count) \($0.filter.label.lowercased())" }
+        return ([occasion] + counts).joined(separator: ", ")
+    }
+
+    private var occasion: String {
+        let day = attempt.date.formatted(.dateTime.month(.abbreviated).day())
+        let time = attempt.date.formatted(date: .omitted, time: .shortened)
+        return "\(day), \(time) · \(attempt.passageTitle)"
+    }
+
+    private var tallies: [(filter: RecitationFilter, count: Int)] {
+        let reviews = attempt.wordReviews
+        return RecitationFilter.allCases.compactMap { filter in
+            let count = reviews.filter(filter.admits).count
+            return count > 0 ? (filter, count) : nil
+        }
     }
 }
 
 struct WordReviewBlock: View {
+    @Environment(\.fontScale) private var fontScale
     let review: RecitationWordReview
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             headline
-            ForEach(review.tries) { entry in
-                line(
-                    lead: entry.accepted ? "took" : "heard",
-                    heard: entry.heard,
-                    tint: entry.accepted ? Theme.ink : Theme.warn
-                )
+            ForEach(Array(review.tries.enumerated()), id: \.element.id) { index, entry in
+                line(try: index, heard: entry.heard, landed: entry.accepted)
             }
             if review.tries.isEmpty, let miss = review.miss, miss.heardSomething {
-                line(lead: "heard", heard: miss.heard, tint: Theme.warn)
+                line(try: 0, heard: miss.heard, landed: false)
             }
         }
     }
@@ -207,7 +240,7 @@ struct WordReviewBlock: View {
         for filter in named {
             line = line
                 + Text(" · ").foregroundStyle(Theme.faint)
-                + Text(filter.label).foregroundStyle(filter.tint)
+                + Text(filter.label.lowercased()).foregroundStyle(filter.tint)
         }
         let count = review.tries.count
         if count > 1 || (named.isEmpty && count > 0) {
@@ -222,9 +255,16 @@ struct WordReviewBlock: View {
             .fixedSize(horizontal: false, vertical: true)
     }
 
-    private func line(lead: String, heard: String, tint: Color) -> some View {
-        (Text("\(lead)  ").foregroundStyle(Theme.faint)
-            + Text("“\(heard)”").foregroundStyle(tint).italic())
+    private func line(try index: Int, heard: String, landed: Bool) -> some View {
+        (Text("try \(index + 1) ").foregroundStyle(Theme.faint)
+            + inlineSymbol(
+                landed ? "checkmark" : "xmark",
+                tint: landed ? Theme.landed : Theme.missed,
+                alongside: Typography.micro,
+                scale: fontScale
+            )
+            + Text("  ").foregroundStyle(Theme.faint)
+            + Text("“\(heard)”").foregroundStyle(Theme.ink).italic())
             .appFont(Typography.micro)
             .multilineTextAlignment(.leading)
             .fixedSize(horizontal: false, vertical: true)

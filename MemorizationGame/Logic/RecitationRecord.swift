@@ -150,9 +150,9 @@ enum RecitationFilter: String, CaseIterable, Identifiable {
 
     var icon: String {
         switch self {
-        case .misses: "xmark.circle"
-        case .skipped: "forward.circle"
-        case .retries: "arrow.clockwise.circle"
+        case .misses: "xmark"
+        case .skipped: "forward"
+        case .retries: "arrow.clockwise"
         }
     }
 

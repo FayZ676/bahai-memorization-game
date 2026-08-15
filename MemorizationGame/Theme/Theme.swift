@@ -21,6 +21,7 @@ enum Theme {
     static let gold        = adaptive(0xB9863F, 0xF0CE8A)
     static let warn        = adaptive(0xB4443A, 0xD98A80)
 
+    static let landed      = adaptive(0x2E7D32, 0x66BB6A)
     static let missed      = adaptive(0xD32F2F, 0xFF6B6B)
     static let retried     = adaptive(0xE2650A, 0xFFA149)
     static let skipped     = adaptive(0xC49000, 0xFFD54F)
