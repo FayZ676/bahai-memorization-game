@@ -182,9 +182,14 @@ struct LibraryView: View {
             withAnimation(.easeInOut(duration: 0.22)) { isArchiveExpanded.toggle() }
         } label: {
             HStack(spacing: Spacing.sm) {
-                Text("Archived")
-                    .appFont(Typography.label)
-                    .foregroundStyle(Theme.muted)
+                HStack(spacing: Spacing.xs) {
+                    Image(systemName: "archivebox")
+                        .appIcon(13, weight: .medium)
+
+                    Text("Archived")
+                        .appFont(Typography.label)
+                }
+                .foregroundStyle(Theme.muted)
 
                 Text("\(store.archivedPassages.count)")
                     .appFont(Typography.footnote)
