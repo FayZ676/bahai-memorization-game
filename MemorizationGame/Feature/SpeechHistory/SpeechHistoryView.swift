@@ -221,7 +221,7 @@ struct WordReviewBlock: View {
 
     private func line(lead: String, heard: String, tint: Color) -> some View {
         (Text("\(lead)  ").foregroundStyle(Theme.faint)
-            + Text("“\(heard)”").foregroundStyle(tint))
+            + Text("“\(heard)”").foregroundStyle(tint).italic())
             .appFont(Typography.micro)
             .multilineTextAlignment(.leading)
             .fixedSize(horizontal: false, vertical: true)
