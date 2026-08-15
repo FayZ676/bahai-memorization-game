@@ -64,6 +64,7 @@ struct Passage: Codable, Identifiable, Hashable {
     var author: String?
     var section: String?
     var sourceID: Int?
+    var isArchived: Bool
 
     init(
         id: UUID = UUID(),
@@ -71,7 +72,8 @@ struct Passage: Codable, Identifiable, Hashable {
         dateAdded: Date = Date(),
         author: String? = nil,
         section: String? = nil,
-        sourceID: Int? = nil
+        sourceID: Int? = nil,
+        isArchived: Bool = false
     ) {
         self.id = id
         self.title = title
@@ -79,6 +81,33 @@ struct Passage: Codable, Identifiable, Hashable {
         self.author = author
         self.section = section
         self.sourceID = sourceID
+        self.isArchived = isArchived
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, title, dateAdded, author, section, sourceID, isArchived
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        title = try container.decode(String.self, forKey: .title)
+        dateAdded = try container.decode(Date.self, forKey: .dateAdded)
+        author = try container.decodeIfPresent(String.self, forKey: .author)
+        section = try container.decodeIfPresent(String.self, forKey: .section)
+        sourceID = try container.decodeIfPresent(Int.self, forKey: .sourceID)
+        isArchived = try container.decodeIfPresent(Bool.self, forKey: .isArchived) ?? false
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(title, forKey: .title)
+        try container.encode(dateAdded, forKey: .dateAdded)
+        try container.encodeIfPresent(author, forKey: .author)
+        try container.encodeIfPresent(section, forKey: .section)
+        try container.encodeIfPresent(sourceID, forKey: .sourceID)
+        try container.encode(isArchived, forKey: .isArchived)
     }
 
     var sourcePath: String? {

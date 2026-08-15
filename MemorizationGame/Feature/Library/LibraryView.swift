@@ -15,6 +15,7 @@ struct LibraryView: View {
     @State private var pendingDelete: Passage?
     @State private var path = NavigationPath()
     @State private var isTourPresented = false
+    @State private var isArchiveExpanded = false
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -107,34 +108,18 @@ struct LibraryView: View {
             }
 
             Section {
-                ForEach(Array(store.passagesSorted.enumerated()), id: \.element.id) { index, passage in
-                    Button {
-                        Feedback.tap()
-                        path.append(passage)
-                    } label: {
-                        PassageCard(
-                            title: passage.title,
-                            author: passage.author,
-                            section: passage.section,
-                            detail: passage.dateAdded.elapsedDuration
-                        ) {
-                            ProgressBar(
-                                heats: store.sectionHeats(for: passage),
-                                weights: store.sectionWeights(for: passage),
-                                completion: store.hiddenFraction(for: passage),
-                                barHeight: 6
-                            )
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .listRowInsets(EdgeInsets())
-                    .listRowBackground(Color.clear.cardSurface())
-                    .listRowSeparator(.hidden)
-                    .swipeActions(edge: .trailing) {
-                        Button(role: .destructive) {
-                            pendingDelete = passage
-                        } label: {
-                            Label("Delete", systemImage: "trash")
+                ForEach(store.activePassages) { passage in
+                    row(for: passage)
+                }
+            }
+
+            if !store.archivedPassages.isEmpty {
+                Section {
+                    archivedHeader
+
+                    if isArchiveExpanded {
+                        ForEach(store.archivedPassages) { passage in
+                            row(for: passage)
                         }
                     }
                 }
@@ -145,6 +130,81 @@ struct LibraryView: View {
         .contentMargins(.top, 0, for: .scrollContent)
         .scrollContentBackground(.hidden)
         .background(Theme.bg)
+    }
+
+    private func row(for passage: Passage) -> some View {
+        Button {
+            Feedback.tap()
+            path.append(passage)
+        } label: {
+            PassageCard(
+                title: passage.title,
+                author: passage.author,
+                section: passage.section,
+                detail: passage.dateAdded.elapsedDuration
+            ) {
+                ProgressBar(
+                    heats: store.sectionHeats(for: passage),
+                    weights: store.sectionWeights(for: passage),
+                    completion: store.hiddenFraction(for: passage),
+                    barHeight: 6
+                )
+            }
+        }
+        .buttonStyle(.plain)
+        .listRowInsets(EdgeInsets())
+        .listRowBackground(Color.clear.cardSurface())
+        .listRowSeparator(.hidden)
+        .swipeActions(edge: .trailing) {
+            Button(role: .destructive) {
+                pendingDelete = passage
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+
+            Button {
+                Feedback.tap()
+                withAnimation(.easeInOut(duration: 0.22)) {
+                    store.setArchived(passage, !passage.isArchived)
+                }
+            } label: {
+                passage.isArchived
+                    ? Label("Unarchive", systemImage: "tray.and.arrow.up")
+                    : Label("Archive", systemImage: "archivebox")
+            }
+            .tint(Theme.muted)
+        }
+    }
+
+    private var archivedHeader: some View {
+        Button {
+            Feedback.tap()
+            withAnimation(.easeInOut(duration: 0.22)) { isArchiveExpanded.toggle() }
+        } label: {
+            HStack(spacing: Spacing.sm) {
+                Text("Archived")
+                    .appFont(Typography.label)
+                    .foregroundStyle(Theme.muted)
+
+                Text("\(store.archivedPassages.count)")
+                    .appFont(Typography.footnote)
+                    .foregroundStyle(Theme.faint)
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .appIcon(12, weight: .semibold)
+                    .foregroundStyle(Theme.muted)
+                    .rotationEffect(.degrees(isArchiveExpanded ? 90 : 0))
+            }
+            .padding(.horizontal, Spacing.xl)
+            .padding(.vertical, Spacing.sm)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .listRowInsets(EdgeInsets())
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
     }
 
     private var streakHeader: some View {

@@ -60,6 +60,14 @@ final class AppStore {
         passages.sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
     }
 
+    var activePassages: [Passage] {
+        passagesSorted.filter { !$0.isArchived }
+    }
+
+    var archivedPassages: [Passage] {
+        passagesSorted.filter(\.isArchived)
+    }
+
     func sectionHeats(for passage: Passage) -> [Double] {
         queue(for: passage).map { card in
             card.wordCount > 0 ? Double(card.hiddenWords.count) / Double(card.wordCount) : 0
@@ -265,6 +273,12 @@ final class AppStore {
 
         reviewables.removeAll { $0.passageRef == passage.id }
         reviewables.append(contentsOf: cards)
+        persist()
+    }
+
+    func setArchived(_ passage: Passage, _ isArchived: Bool) {
+        guard let index = passages.firstIndex(where: { $0.id == passage.id }) else { return }
+        passages[index].isArchived = isArchived
         persist()
     }
 
