@@ -129,7 +129,7 @@ struct RecitationWordReview: Identifiable {
 
     var verdict: String {
         let names = RecitationFilter.allCases.filter { $0.admits(self) }.map(\.label)
-        return names.isEmpty ? "matched" : names.joined(separator: " · ")
+        return names.isEmpty ? "Matched" : names.joined(separator: " · ")
     }
 }
 
