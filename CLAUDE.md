@@ -24,11 +24,13 @@ Xcode project `MemorizationGame.xcodeproj`, scheme `MemorizationGame`. Tested li
   how it ended) *and* every failed try — an utterance spoken while a word was owed that did not
   credit it — so a word said repeatedly but never registered still shows up. The log keeps
   trouble only: a word matched first time is never written down, and the try that finally lands
-  is kept only for a word that had already failed. The history filters on misses and retries.
+  is kept only for a word that had already failed. The history filters on misses, skipped, and
+  retries — a miss was voiced and refused, a skip was never voiced at all, so those two are
+  disjoint.
   `Store/RecitationLog.swift` persists the last few attempts per chunk to `recitation-log.json`.
   That record lives on its own screen — `Feature/SpeechHistory/SpeechHistoryView.swift`, reachable
-  only from the session options menu — and the report purpose offers a toggle for sending it along
-  with the note.
+  from Settings and from the session options menu — and the report purpose offers a toggle for
+  sending it along with the note.
 - `Theme/` — all colors/type/spacing as design tokens (`Theme.swift`, `Typography.swift`, etc.); never hardcode values in views. `design-theme.html` at repo root is the canonical visual reference.
 - `Design/` — generators for art that ships as an asset, one folder per thing, each with a README that is the source of truth for it: `AppIcon/` (the nine-pointed star, rasterised into `Assets.xcassets`) and `StoreFrames/` (App Store screenshots). The asset is the artefact — edit the generator, never the output. Read the folder's README before changing anything there.
 

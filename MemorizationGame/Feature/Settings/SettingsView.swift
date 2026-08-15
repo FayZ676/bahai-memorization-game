@@ -44,6 +44,15 @@ struct SettingsView: View {
                         HairlineDivider()
 
                         NavigationLink {
+                            SpeechHistoryView()
+                        } label: {
+                            DisclosureRow("Speech History")
+                        }
+                        .buttonStyle(.haptic)
+
+                        HairlineDivider()
+
+                        NavigationLink {
                             ContactView(purpose: .reportIssue)
                         } label: {
                             DisclosureRow("Report Issue")

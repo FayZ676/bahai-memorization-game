@@ -8,7 +8,7 @@ enum RecitationOutcome: String, Codable, Hashable {
 
     var label: String {
         switch self {
-        case .skipped: "skipped"
+        case .skipped: "moved past it"
         case .exhausted: "gave up on it"
         case .revealed: "revealed"
         case .abandoned: "still owed at the end"
@@ -117,7 +117,13 @@ struct RecitationWordReview: Identifiable {
 
     var landed: Bool { tries.contains(where: \.accepted) }
 
-    var isMiss: Bool { miss != nil }
+    var failed: Bool { miss != nil }
+
+    var wasVoiced: Bool { !tries.isEmpty || miss?.heardSomething == true }
+
+    var isMiss: Bool { failed && wasVoiced }
+
+    var isSkipped: Bool { failed && !wasVoiced }
 
     var isRetried: Bool { !rejectedTries.isEmpty }
 
@@ -129,6 +135,7 @@ struct RecitationWordReview: Identifiable {
 
 enum RecitationFilter: String, CaseIterable, Identifiable {
     case misses
+    case skipped
     case retries
 
     var id: String { rawValue }
@@ -136,6 +143,7 @@ enum RecitationFilter: String, CaseIterable, Identifiable {
     var label: String {
         switch self {
         case .misses: "Misses"
+        case .skipped: "Skipped"
         case .retries: "Retries"
         }
     }
@@ -143,6 +151,7 @@ enum RecitationFilter: String, CaseIterable, Identifiable {
     var icon: String {
         switch self {
         case .misses: "xmark.circle"
+        case .skipped: "forward.circle"
         case .retries: "arrow.clockwise.circle"
         }
     }
@@ -150,6 +159,7 @@ enum RecitationFilter: String, CaseIterable, Identifiable {
     func admits(_ review: RecitationWordReview) -> Bool {
         switch self {
         case .misses: review.isMiss
+        case .skipped: review.isSkipped
         case .retries: review.isRetried
         }
     }

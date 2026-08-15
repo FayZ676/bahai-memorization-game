@@ -399,6 +399,92 @@ check("the word said in vain is a retry",
 check("no filter shows everything",
       sortedAttempt.wordReviews(matching: []).map(\.wordIndex) == [1],
       "\(sortedAttempt.wordReviews(matching: []).map(\.wordIndex))")
+check("a word said in vain is not a skip",
+      sortedAttempt.wordReviews(matching: [.skipped]).isEmpty,
+      "\(sortedAttempt.wordReviews(matching: [.skipped]).map(\.wordIndex))")
+
+print("\nA miss was said and refused; a skip was never said at all")
+func miss(
+    _ index: Int,
+    _ word: String,
+    heard: String,
+    _ outcome: RecitationOutcome
+) -> RecitationMiss {
+    RecitationMiss(
+        wordIndex: index,
+        expected: word,
+        heard: heard,
+        expectedKey: PhoneticKey.encode(word),
+        heardKeys: heard.isEmpty ? [] : [PhoneticKey.encode(heard)],
+        outcome: outcome
+    )
+}
+func attempt(misses: [RecitationMiss], tries: [RecitationTry] = []) -> RecitationAttempt {
+    RecitationAttempt(
+        chunkID: UUID(),
+        passageTitle: "Hidden Words",
+        excerpt: "O Son of Spirit",
+        expectedCount: misses.count,
+        matchedCount: 0,
+        misses: misses,
+        tries: tries,
+        transcript: ""
+    )
+}
+let split = attempt(misses: [
+    miss(1, "Son", heard: "banana", .skipped),
+    miss(3, "Spirit", heard: "", .skipped),
+    miss(6, "counsel", heard: "", .revealed),
+    miss(8, "is", heard: "sun", .exhausted),
+])
+check("words heard wrong are misses",
+      split.wordReviews(matching: [.misses]).map(\.wordIndex) == [1, 8],
+      "\(split.wordReviews(matching: [.misses]).map(\.wordIndex))")
+check("words never voiced are skips",
+      split.wordReviews(matching: [.skipped]).map(\.wordIndex) == [3, 6],
+      "\(split.wordReviews(matching: [.skipped]).map(\.wordIndex))")
+check("the two buckets do not overlap",
+      Set(split.wordReviews(matching: [.misses]).map(\.wordIndex))
+        .isDisjoint(with: split.wordReviews(matching: [.skipped]).map(\.wordIndex)),
+      "\(split.wordReviews.map { "\($0.wordIndex):\($0.isMiss)/\($0.isSkipped)" })")
+check("together they account for every failed word",
+      split.wordReviews(matching: [.misses, .skipped]).map(\.wordIndex) == [1, 3, 6, 8],
+      "\(split.wordReviews(matching: [.misses, .skipped]).map(\.wordIndex))")
+
+print("\nA word that was tried counts as voiced even if nothing was heard for it")
+let voiced = attempt(
+    misses: [miss(1, "Son", heard: "", .abandoned)],
+    tries: [
+        RecitationTry(
+            wordIndex: 1,
+            expected: "Son",
+            heard: "banana",
+            expectedKey: PhoneticKey.encode("Son"),
+            heardKeys: [PhoneticKey.encode("banana")],
+            accepted: false
+        )
+    ]
+)
+check("having tried it makes it a miss, not a skip",
+      voiced.wordReviews(matching: [.misses]).map(\.wordIndex) == [1],
+      "\(voiced.wordReviews(matching: [.misses]).map(\.wordIndex))")
+check("and it is not counted as skipped", voiced.wordReviews(matching: [.skipped]).isEmpty,
+      "\(voiced.wordReviews(matching: [.skipped]).map(\.wordIndex))")
+check("it is a retry too", voiced.wordReviews(matching: [.retries]).map(\.wordIndex) == [1],
+      "\(voiced.wordReviews(matching: [.retries]).map(\.wordIndex))")
+
+print("\nA word revealed or given up on is not a skip")
+var burnt = RecitationMatcher(words: words, hiddenIndices: [1, 3, 6])
+_ = burnt.ingest(heard("O"), isFinal: true)
+for _ in 0..<3 { _ = burnt.ingest(heard("banana"), isFinal: true) }
+check("giving up is its own outcome", burnt.misses.first?.outcome == .exhausted,
+      "\(burnt.misses)")
+var handed = RecitationMatcher(words: words, hiddenIndices: [1, 3, 6])
+_ = handed.ingest(heard("O"), isFinal: true)
+_ = handed.ingest(heard("banana"), isFinal: true)
+handed.replaceHidden(with: [3, 6])
+check("revealing is its own outcome", handed.misses.first?.outcome == .revealed,
+      "\(handed.misses)")
 check("matched words are never written down",
       sortedAttempt.wordReviews.allSatisfy { $0.isMiss || $0.isRetried },
       "\(sortedAttempt.wordReviews.map(\.wordIndex))")
