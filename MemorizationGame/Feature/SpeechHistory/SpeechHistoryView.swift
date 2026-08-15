@@ -92,6 +92,7 @@ struct SpeechHistoryView: View {
             .foregroundStyle(filters.isEmpty ? Theme.muted : Theme.accent)
             .padding(.horizontal, Spacing.md)
             .frame(height: 36)
+            .fixedSize()
             .background(Theme.surface, in: Capsule())
             .overlay(
                 Capsule().stroke(
@@ -101,6 +102,9 @@ struct SpeechHistoryView: View {
             )
             .contentShape(Capsule())
         }
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .fixedSize()
         .simultaneousGesture(TapGesture().onEnded { Feedback.tap() })
     }
 
