@@ -21,9 +21,10 @@ Xcode project `MemorizationGame.xcodeproj`, scheme `MemorizationGame`. Tested li
   "Send Feedback"; `ContactPurpose` supplies the title, copy, form kind, and whether the recitation
   record shows. Both are reachable from Settings and from the session options menu. `RecitationMatcher`
   records every burnt word (expected word, what was heard in its place, both phonetic keys, and
-  how it ended) *and* every try — each settled utterance spoken while a word was owed, with what
-  was heard and whether it was accepted, so a word said repeatedly but never credited still shows
-  up;
+  how it ended) *and* every failed try — an utterance spoken while a word was owed that did not
+  credit it — so a word said repeatedly but never registered still shows up. The log keeps
+  trouble only: a word matched first time is never written down, and the try that finally lands
+  is kept only for a word that had already failed. The history filters on misses and retries.
   `Store/RecitationLog.swift` persists the last few attempts per chunk to `recitation-log.json`.
   That record lives on its own screen — `Feature/SpeechHistory/SpeechHistoryView.swift`, reachable
   only from the session options menu — and the report purpose offers a toggle for sending it along

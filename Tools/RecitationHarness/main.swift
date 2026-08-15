@@ -330,7 +330,6 @@ let salvagedDraft = RecitationDraft(
     matchedCount: salvaged.matchedCount,
     misses: salvaged.misses,
     tries: salvaged.tries,
-    credits: salvaged.credits,
     transcript: salvaged.transcript
 )
 check("the attempt survives to the log", !salvagedDraft.isEmpty, "\(salvagedDraft)")
@@ -348,15 +347,36 @@ print("\nBurnt words still carry their outcome")
 check("a stalled-out word is exhausted", stalled.misses.first?.outcome == .exhausted,
       "\(stalled.misses)")
 
-print("\nEvery credited word is recorded, not just the one that was owed")
-var credited = RecitationMatcher(words: words, hiddenIndices: [1, 3, 6])
-_ = credited.ingest(heard(line), isFinal: true)
-check("all three credits recorded", credited.credits.map(\.wordIndex) == [1, 3, 6],
-      "\(credited.credits.map(\.wordIndex))")
-check("credits name the word verbatim", credited.credits.map(\.expected) == ["Son", "Spirit", "counsel"],
-      "\(credited.credits.map(\.expected))")
+print("\nA clean recitation writes nothing down")
+var spotless = RecitationMatcher(words: words, hiddenIndices: [1, 3, 6])
+_ = spotless.ingest(heard(line), isFinal: true)
+check("no tries recorded when nothing went wrong", spotless.tries.isEmpty, "\(spotless.tries)")
+check("no misses either", spotless.misses.isEmpty, "\(spotless.misses)")
 
-print("\nThe three filters sort each word into the right bucket")
+print("\nThe try that finally lands is kept, because the word had failed before")
+var landed = RecitationMatcher(words: words, hiddenIndices: [1, 3, 6])
+_ = landed.ingest(heard("banana"), isFinal: true)
+_ = landed.ingest(heard("Son"), isFinal: true)
+check("the failed try and the one that took are both kept", landed.tries.count == 2,
+      "\(landed.tries)")
+check("the last one is marked accepted", landed.tries.last?.accepted == true, "\(landed.tries)")
+let landedAttempt = RecitationDraft(
+    expectedCount: landed.expectedCount,
+    matchedCount: landed.matchedCount,
+    misses: landed.misses,
+    tries: landed.tries,
+    transcript: landed.transcript
+).attempt(chunkID: UUID(), passageTitle: "Hidden Words", excerpt: "O Son of Spirit")
+check("a word retried then matched still counts as a retry",
+      landedAttempt.wordReviews(matching: [.retries]).map(\.wordIndex) == [1],
+      "\(landedAttempt.wordReviews(matching: [.retries]).map(\.wordIndex))")
+check("and it is not a miss", landedAttempt.wordReviews(matching: [.misses]).isEmpty,
+      "\(landedAttempt.wordReviews(matching: [.misses]).map(\.wordIndex))")
+check("its verdict says it landed in the end",
+      landedAttempt.wordReviews.first?.verdict == "matched",
+      "\(String(describing: landedAttempt.wordReviews.first?.verdict))")
+
+print("\nThe two filters sort each word into the right bucket")
 var sorted = RecitationMatcher(words: words, hiddenIndices: [1, 3, 6])
 _ = sorted.ingest(heard("O"), isFinal: true)
 for _ in 0..<3 { _ = sorted.ingest(heard("banana"), isFinal: true) }
@@ -366,11 +386,9 @@ let sortedAttempt = RecitationDraft(
     matchedCount: sorted.matchedCount,
     misses: sorted.misses,
     tries: sorted.tries,
-    credits: sorted.credits,
     transcript: sorted.transcript
 ).attempt(chunkID: UUID(), passageTitle: "Hidden Words", excerpt: "O Son of Spirit")
-check("reviews are listed in scripture order",
-      sortedAttempt.wordReviews.map(\.wordIndex) == [1, 3, 6],
+check("only the troubled word is reviewed", sortedAttempt.wordReviews.map(\.wordIndex) == [1],
       "\(sortedAttempt.wordReviews.map(\.wordIndex))")
 check("the burnt word is a miss",
       sortedAttempt.wordReviews(matching: [.misses]).map(\.wordIndex) == [1],
@@ -378,37 +396,12 @@ check("the burnt word is a miss",
 check("the word said in vain is a retry",
       sortedAttempt.wordReviews(matching: [.retries]).map(\.wordIndex) == [1],
       "\(sortedAttempt.wordReviews(matching: [.retries]).map(\.wordIndex))")
-check("the words that landed are passes",
-      sortedAttempt.wordReviews(matching: [.passes]).map(\.wordIndex) == [3, 6],
-      "\(sortedAttempt.wordReviews(matching: [.passes]).map(\.wordIndex))")
-check("a burnt word is never a pass",
-      sortedAttempt.wordReviews(matching: [.passes]).allSatisfy { !$0.isMiss },
-      "\(sortedAttempt.wordReviews(matching: [.passes]).map(\.wordIndex))")
-check("filters union rather than intersect",
-      sortedAttempt.wordReviews(matching: [.misses, .passes]).map(\.wordIndex) == [1, 3, 6],
-      "\(sortedAttempt.wordReviews(matching: [.misses, .passes]).map(\.wordIndex))")
 check("no filter shows everything",
-      sortedAttempt.wordReviews(matching: []).map(\.wordIndex) == [1, 3, 6],
+      sortedAttempt.wordReviews(matching: []).map(\.wordIndex) == [1],
       "\(sortedAttempt.wordReviews(matching: []).map(\.wordIndex))")
-
-print("\nA clean recitation has passes and nothing else")
-var spotless = RecitationMatcher(words: words, hiddenIndices: [1, 3, 6])
-_ = spotless.ingest(heard(line), isFinal: true)
-let spotlessAttempt = RecitationDraft(
-    expectedCount: spotless.expectedCount,
-    matchedCount: spotless.matchedCount,
-    misses: spotless.misses,
-    tries: spotless.tries,
-    credits: spotless.credits,
-    transcript: spotless.transcript
-).attempt(chunkID: UUID(), passageTitle: "Hidden Words", excerpt: "O Son of Spirit")
-check("every hidden word is a pass",
-      spotlessAttempt.wordReviews(matching: [.passes]).map(\.wordIndex) == [1, 3, 6],
-      "\(spotlessAttempt.wordReviews(matching: [.passes]).map(\.wordIndex))")
-check("no misses to show", spotlessAttempt.wordReviews(matching: [.misses]).isEmpty,
-      "\(spotlessAttempt.wordReviews(matching: [.misses]).map(\.wordIndex))")
-check("no retries to show", spotlessAttempt.wordReviews(matching: [.retries]).isEmpty,
-      "\(spotlessAttempt.wordReviews(matching: [.retries]).map(\.wordIndex))")
+check("matched words are never written down",
+      sortedAttempt.wordReviews.allSatisfy { $0.isMiss || $0.isRetried },
+      "\(sortedAttempt.wordReviews.map(\.wordIndex))")
 
 print("\nTranscript and counts survive for the log")
 check("transcript is the spoken text", recorded.transcript == "O banana of Spirit My first counsel",
