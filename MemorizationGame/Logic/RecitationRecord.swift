@@ -125,7 +125,7 @@ struct RecitationWordReview: Identifiable {
 
     var isSkipped: Bool { failed && !wasVoiced }
 
-    var isRetried: Bool { !rejectedTries.isEmpty }
+    var isRetried: Bool { tries.count > 1 }
 
     var verdict: String {
         let names = RecitationFilter.allCases.filter { $0.admits(self) }.map(\.label)

@@ -341,7 +341,7 @@ let review = salvagedDraft
 check("one word reviewed", review.count == 1, "\(review)")
 check("its tries are attached", review.first?.tries.count == 1, "\(review)")
 check("its verdict names the filters it answers to",
-      review.first?.verdict == "Missed · Retried",
+      review.first?.verdict == "Missed",
       "\(String(describing: review.first?.verdict))")
 
 print("\nBurnt words still carry their outcome")
@@ -490,8 +490,41 @@ check("having tried it makes it a miss, not a skip",
       "\(voiced.wordReviews(matching: [.misses]).map(\.wordIndex))")
 check("and it is not counted as skipped", voiced.wordReviews(matching: [.skipped]).isEmpty,
       "\(voiced.wordReviews(matching: [.skipped]).map(\.wordIndex))")
-check("it is a retry too", voiced.wordReviews(matching: [.retries]).map(\.wordIndex) == [1],
+check("saying it wrong once is not yet a retry",
+      voiced.wordReviews(matching: [.retries]).isEmpty,
       "\(voiced.wordReviews(matching: [.retries]).map(\.wordIndex))")
+
+print("\nRetried means you had to go again, not that you got it wrong")
+func tried(_ heard: String, accepted: Bool) -> RecitationTry {
+    RecitationTry(
+        wordIndex: 1,
+        expected: "Son",
+        heard: heard,
+        expectedKey: PhoneticKey.encode("Son"),
+        heardKeys: [PhoneticKey.encode(heard)],
+        accepted: accepted
+    )
+}
+let once = attempt(
+    misses: [miss(1, "Son", heard: "banana", .exhausted)],
+    tries: [tried("banana", accepted: false)]
+)
+check("one wrong attempt is only missed",
+      once.wordReviews.first?.verdict == "Missed",
+      "\(String(describing: once.wordReviews.first?.verdict))")
+let again = attempt(
+    misses: [miss(1, "Son", heard: "banana", .exhausted)],
+    tries: [tried("banana", accepted: false), tried("bandana", accepted: false)]
+)
+check("a second attempt earns the retried label",
+      again.wordReviews.first?.verdict == "Missed · Retried",
+      "\(String(describing: again.wordReviews.first?.verdict))")
+check("and the retried filter finds it",
+      again.wordReviews(matching: [.retries]).map(\.wordIndex) == [1],
+      "\(again.wordReviews(matching: [.retries]).map(\.wordIndex))")
+check("while the once-wrong word stays out of it",
+      once.wordReviews(matching: [.retries]).isEmpty,
+      "\(once.wordReviews(matching: [.retries]).map(\.wordIndex))")
 
 print("\nA word revealed or given up on is not a skip")
 var burnt = RecitationMatcher(words: words, hiddenIndices: [1, 3, 6])
