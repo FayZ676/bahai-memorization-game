@@ -46,6 +46,15 @@ QUIET BY DESIGN
 
 Verses is built around one belief: memorization isn't a test to pass, it's a way of carrying words with you. Hide what you know. Read what you don't. Come back tomorrow.
 
+## What's New — 1.6 (4000)
+Prayers you've finished can now be archived. Swipe a prayer in your library to tuck it into an Archived section, and swipe again to bring it back.
+
+Reciting aloud no longer holds you to strict order. A word you've already read past can still be said and counted, instead of being marked missed however clearly you say it.
+
+The record of what the app heard now has its own row in Settings. It keeps more than misses — words you never said and words that took a few tries are each listed and colour-coded, with filters for reading just one kind.
+
+Small fixes and refinements.
+
 ## What's New — 1.5 (4000)
 Verses now opens on the nine-pointed star from the app icon, which fades away and hands off to your library.
 
