@@ -7,19 +7,20 @@ struct RecitationBar: View {
     @Binding var micDeniedAlert: Bool
     let onStart: () -> Void
 
+    private static let settle = Animation.easeInOut(duration: 0.22)
+
     var body: some View {
         VStack(spacing: 0) {
             micButton
-                .padding(.top, Spacing.md)
-            if voice.isListening {
-                heardRow
-            } else if showsHint {
+                .padding(.top, Spacing.sm)
+            if showsHint {
                 hint
             }
         }
-        .padding(.bottom, Spacing.md)
-        .animation(.easeInOut(duration: 0.2), value: showsHint)
-        .animation(.easeInOut(duration: 0.2), value: voice.isListening)
+        .padding(.bottom, Spacing.xs)
+        .animation(Self.settle, value: voice.state)
+        .animation(Self.settle, value: showsHint)
+        .animation(Self.settle, value: isDisabled)
     }
 
     private var isDisabled: Bool {
@@ -34,19 +35,8 @@ struct RecitationBar: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 26)
-        .padding(.top, Spacing.sm)
+        .padding(.top, Spacing.xxs)
         .transition(.opacity)
-    }
-
-    private var heardRow: some View {
-        Text(voice.heardText.isEmpty ? "Listening…" : voice.heardText)
-            .appFont(Typography.micro)
-            .foregroundStyle(Theme.faint)
-            .lineLimit(1)
-            .truncationMode(.head)
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal, 26)
-            .padding(.top, Spacing.sm)
     }
 
     private var micButton: some View {
@@ -66,30 +56,35 @@ struct RecitationBar: View {
         }
         .buttonStyle(.haptic)
         .disabled(isDisabled)
-        .animation(.easeInOut(duration: 0.18), value: voice.state)
-        .animation(.easeInOut(duration: 0.18), value: isDisabled)
     }
 
     @ViewBuilder
     private var micIcon: some View {
-        switch voice.state {
-        case .preparingModel:
+        if voice.state == .preparingModel {
             ProgressView()
                 .controlSize(.small)
                 .tint(Theme.muted)
-        case .listening:
-            Image(systemName: "waveform")
-                .font(.system(size: 21, weight: .semibold))
-                .foregroundStyle(Theme.accent)
-                .symbolEffect(.variableColor.iterative.dimInactiveLayers, options: .repeat(.continuous))
-                .transition(.symbolEffect(.drawOn))
-        case .idle, .failed, .micDenied:
-            Image(systemName: isUnavailable ? "mic.slash" : "mic")
-                .font(.system(size: 21, weight: .regular))
-                .foregroundStyle(isUnavailable ? Theme.muted.opacity(0.5) : Theme.navIcon)
-                .contentTransition(.symbolEffect(.replace.magic(fallback: .replace.offUp)))
-                .transition(.opacity)
+        } else {
+            Image(systemName: symbolName)
+                .font(.system(size: 21, weight: voice.state == .listening ? .semibold : .regular))
+                .foregroundStyle(symbolColor)
+                .contentTransition(.symbolEffect(.replace.offUp))
+                .symbolEffect(
+                    .variableColor.iterative.dimInactiveLayers,
+                    options: .repeat(.continuous),
+                    isActive: voice.state == .listening
+                )
         }
+    }
+
+    private var symbolName: String {
+        if voice.state == .listening { return "waveform" }
+        return isUnavailable ? "mic.slash" : "mic"
+    }
+
+    private var symbolColor: Color {
+        if voice.state == .listening { return Theme.accent }
+        return isUnavailable ? Theme.muted.opacity(0.5) : Theme.navIcon
     }
 
     private var isUnavailable: Bool {

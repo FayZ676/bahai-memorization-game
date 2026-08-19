@@ -11,6 +11,7 @@ final class SessionViewModel {
     var presentationEpoch = 0
     private(set) var isPeeking = false
     private(set) var grounding = false
+    private(set) var advancing = true
     private(set) var cascading = false
     private var groundingTask: Task<Void, Never>?
     private var cascadeResetTask: Task<Void, Never>?
@@ -78,6 +79,7 @@ final class SessionViewModel {
         let q = store.queue(for: passage)
         guard canMerge, q.indices.contains(step + 1) else { return }
         store.merge(q[step], with: q[step + 1])
+        advancing = true
         beginGrounding()
         presentationEpoch += 1
     }
@@ -85,6 +87,7 @@ final class SessionViewModel {
     func start() {
         let q = store.queue(for: passage)
         step = q.lastIndex { !$0.hiddenWords.isEmpty } ?? 0
+        advancing = true
         beginGrounding()
         presentationEpoch += 1
     }
@@ -97,6 +100,7 @@ final class SessionViewModel {
     func scrub(to index: Int) {
         let target = max(0, min(index, queueLength - 1))
         guard target != step else { return }
+        advancing = target > step
         step = target
         beginGrounding()
         presentationEpoch += 1
@@ -105,6 +109,7 @@ final class SessionViewModel {
 
     func skip(forward: Bool) {
         guard forward ? canGoForward : canGoBack else { return }
+        advancing = forward
         step += forward ? 1 : -1
         beginGrounding()
         presentationEpoch += 1

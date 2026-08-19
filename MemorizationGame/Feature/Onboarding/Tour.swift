@@ -46,7 +46,7 @@ enum TourStep: Int, CaseIterable {
         case .hideWord: Text("Tap a word to hide it. Tap it again to bring it back. Press and glide over words to hide or reveal multiple words at once.")
         case .recite: Text("Tap the \(symbol("mic")) button to practice saying hidden words aloud.")
         case .nextSection:
-            Text("Paragraphs get split into sections. Swipe across the screen to move to the next section. Or tap the progress bar above.")
+            Text("Paragraphs get split into sections. Swipe up the screen to move to the next section, down to go back. Or tap the progress bar above.")
         case .achievements:
             Text("Certain prayers earn an achievement once every word is hidden. Tap the \(symbol("chevron.left")) button to return to your Library, then tap the \(symbol("trophy")) button to see them all.")
         case .finished: Text("You're ready to start memorizing.")

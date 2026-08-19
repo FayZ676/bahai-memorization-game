@@ -19,6 +19,9 @@ struct SessionView: View {
     @State private var readingPosition = ScrollPosition()
     @State private var wordFrames = WordFrames()
     @State private var scrollOffset = ScrollOffset()
+    @State private var scrollReach = ScrollReach()
+    @State private var departing: Departure?
+    @State private var slide: CGFloat = 0
     @State private var showingFullText = false
     @State private var showingEdit = false
     @State private var showingReportIssue = false
@@ -31,6 +34,7 @@ struct SessionView: View {
     private static let followInsets = (top: CGFloat(56), bottom: CGFloat(120))
     private static let followAnchor = UnitPoint(x: 0, y: 0.34)
     private static let followSettleDelays: [Duration] = [.milliseconds(140), .milliseconds(450)]
+    private static let sectionSlide = Animation.smooth(duration: 0.62, extraBounce: 0)
 
     init(passage: Passage, store: AppStore) {
         self.passage = passage
@@ -341,44 +345,18 @@ struct SessionView: View {
 
     private var readingArea: some View {
         GeometryReader { geo in
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    if let card = vm.current {
-                        scripture(for: card)
-                    }
-                    InfoNote(Typography.micro, color: Theme.faint) {
-                        Text("Tap and glide over words to show or hide them")
-                            .appFont(Typography.micro)
-                            .foregroundStyle(Theme.faint)
-                    }
-                    .padding(.top, 20)
-                    Spacer(minLength: 0)
+            ZStack(alignment: .top) {
+                if let departing {
+                    departingSection(departing, height: geo.size.height)
                 }
-                .frame(maxWidth: .infinity, minHeight: geo.size.height - 64, alignment: .topLeading)
-                .padding(.horizontal, 30)
-                .padding(.top, 28)
-                .padding(.bottom, 36)
+                if let card = vm.current {
+                    sectionScroll(card, viewportHeight: geo.size.height)
+                        .id(card.id)
+                        .offset(y: slide)
+                }
             }
-            .scrollIndicators(.hidden)
-            .scrollDisabled(painting.isActive)
-            .scrollPosition($readingPosition)
-            .onScrollGeometryChange(for: CGFloat.self) { geometry in
-                geometry.contentOffset.y
-            } action: { _, y in
-                scrollOffset.y = y
-            }
-            .simultaneousGesture(
-                DragGesture(minimumDistance: 24)
-                    .onEnded { value in
-                        guard !painting.isActive else { return }
-                        guard abs(value.translation.width) > abs(value.translation.height) else { return }
-                        if value.translation.width < 0, vm.canGoForward {
-                            withAnimation(.easeInOut(duration: 0.28)) { vm.skip(forward: true) }
-                        } else if value.translation.width > 0, vm.canGoBack {
-                            withAnimation(.easeInOut(duration: 0.28)) { vm.skip(forward: false) }
-                        }
-                    }
-            )
+            .frame(width: geo.size.width, height: geo.size.height)
+            .clipped()
             .fadeEdge(.top, height: 16)
             .fadeEdge(.bottom, height: 28)
             .onGeometryChange(for: CGRect.self) { proxy in
@@ -400,6 +378,78 @@ struct SessionView: View {
             }
         }
         .frame(maxHeight: .infinity)
+    }
+
+    private func sectionScroll(_ card: Reviewable, viewportHeight: CGFloat) -> some View {
+        ScrollView {
+            sectionBody(card, viewportHeight: viewportHeight, live: true)
+        }
+        .scrollIndicators(.hidden)
+        .scrollDisabled(painting.isActive)
+        .scrollPosition($readingPosition)
+        .onScrollGeometryChange(for: ScrollReach.self) { geometry in
+            ScrollReach(
+                top: geometry.contentOffset.y + geometry.contentInsets.top,
+                bottom: geometry.contentSize.height - geometry.contentOffset.y - geometry.containerSize.height
+            )
+        } action: { _, reach in
+            scrollOffset.y = reach.top
+            scrollReach = reach
+        }
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 24)
+                .onEnded { value in
+                    guard !painting.isActive, departing == nil else { return }
+                    guard abs(value.translation.height) > abs(value.translation.width) else { return }
+                    if value.translation.height < 0, scrollReach.atBottom {
+                        moveSection(forward: true)
+                    } else if value.translation.height > 0, scrollReach.atTop {
+                        moveSection(forward: false)
+                    }
+                }
+        )
+    }
+
+    private func departingSection(_ departure: Departure, height: CGFloat) -> some View {
+        sectionBody(departure.card, viewportHeight: height, live: false)
+            .offset(y: -departure.scrollTop)
+            .frame(height: height, alignment: .topLeading)
+            .clipped()
+            .allowsHitTesting(false)
+            .offset(y: slide - (departure.advancing ? height : -height))
+    }
+
+    private func sectionBody(_ card: Reviewable, viewportHeight: CGFloat, live: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            scripture(for: card, live: live)
+            InfoNote(Typography.micro, color: Theme.faint) {
+                Text("Tap and glide over words to show or hide them")
+                    .appFont(Typography.micro)
+                    .foregroundStyle(Theme.faint)
+            }
+            .padding(.top, 20)
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, minHeight: viewportHeight - 64, alignment: .topLeading)
+        .padding(.horizontal, 30)
+        .padding(.top, 18)
+        .padding(.bottom, 28)
+    }
+
+    private func moveSection(forward: Bool) {
+        guard forward ? vm.canGoForward : vm.canGoBack, let card = vm.current else { return }
+        let height = readingViewport.height
+        departing = Departure(card: card, scrollTop: scrollOffset.y, advancing: forward)
+        vm.skip(forward: forward)
+        readingPosition.scrollTo(edge: .top)
+        slide = forward ? height : -height
+        DispatchQueue.main.async {
+            withAnimation(Self.sectionSlide) {
+                slide = 0
+            } completion: {
+                departing = nil
+            }
+        }
     }
 
     private func follow(_ index: Int?, force: Bool = false) {
@@ -425,7 +475,7 @@ struct SessionView: View {
         }
     }
 
-    private func scripture(for card: Reviewable) -> some View {
+    private func scripture(for card: Reviewable, live: Bool = true) -> some View {
         let words = card.words
         return VStack(alignment: .leading, spacing: 18) {
             ForEach(Array(card.paragraphs.enumerated()), id: \.offset) { _, range in
@@ -433,17 +483,18 @@ struct SessionView: View {
                     ForEach(range, id: \.self) { idx in
                         WordView(
                             token: String(words[idx]),
-                            hidden: vm.isHidden(idx),
-                            recited: highlights.recited.contains(idx),
-                            missed: highlights.missed.contains(idx),
-                            missFlashing: highlights.isFlashing(idx),
-                            staggerDelay: vm.cascading ? Motion.cascadeDelay(idx, of: words.count) : 0
+                            hidden: live ? vm.isHidden(idx) : card.hiddenWords.contains(idx),
+                            recited: live && highlights.recited.contains(idx),
+                            missed: live && highlights.missed.contains(idx),
+                            missFlashing: live && highlights.isFlashing(idx),
+                            staggerDelay: live && vm.cascading ? Motion.cascadeDelay(idx, of: words.count) : 0
                         )
                             .appFont(Typography.recite)
-                            .modifier(ShakeEffect(shakes: highlights.shakeAmount(at: idx)))
+                            .modifier(ShakeEffect(shakes: live ? highlights.shakeAmount(at: idx) : 0))
                             .onGeometryChange(for: CGRect.self) { proxy in
                                 proxy.frame(in: .global)
                             } action: { frame in
+                                guard live else { return }
                                 wordFrames.record(frame, at: idx)
                             }
                     }
@@ -453,13 +504,16 @@ struct SessionView: View {
         .onGeometryChange(for: CGRect.self) { proxy in
             proxy.frame(in: .global)
         } action: { frame in
+            guard live else { return }
             scriptureFrame = frame
         }
         .overlay(alignment: .topLeading) {
-            RecitationCursor(target: cursorTarget)
+            if live {
+                RecitationCursor(target: cursorTarget)
+            }
         }
         .contentShape(Rectangle())
-        .allowsHitTesting(!vm.wordsRevealed)
+        .allowsHitTesting(live && !vm.wordsRevealed)
         .simultaneousGesture(
             SpatialTapGesture(coordinateSpace: .global)
                 .onEnded { value in
@@ -586,4 +640,10 @@ private struct Toast: View {
                 .overlay(Capsule(style: .continuous).stroke(Theme.gold.opacity(0.5), lineWidth: 1))
         )
     }
+}
+
+struct Departure {
+    let card: Reviewable
+    let scrollTop: CGFloat
+    let advancing: Bool
 }

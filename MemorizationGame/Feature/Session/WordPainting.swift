@@ -65,3 +65,11 @@ struct PaintRecognizer: UIGestureRecognizerRepresentable {
         }
     }
 }
+
+struct ScrollReach: Equatable {
+    var top: CGFloat = 0
+    var bottom: CGFloat = 0
+
+    var atTop: Bool { top <= 4 }
+    var atBottom: Bool { bottom <= 4 }
+}
