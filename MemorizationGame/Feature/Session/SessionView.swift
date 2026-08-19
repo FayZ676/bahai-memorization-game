@@ -553,7 +553,7 @@ struct SessionView: View {
     private var optionsMenu: some View {
         Menu {
             Button("Edit", systemImage: "pencil") { showingEdit = true }
-            Section("Change What's Hidden") {
+            Section {
                 Button("Hide Every Word", systemImage: "text.page.slash") {
                     vm.setAllWords(hidden: true)
                 }
