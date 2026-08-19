@@ -57,8 +57,10 @@ struct SessionView: View {
                                 voice: voice,
                                 hasHiddenWords: !(vm.current?.hiddenWords.isEmpty ?? true),
                                 showsHint: !vm.passageHasHiddenWords,
+                                isPeeking: vm.isPeeking,
                                 micDeniedAlert: $showingMicDenied,
-                                onStart: startRecitation
+                                onStart: startRecitation,
+                                onPeek: { vm.togglePeek() }
                             )
                         }
                 } else {
@@ -551,12 +553,6 @@ struct SessionView: View {
     private var optionsMenu: some View {
         Menu {
             Button("Edit", systemImage: "pencil") { showingEdit = true }
-            Section("Just for Now") {
-                Button(
-                    vm.isPeeking ? "Stop Peeking" : "Peek at Hidden Words",
-                    systemImage: "eyeglasses"
-                ) { vm.togglePeek() }
-            }
             Section("Change What's Hidden") {
                 Button("Hide Every Word", systemImage: "eye.slash") {
                     vm.setAllWords(hidden: true)
