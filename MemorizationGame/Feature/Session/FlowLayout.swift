@@ -3,6 +3,9 @@ import SwiftUI
 struct FlowLayout: Layout {
     var spacing: CGFloat = 6
     var lineSpacing: CGFloat = 8
+    var justified = false
+
+    private static let maxStretchPerGap: CGFloat = 2.5
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout Void) -> CGSize {
         let maxWidth = proposal.width ?? .infinity
@@ -19,7 +22,7 @@ struct FlowLayout: Layout {
         }
         if !current.items.isEmpty { rows.append(current) }
 
-        let width = rows.map(\.width).max() ?? 0
+        let width = justified && maxWidth.isFinite ? maxWidth : (rows.map(\.width).max() ?? 0)
         let height = rows.map(\.height).reduce(0, +) + lineSpacing * CGFloat(max(0, rows.count - 1))
         return CGSize(width: min(width, maxWidth), height: height)
     }
@@ -41,16 +44,24 @@ struct FlowLayout: Layout {
                 rowHeight = max(rowHeight, size.height)
                 index += 1
             }
+            let gap = gapWidth(rowWidth: rowWidth, maxWidth: maxWidth, items: rowItems.count, lastRow: index >= subviews.count)
             var x = bounds.minX
             for (i, size) in rowItems {
                 subviews[i].place(
                     at: CGPoint(x: x, y: y + (rowHeight - size.height) / 2),
                     proposal: ProposedViewSize(size)
                 )
-                x += size.width + spacing
+                x += size.width + gap
             }
             y += rowHeight + lineSpacing
         }
+    }
+
+    private func gapWidth(rowWidth: CGFloat, maxWidth: CGFloat, items: Int, lastRow: Bool) -> CGFloat {
+        guard justified, !lastRow, items > 1 else { return spacing }
+        let slack = maxWidth - rowWidth
+        guard slack > 0 else { return spacing }
+        return spacing + min(slack / CGFloat(items - 1), spacing * Self.maxStretchPerGap)
     }
 
     private struct Row {

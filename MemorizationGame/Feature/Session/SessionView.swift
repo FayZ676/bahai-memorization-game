@@ -317,7 +317,7 @@ struct SessionView: View {
                 }
         )
         .onPreferenceChange(ProgressBarBounds.self) { barBounds = $0 }
-        .frame(width: 34)
+        .frame(width: 26)
         .padding(.leading, 10)
         .padding(.top, Spacing.headerGap)
         .padding(.bottom, Spacing.sm)
@@ -469,7 +469,7 @@ struct SessionView: View {
         let words = card.words
         return VStack(alignment: .leading, spacing: 18) {
             ForEach(Array(card.paragraphs.enumerated()), id: \.offset) { _, range in
-                FlowLayout(spacing: 7, lineSpacing: 12) {
+                FlowLayout(spacing: 7, lineSpacing: 12, justified: true) {
                     ForEach(range, id: \.self) { idx in
                         WordView(
                             token: String(words[idx]),
