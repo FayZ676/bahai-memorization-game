@@ -51,27 +51,27 @@ struct SessionView: View {
                     if vm.current != nil { optionsMenu }
                 }
                 if vm.current != nil {
-                    HStack(spacing: 0) {
-                        if showingRail {
-                            progressRail
-                                .transition(.move(edge: .leading).combined(with: .opacity))
-                        }
-                        readingArea
-                    }
-                    .overlay(alignment: .bottom) {
-                        RecitationBar(
-                            voice: voice,
-                            hasHiddenWords: !(vm.current?.hiddenWords.isEmpty ?? true),
-                            isPeeking: vm.isPeeking,
-                            isRailVisible: showingRail,
-                            micDeniedAlert: $showingMicDenied,
-                            onStart: startRecitation,
-                            onPeek: { vm.togglePeek() },
-                            onToggleRail: {
-                                withAnimation(.easeInOut(duration: 0.28)) { showingRail.toggle() }
+                    readingArea
+                        .overlay(alignment: .leading) {
+                            if showingRail {
+                                progressRail
+                                    .transition(.move(edge: .leading).combined(with: .opacity))
                             }
-                        )
-                    }
+                        }
+                        .overlay(alignment: .bottom) {
+                            RecitationBar(
+                                voice: voice,
+                                hasHiddenWords: !(vm.current?.hiddenWords.isEmpty ?? true),
+                                isPeeking: vm.isPeeking,
+                                isRailVisible: showingRail,
+                                micDeniedAlert: $showingMicDenied,
+                                onStart: startRecitation,
+                                onPeek: { vm.togglePeek() },
+                                onToggleRail: {
+                                    withAnimation(.easeInOut(duration: 0.28)) { showingRail.toggle() }
+                                }
+                            )
+                        }
                 } else {
                     Spacer()
                     emptyQueue
@@ -317,8 +317,7 @@ struct SessionView: View {
                 }
         )
         .onPreferenceChange(ProgressBarBounds.self) { barBounds = $0 }
-        .frame(width: 26)
-        .padding(.leading, 10)
+        .frame(width: 30)
         .padding(.top, Spacing.headerGap)
         .padding(.bottom, Spacing.sm)
         .animation(.easeOut(duration: 0.14), value: vm.step)
@@ -420,8 +419,7 @@ struct SessionView: View {
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, minHeight: viewportHeight - 64, alignment: .topLeading)
-        .padding(.leading, showingRail ? 16 : 30)
-        .padding(.trailing, 30)
+        .padding(.horizontal, 30)
         .padding(.top, 18)
         .padding(.bottom, 110)
     }
