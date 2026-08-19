@@ -56,18 +56,10 @@ final class SessionViewModel {
         focus(on: card.id)
     }
 
-    var progressTotal: Int { max(queueLength, 1) }
     var sectionHeats: [Double] { store.sectionHeats(for: passage) }
     var sectionWeights: [Int] { store.sectionWeights(for: passage) }
     var hiddenFraction: Double { store.hiddenFraction(for: passage) }
     var mergeableGaps: [Bool] { store.mergeableGaps(for: passage) }
-
-    var sectionLabel: String {
-        guard let span = current?.span else { return "" }
-        return span.start == span.end
-            ? "Section \(span.start) / \(progressTotal)"
-            : "Sections \(span.start)–\(span.end) / \(progressTotal)"
-    }
 
     var canMerge: Bool {
         let gaps = mergeableGaps

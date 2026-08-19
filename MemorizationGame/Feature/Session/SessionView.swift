@@ -276,13 +276,9 @@ struct SessionView: View {
 
     private var progressRow: some View {
         VStack(spacing: 9) {
-            HStack {
-                Text(vm.sectionLabel)
-                    .appFont(Typography.micro)
-                    .tracking(0.5)
-                    .foregroundStyle(Theme.muted)
-                Spacer()
-                if vm.canMerge {
+            if vm.canMerge {
+                HStack {
+                    Spacer()
                     mergeButton
                 }
             }
