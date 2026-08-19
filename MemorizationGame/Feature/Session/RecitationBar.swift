@@ -16,7 +16,7 @@ struct RecitationBar: View {
                 hint
             }
         }
-        .padding(.bottom, Spacing.sm)
+        .padding(.bottom, Spacing.xxs)
         .animation(Self.settle, value: voice.state)
         .animation(Self.settle, value: showsHint)
         .animation(Self.settle, value: isDisabled)
@@ -48,11 +48,12 @@ struct RecitationBar: View {
             }
         } label: {
             micIcon
-                .frame(width: 56, height: 56)
+                .frame(width: 68, height: 68)
                 .background(fill, in: Circle())
                 .background(Theme.surface, in: Circle())
                 .overlay(Circle().stroke(stroke, lineWidth: 1))
                 .shadow(color: .black.opacity(0.07), radius: 10, y: 3)
+                .padding(10)
                 .contentShape(Circle())
         }
         .buttonStyle(.haptic)
@@ -67,7 +68,7 @@ struct RecitationBar: View {
                 .tint(Theme.muted)
         } else {
             Image(systemName: symbolName)
-                .font(.system(size: 21, weight: voice.state == .listening ? .semibold : .regular))
+                .font(.system(size: 25, weight: voice.state == .listening ? .semibold : .regular))
                 .foregroundStyle(symbolColor)
                 .contentTransition(.symbolEffect(.replace.offUp))
                 .symbolEffect(

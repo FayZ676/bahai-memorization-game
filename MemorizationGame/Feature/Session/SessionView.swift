@@ -429,7 +429,7 @@ struct SessionView: View {
         .frame(maxWidth: .infinity, minHeight: viewportHeight - 64, alignment: .topLeading)
         .padding(.horizontal, 30)
         .padding(.top, 18)
-        .padding(.bottom, 96)
+        .padding(.bottom, 110)
     }
 
     private func moveSection(forward: Bool) {
