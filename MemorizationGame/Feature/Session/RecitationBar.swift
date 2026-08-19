@@ -36,10 +36,10 @@ struct RecitationBar: View {
     private var peekButton: some View {
         Button(action: onPeek) {
             Image(systemName: isPeeking ? "eye.slash" : "eye")
-                .font(.system(size: 17, weight: .regular))
+                .font(.system(size: 20, weight: .regular))
                 .foregroundStyle(peekSymbolColor)
                 .contentTransition(.symbolEffect(.replace.offUp))
-                .frame(width: 46, height: 46)
+                .frame(width: 54, height: 54)
                 .background(peekFill, in: Circle())
                 .background(Theme.surface, in: Circle())
                 .overlay(Circle().stroke(peekStroke, lineWidth: 1))
