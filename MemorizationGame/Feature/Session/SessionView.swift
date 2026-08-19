@@ -317,8 +317,8 @@ struct SessionView: View {
                 }
         )
         .onPreferenceChange(ProgressBarBounds.self) { barBounds = $0 }
-        .frame(width: 30)
-        .padding(.leading, 14)
+        .frame(width: 28)
+        .padding(.leading, 8)
         .padding(.top, Spacing.headerGap)
         .padding(.bottom, Spacing.sm)
         .animation(.easeOut(duration: 0.14), value: vm.step)
@@ -420,8 +420,7 @@ struct SessionView: View {
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, minHeight: viewportHeight - 64, alignment: .topLeading)
-        .padding(.leading, 54)
-        .padding(.trailing, 34)
+        .padding(.horizontal, 42)
         .padding(.top, 18)
         .padding(.bottom, 110)
     }
