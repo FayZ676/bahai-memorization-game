@@ -52,7 +52,7 @@ struct RecitationBar: View {
                 .background(fill, in: Circle())
                 .background(Theme.surface, in: Circle())
                 .overlay(Circle().stroke(stroke, lineWidth: 1))
-                .shadow(color: .black.opacity(0.16), radius: 14, y: 5)
+                .shadow(color: .black.opacity(0.07), radius: 10, y: 3)
                 .contentShape(Circle())
         }
         .buttonStyle(.haptic)
