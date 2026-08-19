@@ -28,7 +28,6 @@ struct SessionView: View {
     @State private var showingSpeechHistory = false
     @State private var showingFeedback = false
     @State private var recitingChunkID: UUID?
-    @State private var recitingWholeChunk = false
     let passage: Passage
     private let store: AppStore
 
@@ -121,7 +120,7 @@ struct SessionView: View {
             voice.prepare(for: vm.passageText)
         }
         .onChange(of: vm.current?.hiddenWords) {
-            guard let card = vm.current, !recitingWholeChunk else { return }
+            guard let card = vm.current else { return }
             voice.updateHiddenIndices(highlights.unattempted(in: card))
         }
         .onDisappear { voice.release() }
@@ -263,7 +262,6 @@ struct SessionView: View {
         }
         Feedback.prepareRecitation()
         recitingChunkID = card.id
-        recitingWholeChunk = card.hiddenWords.isEmpty
         if let first = remaining.first {
             scrollRequest = ScrollRequest(index: first)
         }
