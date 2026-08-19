@@ -134,7 +134,7 @@ struct ProgressBar: View {
             )
             .shadow(color: Theme.ink.opacity(selected ? 0.22 : 0), radius: 3, y: 2)
             .offset(
-                x: axis == .horizontal ? 0 : (selected ? -3 : 0),
+                x: axis == .horizontal ? 0 : (selected ? 3 : 0),
                 y: axis == .horizontal ? (selected ? -3 : 0) : 0
             )
             .zIndex(selected ? 1 : 0)
