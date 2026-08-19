@@ -52,13 +52,15 @@ struct SessionView: View {
                 if vm.current != nil {
                     progressRow
                     readingArea
-                    RecitationBar(
-                        voice: voice,
-                        hasHiddenWords: !(vm.current?.hiddenWords.isEmpty ?? true),
-                        showsHint: !vm.passageHasHiddenWords,
-                        micDeniedAlert: $showingMicDenied,
-                        onStart: startRecitation
-                    )
+                        .overlay(alignment: .bottom) {
+                            RecitationBar(
+                                voice: voice,
+                                hasHiddenWords: !(vm.current?.hiddenWords.isEmpty ?? true),
+                                showsHint: !vm.passageHasHiddenWords,
+                                micDeniedAlert: $showingMicDenied,
+                                onStart: startRecitation
+                            )
+                        }
                 } else {
                     Spacer()
                     emptyQueue
@@ -358,7 +360,7 @@ struct SessionView: View {
             .frame(width: geo.size.width, height: geo.size.height)
             .clipped()
             .fadeEdge(.top, height: 16)
-            .fadeEdge(.bottom, height: 28)
+            .fadeEdge(.bottom, height: 44)
             .onGeometryChange(for: CGRect.self) { proxy in
                 proxy.frame(in: .global)
             } action: { frame in
@@ -433,7 +435,7 @@ struct SessionView: View {
         .frame(maxWidth: .infinity, minHeight: viewportHeight - 64, alignment: .topLeading)
         .padding(.horizontal, 30)
         .padding(.top, 18)
-        .padding(.bottom, 28)
+        .padding(.bottom, 96)
     }
 
     private func moveSection(forward: Bool) {

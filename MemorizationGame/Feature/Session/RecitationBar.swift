@@ -12,12 +12,11 @@ struct RecitationBar: View {
     var body: some View {
         VStack(spacing: 0) {
             micButton
-                .padding(.top, Spacing.sm)
             if showsHint {
                 hint
             }
         }
-        .padding(.bottom, Spacing.xs)
+        .padding(.bottom, Spacing.sm)
         .animation(Self.settle, value: voice.state)
         .animation(Self.settle, value: showsHint)
         .animation(Self.settle, value: isDisabled)
@@ -51,7 +50,9 @@ struct RecitationBar: View {
             micIcon
                 .frame(width: 56, height: 56)
                 .background(fill, in: Circle())
+                .background(Theme.surface, in: Circle())
                 .overlay(Circle().stroke(stroke, lineWidth: 1))
+                .shadow(color: .black.opacity(0.16), radius: 14, y: 5)
                 .contentShape(Circle())
         }
         .buttonStyle(.haptic)
@@ -93,7 +94,7 @@ struct RecitationBar: View {
 
     private var fill: Color {
         if voice.state == .listening { return Theme.accent.opacity(0.18) }
-        return isUnavailable ? Theme.surface.opacity(0.5) : Theme.surface
+        return Theme.surface
     }
 
     private var stroke: Color {
