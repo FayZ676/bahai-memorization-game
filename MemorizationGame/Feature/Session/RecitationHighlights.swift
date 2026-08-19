@@ -34,7 +34,7 @@ struct RecitationHighlights {
     }
 
     func unattempted(in card: Reviewable) -> [Int] {
-        card.hiddenWords
+        card.recitableIndices
             .filter { !recited.contains($0) && !missed.contains($0) }
             .sorted()
     }

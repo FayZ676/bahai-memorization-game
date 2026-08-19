@@ -44,6 +44,11 @@ struct Reviewable: Codable, Identifiable, Hashable {
 
     var wordCount: Int { layout.words.count }
 
+    var recitableIndices: [Int] {
+        guard hiddenWords.isEmpty else { return hiddenWords.sorted() }
+        return words.indices.filter { words[$0].contains(where: \.isLetter) }
+    }
+
     mutating func toggleWord(_ index: Int) {
         if hiddenWords.contains(index) {
             hiddenWords.remove(index)

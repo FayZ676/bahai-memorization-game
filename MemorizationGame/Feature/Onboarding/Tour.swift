@@ -44,7 +44,7 @@ enum TourStep: Int, CaseIterable {
         case .importPrayer: Text("Tap the \(symbol("plus")) button to add the prayer to your Memorization Library.")
         case .openPassage: Text("Tap the prayer to start memorizing it.")
         case .hideWord: Text("Tap a word to hide it. Tap it again to bring it back. Press and glide over words to hide or reveal multiple words at once.")
-        case .recite: Text("Tap the \(symbol("mic")) button to practice saying hidden words aloud.")
+        case .recite: Text("Tap the \(symbol("mic")) button to practice saying the words aloud.")
         case .nextSection:
             Text("Paragraphs get split into sections. Swipe up the screen to move to the next section, down to go back. Or tap the progress bar above.")
         case .achievements:

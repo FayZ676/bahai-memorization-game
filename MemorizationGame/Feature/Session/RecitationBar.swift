@@ -3,7 +3,6 @@ import SwiftUI
 struct RecitationBar: View {
     let voice: VoiceRecitationController
     let hasHiddenWords: Bool
-    let showsHint: Bool
     let isPeeking: Bool
     @Binding var micDeniedAlert: Bool
     let onStart: () -> Void
@@ -12,20 +11,13 @@ struct RecitationBar: View {
     private static let settle = Animation.easeInOut(duration: 0.22)
 
     var body: some View {
-        VStack(spacing: 0) {
-            HStack(alignment: .bottom, spacing: -10) {
-                peekButton
-                micButton
-                peekButton.hidden()
-            }
-            if showsHint {
-                hint
-            }
+        HStack(alignment: .bottom, spacing: -10) {
+            peekButton
+            micButton
+            peekButton.hidden()
         }
         .padding(.bottom, Spacing.xxs)
         .animation(Self.settle, value: voice.state)
-        .animation(Self.settle, value: showsHint)
-        .animation(Self.settle, value: isDisabled)
         .animation(Self.settle, value: isPeeking)
     }
 
@@ -65,22 +57,6 @@ struct RecitationBar: View {
         return peekDisabled ? Theme.hairline.opacity(0.6) : Theme.hairline
     }
 
-    private var isDisabled: Bool {
-        !hasHiddenWords && !voice.isListening
-    }
-
-    private var hint: some View {
-        InfoNote(Typography.micro, color: Theme.faint) {
-            Text("Hide a word to activate the mic.")
-                .appFont(Typography.micro)
-                .foregroundStyle(Theme.faint)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, 26)
-        .padding(.top, Spacing.xxs)
-        .transition(.opacity)
-    }
-
     private var micButton: some View {
         Button {
             switch voice.state {
@@ -100,7 +76,6 @@ struct RecitationBar: View {
                 .contentShape(Circle())
         }
         .buttonStyle(.haptic)
-        .disabled(isDisabled)
     }
 
     @ViewBuilder
@@ -133,7 +108,7 @@ struct RecitationBar: View {
     }
 
     private var isUnavailable: Bool {
-        voice.state == .micDenied || isDisabled
+        voice.state == .micDenied
     }
 
     private var fill: Color {
