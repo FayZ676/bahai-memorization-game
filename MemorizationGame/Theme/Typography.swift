@@ -66,6 +66,10 @@ struct AppTextToken {
         self.face = face
     }
 
+    func weight(_ weight: Font.Weight) -> AppTextToken {
+        AppTextToken(size, weight: weight, face: face)
+    }
+
     func font(scale: CGFloat) -> Font {
         let scaled = size * scale * face.opticalScale
         switch face {

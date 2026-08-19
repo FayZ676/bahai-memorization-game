@@ -37,7 +37,7 @@ struct ProgressBar: View {
     private var completionLabel: some View {
         if let completion {
             Text(Self.percentLabel(completion))
-                .appFont(axis == .horizontal ? Typography.footnote : Typography.micro)
+                .appFont((axis == .horizontal ? Typography.footnote : Typography.micro).weight(.bold))
                 .monospacedDigit()
                 .foregroundStyle(Theme.accent)
                 .fixedSize()
