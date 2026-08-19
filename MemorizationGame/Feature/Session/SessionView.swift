@@ -276,29 +276,10 @@ struct SessionView: View {
     }
 
     private var progressRow: some View {
-        VStack(spacing: 9) {
-            if vm.canMerge {
-                HStack {
-                    Spacer()
-                    mergeButton
-                }
-            }
-            heatBar
-        }
-        .padding(.horizontal, 26)
-        .padding(.top, Spacing.headerGap)
-        .padding(.bottom, 16)
-        .animation(.easeInOut(duration: 0.22), value: vm.canMerge)
-    }
-
-    private var mergeButton: some View {
-        Button {
-            withAnimation(.easeInOut(duration: 0.28)) { vm.merge() }
-        } label: {
-            MergeChip()
-        }
-        .buttonStyle(.haptic)
-        .transition(.opacity.combined(with: .scale(scale: 0.9)))
+        heatBar
+            .padding(.horizontal, 26)
+            .padding(.top, Spacing.headerGap)
+            .padding(.bottom, 16)
     }
 
     private var heatBar: some View {
