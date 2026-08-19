@@ -11,7 +11,7 @@ struct SessionView: View {
     @State private var showingMicDenied = false
     @State private var scrubbing = false
     @State private var showingRail = true
-    @State private var barExtent: CGFloat = 0
+    @State private var barBounds: CGRect = .zero
     @State private var highlights = RecitationHighlights()
     @State private var painting = WordPainting()
     @State private var scriptureFrame: CGRect = .zero
@@ -299,24 +299,28 @@ struct SessionView: View {
         .frame(maxWidth: .infinity)
         .contentShape(Rectangle())
         .gesture(
-            DragGesture(minimumDistance: 0)
+            DragGesture(minimumDistance: 0, coordinateSpace: .global)
                 .onChanged { value in
                     if !scrubbing {
                         withAnimation(.easeOut(duration: 0.16)) { scrubbing = true }
                     }
                     withAnimation(.easeInOut(duration: 0.18)) {
-                        vm.scrub(to: Self.segmentIndex(at: value.location.y, extent: barExtent, weights: weights))
+                        vm.scrub(to: Self.segmentIndex(
+                            at: value.location.y - barBounds.minY,
+                            extent: barBounds.height,
+                            weights: weights
+                        ))
                     }
                 }
                 .onEnded { _ in
                     withAnimation(.easeOut(duration: 0.2)) { scrubbing = false }
                 }
         )
-        .onPreferenceChange(ProgressBarExtent.self) { barExtent = $0 }
+        .onPreferenceChange(ProgressBarBounds.self) { barBounds = $0 }
         .frame(width: 34)
         .padding(.leading, 10)
         .padding(.top, Spacing.headerGap)
-        .padding(.bottom, 110)
+        .padding(.bottom, Spacing.sm)
         .animation(.easeOut(duration: 0.14), value: vm.step)
     }
 

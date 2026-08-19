@@ -26,9 +26,9 @@ struct ProgressBar: View {
             }
         case .vertical:
             VStack(spacing: Self.spacing * 2) {
+                completionLabel
                 bar
                     .frame(width: barHeight)
-                completionLabel
             }
         }
     }
@@ -48,7 +48,7 @@ struct ProgressBar: View {
         GeometryReader { geo in
             let span = extent(of: geo.size) - Self.spacing * CGFloat(max(heats.count - 1, 0))
             segments(span: span)
-                .preference(key: ProgressBarExtent.self, value: extent(of: geo.size))
+                .preference(key: ProgressBarBounds.self, value: geo.frame(in: .global))
         }
     }
 
@@ -151,10 +151,11 @@ struct ProgressBar: View {
     }
 }
 
-struct ProgressBarExtent: PreferenceKey {
-    static let defaultValue: CGFloat = 0
+struct ProgressBarBounds: PreferenceKey {
+    static let defaultValue: CGRect = .zero
 
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = max(value, nextValue())
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        let next = nextValue()
+        if next.width * next.height > value.width * value.height { value = next }
     }
 }
