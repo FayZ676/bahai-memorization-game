@@ -10,7 +10,8 @@ struct SessionView: View {
     @State private var started = false
     @State private var showingMicDenied = false
     @State private var scrubbing = false
-    @State private var barWidth: CGFloat = 0
+    @State private var showingRail = true
+    @State private var barExtent: CGFloat = 0
     @State private var highlights = RecitationHighlights()
     @State private var painting = WordPainting()
     @State private var scriptureFrame: CGRect = .zero
@@ -50,18 +51,27 @@ struct SessionView: View {
                     if vm.current != nil { optionsMenu }
                 }
                 if vm.current != nil {
-                    progressRow
-                    readingArea
-                        .overlay(alignment: .bottom) {
-                            RecitationBar(
-                                voice: voice,
-                                hasHiddenWords: !(vm.current?.hiddenWords.isEmpty ?? true),
-                                isPeeking: vm.isPeeking,
-                                micDeniedAlert: $showingMicDenied,
-                                onStart: startRecitation,
-                                onPeek: { vm.togglePeek() }
-                            )
+                    HStack(spacing: 0) {
+                        if showingRail {
+                            progressRail
+                                .transition(.move(edge: .leading).combined(with: .opacity))
                         }
+                        readingArea
+                    }
+                    .overlay(alignment: .bottom) {
+                        RecitationBar(
+                            voice: voice,
+                            hasHiddenWords: !(vm.current?.hiddenWords.isEmpty ?? true),
+                            isPeeking: vm.isPeeking,
+                            isRailVisible: showingRail,
+                            micDeniedAlert: $showingMicDenied,
+                            onStart: startRecitation,
+                            onPeek: { vm.togglePeek() },
+                            onToggleRail: {
+                                withAnimation(.easeInOut(duration: 0.28)) { showingRail.toggle() }
+                            }
+                        )
+                    }
                 } else {
                     Spacer()
                     emptyQueue
@@ -275,14 +285,7 @@ struct SessionView: View {
         }
     }
 
-    private var progressRow: some View {
-        heatBar
-            .padding(.horizontal, 26)
-            .padding(.top, Spacing.headerGap)
-            .padding(.bottom, 16)
-    }
-
-    private var heatBar: some View {
+    private var progressRail: some View {
         let weights = vm.sectionWeights
         return ProgressBar(
             heats: vm.sectionHeats,
@@ -290,9 +293,10 @@ struct SessionView: View {
             animated: false,
             highlight: vm.step,
             completion: vm.hiddenFraction,
-            barHeight: scrubbing ? 12 : 6
+            barHeight: scrubbing ? 12 : 6,
+            axis: .vertical
         )
-        .frame(maxHeight: .infinity)
+        .frame(maxWidth: .infinity)
         .contentShape(Rectangle())
         .gesture(
             DragGesture(minimumDistance: 0)
@@ -301,24 +305,27 @@ struct SessionView: View {
                         withAnimation(.easeOut(duration: 0.16)) { scrubbing = true }
                     }
                     withAnimation(.easeInOut(duration: 0.18)) {
-                        vm.scrub(to: Self.segmentIndex(at: value.location.x, width: barWidth, weights: weights))
+                        vm.scrub(to: Self.segmentIndex(at: value.location.y, extent: barExtent, weights: weights))
                     }
                 }
                 .onEnded { _ in
                     withAnimation(.easeOut(duration: 0.2)) { scrubbing = false }
                 }
         )
-        .onPreferenceChange(ProgressBarWidth.self) { barWidth = $0 }
-        .frame(height: 20)
+        .onPreferenceChange(ProgressBarExtent.self) { barExtent = $0 }
+        .frame(width: 34)
+        .padding(.leading, 10)
+        .padding(.top, Spacing.headerGap)
+        .padding(.bottom, 110)
         .animation(.easeOut(duration: 0.14), value: vm.step)
     }
 
-    private static func segmentIndex(at x: CGFloat, width: CGFloat, weights: [Int]) -> Int {
+    private static func segmentIndex(at distance: CGFloat, extent: CGFloat, weights: [Int]) -> Int {
         let fractions = ProgressBar.displayFractions(weights: weights, count: weights.count)
         var edge: CGFloat = 0
         for (i, fraction) in fractions.enumerated() {
-            edge += width * CGFloat(fraction)
-            if x < edge { return i }
+            edge += extent * CGFloat(fraction)
+            if distance < edge { return i }
         }
         return max(weights.count - 1, 0)
     }
@@ -409,7 +416,8 @@ struct SessionView: View {
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, minHeight: viewportHeight - 64, alignment: .topLeading)
-        .padding(.horizontal, 30)
+        .padding(.leading, showingRail ? 16 : 30)
+        .padding(.trailing, 30)
         .padding(.top, 18)
         .padding(.bottom, 110)
     }

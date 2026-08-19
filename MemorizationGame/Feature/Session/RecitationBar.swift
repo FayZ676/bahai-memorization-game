@@ -4,21 +4,24 @@ struct RecitationBar: View {
     let voice: VoiceRecitationController
     let hasHiddenWords: Bool
     let isPeeking: Bool
+    let isRailVisible: Bool
     @Binding var micDeniedAlert: Bool
     let onStart: () -> Void
     let onPeek: () -> Void
+    let onToggleRail: () -> Void
 
     private static let settle = Animation.easeInOut(duration: 0.22)
 
     var body: some View {
         HStack(alignment: .bottom, spacing: -10) {
-            peekButton
+            railButton
             micButton
-            peekButton.hidden()
+            peekButton
         }
         .padding(.bottom, Spacing.xxs)
         .animation(Self.settle, value: voice.state)
         .animation(Self.settle, value: isPeeking)
+        .animation(Self.settle, value: isRailVisible)
     }
 
     private var peekDisabled: Bool {
@@ -26,35 +29,54 @@ struct RecitationBar: View {
     }
 
     private var peekButton: some View {
-        Button(action: onPeek) {
-            Image(systemName: isPeeking ? "eye.slash" : "eye")
+        sideButton(
+            symbol: isPeeking ? "eye.slash" : "eye",
+            on: isPeeking,
+            disabled: peekDisabled,
+            action: onPeek
+        )
+    }
+
+    private var railButton: some View {
+        sideButton(
+            symbol: "sidebar.squares.leading",
+            on: isRailVisible,
+            disabled: false,
+            action: onToggleRail
+        )
+    }
+
+    private func sideButton(
+        symbol: String,
+        on: Bool,
+        disabled: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
                 .font(.system(size: 20, weight: .regular))
-                .foregroundStyle(peekSymbolColor)
+                .foregroundStyle(sideSymbolColor(on: on, disabled: disabled))
                 .contentTransition(.symbolEffect(.replace.offUp))
                 .frame(width: 54, height: 54)
-                .background(peekFill, in: Circle())
+                .background(on ? Theme.accent.opacity(0.18) : Theme.surface, in: Circle())
                 .background(Theme.surface, in: Circle())
-                .overlay(Circle().stroke(peekStroke, lineWidth: 1))
+                .overlay(Circle().stroke(sideStroke(on: on, disabled: disabled), lineWidth: 1))
                 .shadow(color: .black.opacity(0.05), radius: 7, y: 2)
                 .padding(10)
                 .contentShape(Circle())
         }
         .buttonStyle(.haptic)
-        .disabled(peekDisabled)
+        .disabled(disabled)
     }
 
-    private var peekSymbolColor: Color {
-        if isPeeking { return Theme.accent }
-        return peekDisabled ? Theme.muted.opacity(0.5) : Theme.navIcon
+    private func sideSymbolColor(on: Bool, disabled: Bool) -> Color {
+        if on { return Theme.accent }
+        return disabled ? Theme.muted.opacity(0.5) : Theme.navIcon
     }
 
-    private var peekFill: Color {
-        isPeeking ? Theme.accent.opacity(0.18) : Theme.surface
-    }
-
-    private var peekStroke: Color {
-        if isPeeking { return Theme.accent.opacity(0.7) }
-        return peekDisabled ? Theme.hairline.opacity(0.6) : Theme.hairline
+    private func sideStroke(on: Bool, disabled: Bool) -> Color {
+        if on { return Theme.accent.opacity(0.7) }
+        return disabled ? Theme.hairline.opacity(0.6) : Theme.hairline
     }
 
     private var micButton: some View {

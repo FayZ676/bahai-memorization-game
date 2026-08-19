@@ -1,41 +1,83 @@
 import SwiftUI
 
 struct ProgressBar: View {
+    enum Axis {
+        case horizontal
+        case vertical
+    }
+
     let heats: [Double]
     var weights: [Int]? = nil
     var animated = true
     var highlight: Int? = nil
     var completion: Double? = nil
     var barHeight: CGFloat? = nil
+    var axis: Axis = .horizontal
 
     private static let spacing: CGFloat = 3
 
     var body: some View {
-        HStack(spacing: Self.spacing * 2) {
-            bar
-                .frame(height: barHeight)
-
-            if let completion {
-                Text(Self.percentLabel(completion))
-                    .appFont(Typography.footnote)
-                    .monospacedDigit()
-                    .foregroundStyle(Theme.accent)
-                    .fixedSize()
+        switch axis {
+        case .horizontal:
+            HStack(spacing: Self.spacing * 2) {
+                bar
+                    .frame(height: barHeight)
+                completionLabel
             }
+        case .vertical:
+            VStack(spacing: Self.spacing * 2) {
+                bar
+                    .frame(width: barHeight)
+                completionLabel
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var completionLabel: some View {
+        if let completion {
+            Text(Self.percentLabel(completion))
+                .appFont(Typography.footnote)
+                .monospacedDigit()
+                .foregroundStyle(Theme.accent)
+                .fixedSize()
         }
     }
 
     private var bar: some View {
         GeometryReader { geo in
-            let fractions = normalizedWeights
-            let available = geo.size.width - Self.spacing * CGFloat(max(heats.count - 1, 0))
+            let span = extent(of: geo.size) - Self.spacing * CGFloat(max(heats.count - 1, 0))
+            segments(span: span)
+                .preference(key: ProgressBarExtent.self, value: extent(of: geo.size))
+        }
+    }
+
+    private func extent(of size: CGSize) -> CGFloat {
+        axis == .horizontal ? size.width : size.height
+    }
+
+    @ViewBuilder
+    private func segments(span: CGFloat) -> some View {
+        let fractions = normalizedWeights
+        switch axis {
+        case .horizontal:
             HStack(spacing: Self.spacing) {
-                ForEach(heats.indices, id: \.self) { i in
-                    segment(heat: heats[i], selected: i == highlight)
-                        .frame(width: max(available * fractions[i], 0))
-                }
+                sizedSegments(fractions: fractions, span: span)
             }
-            .preference(key: ProgressBarWidth.self, value: geo.size.width)
+        case .vertical:
+            VStack(spacing: Self.spacing) {
+                sizedSegments(fractions: fractions, span: span)
+            }
+        }
+    }
+
+    private func sizedSegments(fractions: [Double], span: CGFloat) -> some View {
+        ForEach(heats.indices, id: \.self) { i in
+            segment(heat: heats[i], selected: i == highlight)
+                .frame(
+                    width: axis == .horizontal ? max(span * fractions[i], 0) : nil,
+                    height: axis == .horizontal ? nil : max(span * fractions[i], 0)
+                )
         }
     }
 
@@ -86,9 +128,15 @@ struct ProgressBar: View {
             .overlay {
                 shape.fill(Theme.accent).opacity(fillOpacity(t))
             }
-            .frame(maxHeight: .infinity)
+            .frame(
+                maxWidth: axis == .horizontal ? nil : .infinity,
+                maxHeight: axis == .horizontal ? .infinity : nil
+            )
             .shadow(color: Theme.ink.opacity(selected ? 0.22 : 0), radius: 3, y: 2)
-            .offset(y: selected ? -3 : 0)
+            .offset(
+                x: axis == .horizontal ? 0 : (selected ? -3 : 0),
+                y: axis == .horizontal ? (selected ? -3 : 0) : 0
+            )
             .zIndex(selected ? 1 : 0)
     }
 
@@ -103,7 +151,7 @@ struct ProgressBar: View {
     }
 }
 
-struct ProgressBarWidth: PreferenceKey {
+struct ProgressBarExtent: PreferenceKey {
     static let defaultValue: CGFloat = 0
 
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
