@@ -224,13 +224,13 @@ struct LibraryView: View {
 
             BrowseLink(.browse) {
                 Image(systemName: "book")
-                    .font(.system(size: 34, weight: .ultraLight))
+                    .appIcon(34)
                     .foregroundStyle(Theme.accent)
             }
             .buttonStyle(IconButtonStyle(size: 96))
 
             Text("Choose a prayer to get started")
-                .appFont(Typography.subtitle)
+                .appFont(Typography.body)
                 .foregroundStyle(Theme.muted)
                 .multilineTextAlignment(.center)
 
