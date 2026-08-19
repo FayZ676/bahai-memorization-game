@@ -554,10 +554,12 @@ struct SessionView: View {
         Menu {
             Button("Edit", systemImage: "pencil") { showingEdit = true }
             Section("Change What's Hidden") {
-                Button("Hide Every Word", systemImage: "eye.slash") {
+                Button("Hide Every Word", systemImage: "lock") {
                     vm.setAllWords(hidden: true)
                 }
-                Button("Show Every Word", systemImage: "eye") { vm.setAllWords(hidden: false) }
+                Button("Show Every Word", systemImage: "lock.open") {
+                    vm.setAllWords(hidden: false)
+                }
             }
             Section {
                 Button(

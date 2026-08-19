@@ -13,7 +13,7 @@ struct RecitationBar: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(alignment: .bottom, spacing: 0) {
+            HStack(alignment: .bottom, spacing: -10) {
                 peekButton
                 micButton
                 peekButton.hidden()
@@ -35,9 +35,10 @@ struct RecitationBar: View {
 
     private var peekButton: some View {
         Button(action: onPeek) {
-            Image(systemName: "eyeglasses")
+            Image(systemName: isPeeking ? "eye.slash" : "eye")
                 .font(.system(size: 17, weight: .regular))
                 .foregroundStyle(peekSymbolColor)
+                .contentTransition(.symbolEffect(.replace.offUp))
                 .frame(width: 46, height: 46)
                 .background(peekFill, in: Circle())
                 .background(Theme.surface, in: Circle())
