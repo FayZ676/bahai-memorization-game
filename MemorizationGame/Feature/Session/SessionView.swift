@@ -359,7 +359,6 @@ struct SessionView: View {
             }
             .frame(width: geo.size.width, height: geo.size.height)
             .clipped()
-            .fadeEdge(.bottom, height: 44)
             .onGeometryChange(for: CGRect.self) { proxy in
                 proxy.frame(in: .global)
             } action: { frame in
