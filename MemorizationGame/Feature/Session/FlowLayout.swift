@@ -4,8 +4,7 @@ struct FlowLayout: Layout {
     var spacing: CGFloat = 6
     var lineSpacing: CGFloat = 8
     var justified = false
-
-    private static let maxStretchPerGap: CGFloat = 2.5
+    var maxStretchPerGap: CGFloat = 2.5
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout Void) -> CGSize {
         let maxWidth = proposal.width ?? .infinity
@@ -61,7 +60,7 @@ struct FlowLayout: Layout {
         guard justified, !lastRow, items > 1 else { return spacing }
         let slack = maxWidth - rowWidth
         guard slack > 0 else { return spacing }
-        return spacing + min(slack / CGFloat(items - 1), spacing * Self.maxStretchPerGap)
+        return spacing + min(slack / CGFloat(items - 1), spacing * maxStretchPerGap)
     }
 
     private struct Row {

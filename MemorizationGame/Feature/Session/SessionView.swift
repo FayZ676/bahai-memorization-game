@@ -51,10 +51,12 @@ struct SessionView: View {
                     if vm.current != nil { optionsMenu }
                 }
                 if vm.current != nil {
-                    readingArea
+                    GeometryReader { geo in
+                        let metrics = ReadingMetrics(width: geo.size.width)
+                        readingArea(metrics)
                         .overlay(alignment: .leading) {
                             if showingRail {
-                                progressRail
+                                progressRail(metrics)
                                     .transition(.move(edge: .leading).combined(with: .opacity))
                             }
                         }
@@ -72,6 +74,7 @@ struct SessionView: View {
                                 }
                             )
                         }
+                    }
                 } else {
                     Spacer()
                     emptyQueue
@@ -285,7 +288,7 @@ struct SessionView: View {
         }
     }
 
-    private var progressRail: some View {
+    private func progressRail(_ metrics: ReadingMetrics) -> some View {
         let weights = vm.sectionWeights
         return ProgressBar(
             heats: vm.sectionHeats,
@@ -317,8 +320,8 @@ struct SessionView: View {
                 }
         )
         .onPreferenceChange(ProgressBarBounds.self) { barBounds = $0 }
-        .frame(width: 28)
-        .padding(.leading, 8)
+        .frame(width: metrics.railWidth)
+        .padding(.leading, metrics.railInset)
         .padding(.top, Spacing.headerGap)
         .padding(.bottom, Spacing.sm)
         .animation(.easeOut(duration: 0.14), value: vm.step)
@@ -334,14 +337,14 @@ struct SessionView: View {
         return max(weights.count - 1, 0)
     }
 
-    private var readingArea: some View {
+    private func readingArea(_ metrics: ReadingMetrics) -> some View {
         GeometryReader { geo in
             ZStack(alignment: .top) {
                 if let departing {
-                    departingSection(departing, height: geo.size.height)
+                    departingSection(departing, height: geo.size.height, metrics: metrics)
                 }
                 if let card = vm.current {
-                    sectionScroll(card, viewportHeight: geo.size.height)
+                    sectionScroll(card, viewportHeight: geo.size.height, metrics: metrics)
                         .id(card.id)
                         .offset(y: slide)
                 }
@@ -369,9 +372,9 @@ struct SessionView: View {
         .frame(maxHeight: .infinity)
     }
 
-    private func sectionScroll(_ card: Reviewable, viewportHeight: CGFloat) -> some View {
+    private func sectionScroll(_ card: Reviewable, viewportHeight: CGFloat, metrics: ReadingMetrics) -> some View {
         ScrollView {
-            sectionBody(card, viewportHeight: viewportHeight, live: true)
+            sectionBody(card, viewportHeight: viewportHeight, live: true, metrics: metrics)
         }
         .scrollIndicators(.hidden)
         .scrollDisabled(painting.isActive)
@@ -399,8 +402,8 @@ struct SessionView: View {
         )
     }
 
-    private func departingSection(_ departure: Departure, height: CGFloat) -> some View {
-        sectionBody(departure.card, viewportHeight: height, live: false)
+    private func departingSection(_ departure: Departure, height: CGFloat, metrics: ReadingMetrics) -> some View {
+        sectionBody(departure.card, viewportHeight: height, live: false, metrics: metrics)
             .offset(y: -departure.scrollTop)
             .frame(height: height, alignment: .topLeading)
             .clipped()
@@ -408,9 +411,9 @@ struct SessionView: View {
             .offset(y: slide - (departure.advancing ? height : -height))
     }
 
-    private func sectionBody(_ card: Reviewable, viewportHeight: CGFloat, live: Bool) -> some View {
+    private func sectionBody(_ card: Reviewable, viewportHeight: CGFloat, live: Bool, metrics: ReadingMetrics) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            scripture(for: card, live: live)
+            scripture(for: card, live: live, metrics: metrics)
             InfoNote(Typography.micro, color: Theme.faint) {
                 Text("Tap and glide over words to show or hide them")
                     .appFont(Typography.micro)
@@ -420,7 +423,7 @@ struct SessionView: View {
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, minHeight: viewportHeight - 64, alignment: .topLeading)
-        .padding(.horizontal, 42)
+        .padding(.horizontal, metrics.textMargin)
         .padding(.top, 18)
         .padding(.bottom, 110)
     }
@@ -464,11 +467,11 @@ struct SessionView: View {
         }
     }
 
-    private func scripture(for card: Reviewable, live: Bool = true) -> some View {
+    private func scripture(for card: Reviewable, live: Bool, metrics: ReadingMetrics) -> some View {
         let words = card.words
         return VStack(alignment: .leading, spacing: 18) {
             ForEach(Array(card.paragraphs.enumerated()), id: \.offset) { _, range in
-                FlowLayout(spacing: 7, lineSpacing: 12, justified: true) {
+                FlowLayout(spacing: 7, lineSpacing: 12, justified: true, maxStretchPerGap: metrics.maxStretchPerGap) {
                     ForEach(range, id: \.self) { idx in
                         WordView(
                             token: String(words[idx]),
@@ -577,6 +580,21 @@ struct SessionView: View {
             .appFont(Typography.subtitle)
             .foregroundStyle(Theme.muted)
             .multilineTextAlignment(.center)
+    }
+}
+
+private struct ReadingMetrics {
+    let textMargin: CGFloat
+    let railInset: CGFloat
+    let railWidth: CGFloat
+    let maxStretchPerGap: CGFloat
+
+    init(width: CGFloat) {
+        let narrow = width < 390
+        textMargin = narrow ? 30 : 42
+        railInset = narrow ? 3 : 8
+        railWidth = narrow ? 24 : 28
+        maxStretchPerGap = narrow ? 1.5 : 2.5
     }
 }
 
