@@ -9,7 +9,11 @@ struct RecitationBar: View {
     let onPeek: () -> Void
     let onToggleRail: () -> Void
 
+    @State private var hintShowing = false
+    @State private var hintToken = 0
+
     private static let settle = Animation.easeInOut(duration: 0.22)
+    private static let hintDwell = Duration.seconds(2.4)
 
     var body: some View {
         HStack(alignment: .bottom, spacing: -10) {
@@ -20,6 +24,10 @@ struct RecitationBar: View {
         .padding(.bottom, Spacing.xxs)
         .animation(Self.settle, value: voice.state)
         .animation(Self.settle, value: isPeeking)
+        .onChange(of: peekDisabled) { _, disabled in
+            guard !disabled else { return }
+            withAnimation(Self.settle) { hintShowing = false }
+        }
     }
 
     private var peekDisabled: Bool {
@@ -30,16 +38,55 @@ struct RecitationBar: View {
         sideButton(
             symbol: isPeeking ? "eye.slash" : "eye",
             on: isPeeking,
-            disabled: peekDisabled,
-            action: onPeek
+            dimmed: peekDisabled,
+            action: { peekDisabled ? flashHint() : onPeek() }
         )
+        .overlay(alignment: .top) {
+            if hintShowing {
+                hint
+                    .offset(y: -34)
+                    .transition(.opacity.combined(with: .scale(scale: 0.92, anchor: .bottom)))
+            }
+        }
+    }
+
+    private var hint: some View {
+        Text("Nothing is hidden yet — tap words to hide them.")
+            .appFont(Typography.micro)
+            .foregroundStyle(Theme.muted)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(width: 190)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(
+                RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
+                    .fill(Theme.rowBg)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
+                            .stroke(Theme.hairline, lineWidth: 1)
+                    )
+            )
+            .shadow(color: .black.opacity(0.08), radius: 10, y: 3)
+            .allowsHitTesting(false)
+    }
+
+    private func flashHint() {
+        hintToken += 1
+        let token = hintToken
+        withAnimation(Self.settle) { hintShowing = true }
+        Task {
+            try? await Task.sleep(for: Self.hintDwell)
+            guard token == hintToken else { return }
+            withAnimation(Self.settle) { hintShowing = false }
+        }
     }
 
     private var railButton: some View {
         sideButton(
             symbol: "sidebar.squares.leading",
             on: false,
-            disabled: false,
+            dimmed: false,
             action: onToggleRail
         )
     }
@@ -47,34 +94,33 @@ struct RecitationBar: View {
     private func sideButton(
         symbol: String,
         on: Bool,
-        disabled: Bool,
+        dimmed: Bool,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 20, weight: .regular))
-                .foregroundStyle(sideSymbolColor(on: on, disabled: disabled))
+                .foregroundStyle(sideSymbolColor(on: on, dimmed: dimmed))
                 .contentTransition(.symbolEffect(.replace.offUp))
                 .frame(width: 54, height: 54)
                 .background(on ? Theme.accent.opacity(0.18) : Theme.surface, in: Circle())
                 .background(Theme.surface, in: Circle())
-                .overlay(Circle().stroke(sideStroke(on: on, disabled: disabled), lineWidth: 1))
+                .overlay(Circle().stroke(sideStroke(on: on, dimmed: dimmed), lineWidth: 1))
                 .shadow(color: .black.opacity(0.05), radius: 7, y: 2)
                 .padding(10)
                 .contentShape(Circle())
         }
         .buttonStyle(.haptic)
-        .disabled(disabled)
     }
 
-    private func sideSymbolColor(on: Bool, disabled: Bool) -> Color {
+    private func sideSymbolColor(on: Bool, dimmed: Bool) -> Color {
         if on { return Theme.accent }
-        return disabled ? Theme.muted.opacity(0.5) : Theme.navIcon
+        return dimmed ? Theme.muted.opacity(0.5) : Theme.navIcon
     }
 
-    private func sideStroke(on: Bool, disabled: Bool) -> Color {
+    private func sideStroke(on: Bool, dimmed: Bool) -> Color {
         if on { return Theme.accent.opacity(0.7) }
-        return disabled ? Theme.hairline.opacity(0.6) : Theme.hairline
+        return dimmed ? Theme.hairline.opacity(0.6) : Theme.hairline
     }
 
     private var micButton: some View {
