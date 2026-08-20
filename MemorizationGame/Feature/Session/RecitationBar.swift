@@ -11,6 +11,7 @@ struct RecitationBar: View {
 
     @State private var hintShowing = false
     @State private var hintToken = 0
+    @State private var hintHeight: CGFloat = 0
 
     private static let settle = Animation.easeInOut(duration: 0.22)
     private static let hintDwell = Duration.seconds(2.4)
@@ -22,19 +23,19 @@ struct RecitationBar: View {
             peekButton
         }
         .overlay(alignment: .top) {
-            if hintShowing {
-                hint
-                    .padding(.bottom, Spacing.xs)
-                    .alignmentGuide(.top) { $0[.bottom] }
-                    .transition(.opacity.combined(with: .scale(scale: 0.94, anchor: .bottom)))
-            }
+            hint
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { hintHeight = $0 }
+                .offset(y: -(hintHeight + Spacing.sm))
+                .opacity(hintShowing ? 1 : 0)
+                .scaleEffect(hintShowing ? 1 : 0.94, anchor: .bottom)
+                .animation(Self.settle, value: hintShowing)
         }
         .padding(.bottom, Spacing.xxs)
         .animation(Self.settle, value: voice.state)
         .animation(Self.settle, value: isPeeking)
         .onChange(of: peekDisabled) { _, disabled in
             guard !disabled else { return }
-            withAnimation(Self.settle) { hintShowing = false }
+            hintShowing = false
         }
     }
 
@@ -75,11 +76,11 @@ struct RecitationBar: View {
     private func flashHint() {
         hintToken += 1
         let token = hintToken
-        withAnimation(Self.settle) { hintShowing = true }
+        hintShowing = true
         Task {
             try? await Task.sleep(for: Self.hintDwell)
             guard token == hintToken else { return }
-            withAnimation(Self.settle) { hintShowing = false }
+            hintShowing = false
         }
     }
 
