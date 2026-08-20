@@ -15,6 +15,7 @@ struct ProgressBar: View {
     var axis: Axis = .horizontal
 
     private static let spacing: CGFloat = 3
+    private static let selectionGap: CGFloat = 2.5
 
     var body: some View {
         switch axis {
@@ -132,11 +133,11 @@ struct ProgressBar: View {
                 maxWidth: axis == .horizontal ? nil : .infinity,
                 maxHeight: axis == .horizontal ? .infinity : nil
             )
-            .shadow(color: Theme.ink.opacity(selected ? 0.22 : 0), radius: 3, y: 2)
-            .offset(
-                x: axis == .horizontal ? 0 : (selected ? 3 : 0),
-                y: axis == .horizontal ? (selected ? -3 : 0) : 0
-            )
+            .overlay {
+                if selected {
+                    shape.inset(by: -Self.selectionGap).stroke(Theme.accent, lineWidth: 1.5)
+                }
+            }
             .zIndex(selected ? 1 : 0)
     }
 
