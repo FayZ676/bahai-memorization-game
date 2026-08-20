@@ -8,34 +8,38 @@ struct RecitationBar: View {
     let onStart: () -> Void
     let onPeek: () -> Void
     let onToggleRail: () -> Void
+    let hint: SessionHint
 
-    @State private var hintShowing = false
-    @State private var hintToken = 0
     @State private var hintHeight: CGFloat = 0
+    @State private var standingMessage = ""
 
     private static let settle = Animation.easeInOut(duration: 0.22)
-    private static let hintDwell = Duration.seconds(2.4)
+    private static let halo: CGFloat = 10
 
     var body: some View {
-        HStack(alignment: .bottom, spacing: -10) {
+        HStack(alignment: .bottom, spacing: -Self.halo) {
             railButton
             micButton
             peekButton
         }
         .overlay(alignment: .top) {
-            hint
+            HintBubble(text: standingMessage)
                 .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { hintHeight = $0 }
-                .offset(y: -(hintHeight + Spacing.sm))
-                .opacity(hintShowing ? 1 : 0)
-                .scaleEffect(hintShowing ? 1 : 0.94, anchor: .bottom)
-                .animation(Self.settle, value: hintShowing)
+                .offset(y: -hintHeight)
+                .opacity(hint.message == nil ? 0 : 1)
+                .scaleEffect(hint.message == nil ? 0.94 : 1, anchor: .bottom)
+                .animation(Self.settle, value: hint.message)
         }
         .padding(.bottom, Spacing.xxs)
         .animation(Self.settle, value: voice.state)
         .animation(Self.settle, value: isPeeking)
+        .onChange(of: hint.message) { _, message in
+            guard let message else { return }
+            standingMessage = message
+        }
         .onChange(of: peekDisabled) { _, disabled in
             guard !disabled else { return }
-            hintShowing = false
+            hint.dismiss()
         }
     }
 
@@ -48,40 +52,10 @@ struct RecitationBar: View {
             symbol: isPeeking ? "eye.slash" : "eye",
             on: isPeeking,
             dimmed: peekDisabled,
-            action: { peekDisabled ? flashHint() : onPeek() }
+            action: {
+                peekDisabled ? hint.show("Nothing to peek. Try hiding a word first.") : onPeek()
+            }
         )
-    }
-
-    private var hint: some View {
-        Text("Nothing to peek. Try hiding a word first.")
-            .appFont(Typography.micro)
-            .foregroundStyle(Theme.muted)
-            .multilineTextAlignment(.center)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(width: 190)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(
-                RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
-                    .fill(Theme.rowBg)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
-                            .stroke(Theme.hairline, lineWidth: 1)
-                    )
-            )
-            .shadow(color: .black.opacity(0.08), radius: 10, y: 3)
-            .allowsHitTesting(false)
-    }
-
-    private func flashHint() {
-        hintToken += 1
-        let token = hintToken
-        hintShowing = true
-        Task {
-            try? await Task.sleep(for: Self.hintDwell)
-            guard token == hintToken else { return }
-            hintShowing = false
-        }
     }
 
     private var railButton: some View {
@@ -109,7 +83,7 @@ struct RecitationBar: View {
                 .background(Theme.surface, in: Circle())
                 .overlay(Circle().stroke(sideStroke(on: on, dimmed: dimmed), lineWidth: 1))
                 .shadow(color: .black.opacity(0.05), radius: 7, y: 2)
-                .padding(10)
+                .padding(Self.halo)
                 .contentShape(Circle())
         }
         .buttonStyle(.haptic)
@@ -140,7 +114,7 @@ struct RecitationBar: View {
                 .background(Theme.surface, in: Circle())
                 .overlay(Circle().stroke(stroke, lineWidth: 1))
                 .shadow(color: .black.opacity(0.07), radius: 10, y: 3)
-                .padding(10)
+                .padding(Self.halo)
                 .contentShape(Circle())
         }
         .buttonStyle(.haptic)

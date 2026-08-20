@@ -14,6 +14,7 @@ struct SessionView: View {
     @State private var barBounds: CGRect = .zero
     @State private var highlights = RecitationHighlights()
     @State private var painting = WordPainting()
+    @State private var hint = SessionHint()
     @State private var scriptureFrame: CGRect = .zero
     @State private var readingViewport: CGRect = .zero
     @State private var scrollRequest: ScrollRequest?
@@ -70,7 +71,8 @@ struct SessionView: View {
                                 onPeek: { vm.togglePeek() },
                                 onToggleRail: {
                                     withAnimation(.easeInOut(duration: 0.28)) { showingRail.toggle() }
-                                }
+                                },
+                                hint: hint
                             )
                         }
                     }
@@ -548,9 +550,15 @@ struct SessionView: View {
             Button("Edit Passage", systemImage: "pencil") { showingEdit = true }
             Section {
                 Button("Hide Every Word", systemImage: "text.page.slash") {
+                    guard !vm.everyWordHidden else {
+                        return hint.show("Every word is already hidden.")
+                    }
                     vm.setAllWords(hidden: true)
                 }
                 Button("Show Every Word", systemImage: "text.page") {
+                    guard !vm.everyWordShowing else {
+                        return hint.show("Every word is already showing.")
+                    }
                     vm.setAllWords(hidden: false)
                 }
             }

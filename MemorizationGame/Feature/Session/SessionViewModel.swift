@@ -52,6 +52,15 @@ final class SessionViewModel {
         focus(on: card.id)
     }
 
+    var everyWordHidden: Bool {
+        guard let card = current else { return false }
+        return card.hiddenWords.count >= card.wordCount
+    }
+
+    var everyWordShowing: Bool {
+        current?.hiddenWords.isEmpty ?? true
+    }
+
     var sectionHeats: [Double] { store.sectionHeats(for: passage) }
     var sectionWeights: [Int] { store.sectionWeights(for: passage) }
     var hiddenFraction: Double { store.hiddenFraction(for: passage) }
