@@ -15,6 +15,7 @@ struct LibraryView: View {
     @State private var pendingDelete: Passage?
     @State private var path = NavigationPath()
     @State private var isTourPresented = false
+    @State private var releaseNote: ReleaseNote?
     @State private var isArchiveExpanded = false
 
     var body: some View {
@@ -69,7 +70,10 @@ struct LibraryView: View {
             onRestart: { isTourPresented = true },
             onFinish: { isTourPresented = false }
         )
+        .releaseNotes($releaseNote)
         .onAppear {
+            releaseNote = ReleaseNotes.unseen(version: AppInfo.version, settings: store.settings)
+            store.markReleaseNotesSeen()
             guard !store.settings.hasSeenWelcomeTour else { return }
             store.settings.hasSeenWelcomeTour = true
             isTourPresented = true

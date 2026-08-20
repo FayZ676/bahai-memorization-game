@@ -55,6 +55,10 @@ commit's diff.
 
 ## Phase 2 — Draft the notes
 
+The notes are written twice, from one set of beats: the App Store paragraphs and the
+in-app What's New card. Draft the paragraphs first, then turn the same beats into
+highlights.
+
 Include a change only if a person using the app would notice it. The "Files by area"
 section is the first filter:
 
@@ -80,6 +84,35 @@ before drafting.
 - Never advertise the review prompt or analytics-shaped plumbing.
 - Fixes get one grouped line at the end unless a fix is the headline.
 - Usually under 500 characters; the hard limit is 4000.
+
+Land them in `store-listing.md` as a new `## What's New — <X.Y> (4000)` section above the
+previous one, in the same commit as the card below, so the file never skips a version.
+
+### The in-app card
+
+`MemorizationGame/Feature/ReleaseNotes/ReleaseNotes.swift` holds the card the app shows on
+the first launch of a new version. **Every release adds an entry, and the release is not
+ready until it does** — a version with no entry shows nobody anything, and the Settings
+"What's new" row keeps offering the release before it.
+
+Prepend a `ReleaseNote` to `ReleaseNotes.all`; newest first is what `latest` means.
+
+- `version` is the marketing version being shipped, exactly as `project_version.py` will
+  write it — `"1.7"`, not `"1.7.0"`. A mismatch is silent: the card simply never appears.
+- `headline` is one sentence on the shape of the release, the same beat the App Store
+  paragraphs lead with.
+- Three to five `highlights`, one per change worth naming. Each has an SF Symbol the app
+  already uses for that thing (`mic`, `eye`, `waveform`, `trophy`, `book`), a two-to-four
+  word `title`, and a `text` of a sentence or two in the voice above.
+- The card scrolls past five, but a release that needs more is a release whose notes are
+  not filtered enough.
+- Same filter as the paragraphs: if a change is invisible to someone using the app, it does
+  not earn a highlight, and "Small fixes and refinements" is not a highlight — leave it to
+  the App Store copy.
+
+Check it renders before shipping: Settings → **What's new** always shows the newest entry,
+whatever version is installed, so the card can be read on device before the version is
+bumped.
 
 ## Phase 3 — Check the listing and screenshots
 
@@ -111,15 +144,18 @@ capability is a minor bump.
 
 ## Phase 4 — Show the user
 
-Present, in this order: the draft notes, the listing findings, the screenshot verdict, and
-the recommended version. Then ask whether to ship.
+Present, in this order: the draft notes, the highlights going into the in-app card, the
+listing findings, the screenshot verdict, and the recommended version. Then ask whether to
+ship.
 
 Stop here if anything in phase 3 needs the user's hand first — stale copy is worth fixing
 before the build goes up, not after.
 
 ## Phase 5 — Ship
 
-Only on an explicit yes:
+Only on an explicit yes. First commit the notes — `store-listing.md` and the new
+`ReleaseNote` — and confirm that entry's `version` is the version about to be passed to
+`--version`. `push-build.sh` refuses a dirty tree, so this has to land first either way.
 
 ```
 scripts/push-build.sh --version <X.Y>

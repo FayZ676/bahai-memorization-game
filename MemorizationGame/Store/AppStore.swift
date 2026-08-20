@@ -260,6 +260,10 @@ final class AppStore {
         settings.lastReviewRequestVersion = ReviewPrompt.currentVersion
     }
 
+    func markReleaseNotesSeen() {
+        settings.lastSeenReleaseNotesVersion = AppInfo.version
+    }
+
     private func announceAchievements(memorizedBefore: Set<Int>) {
         let memorizedNow = memorizedPrayerIDs
         guard memorizedNow != memorizedBefore else { return }

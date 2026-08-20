@@ -5,6 +5,7 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.tour) private var tour
     @Environment(\.restartWelcomeTour) private var restartWelcomeTour
+    @Environment(\.showReleaseNotes) private var showReleaseNotes
     @Environment(\.openURL) private var openURL
     @State private var permissionDenied = false
 
@@ -38,6 +39,16 @@ struct SettingsView: View {
                             dismiss()
                         } label: {
                             DisclosureRow(tour == nil ? "Show welcome tour" : "Restart welcome tour")
+                        }
+                        .buttonStyle(.haptic)
+
+                        HairlineDivider()
+
+                        Button {
+                            showReleaseNotes()
+                            dismiss()
+                        } label: {
+                            DisclosureRow("What's new")
                         }
                         .buttonStyle(.haptic)
 

@@ -62,6 +62,7 @@ struct AppSettings: Codable, Equatable {
     var fontSize: FontSize = .medium
     var hasSeenWelcomeTour: Bool = false
     var lastReviewRequestVersion: String?
+    var lastSeenReleaseNotesVersion: String?
 
     static let `default` = AppSettings()
 
@@ -71,6 +72,7 @@ struct AppSettings: Codable, Equatable {
         case reminderMinuteOfDay, reminderMessage
         case hasSeenWelcomeTour, hasCompletedOnboarding
         case lastReviewRequestVersion
+        case lastSeenReleaseNotesVersion
     }
 
     init() {}
@@ -86,6 +88,7 @@ struct AppSettings: Codable, Equatable {
             ?? container.decodeIfPresent(Bool.self, forKey: .hasCompletedOnboarding)
             ?? AppSettings.seenWhenSnapshotPredatesWelcomeTour
         lastReviewRequestVersion = try container.decodeIfPresent(String.self, forKey: .lastReviewRequestVersion)
+        lastSeenReleaseNotesVersion = try container.decodeIfPresent(String.self, forKey: .lastSeenReleaseNotesVersion)
         if let stored = try container.decodeIfPresent([Reminder].self, forKey: .reminders) {
             reminders = stored
         } else {
@@ -104,5 +107,6 @@ struct AppSettings: Codable, Equatable {
         try container.encode(fontSize, forKey: .fontSize)
         try container.encode(hasSeenWelcomeTour, forKey: .hasSeenWelcomeTour)
         try container.encodeIfPresent(lastReviewRequestVersion, forKey: .lastReviewRequestVersion)
+        try container.encodeIfPresent(lastSeenReleaseNotesVersion, forKey: .lastSeenReleaseNotesVersion)
     }
 }
