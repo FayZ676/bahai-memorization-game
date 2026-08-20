@@ -44,8 +44,8 @@ enum ReleaseNotes {
                 ),
                 ReleaseHighlight(
                     symbol: "text.quote",
-                    title: "Clearer names",
-                    text: "Prayers are now named after the first few words you read, so they are easier to tell apart in your list."
+                    title: "Your list of prayers",
+                    text: "The top of your list now counts how many prayers you have memorized, next to the days you have kept going. Prayers are also named after their first few words, so they are easier to tell apart."
                 )
             ]
         )
