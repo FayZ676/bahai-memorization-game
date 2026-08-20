@@ -26,7 +26,7 @@ Search for a half-remembered phrase, or browse by section. Nothing to download.
 
 MEMORIZE AT YOUR OWN PACE
 • Tap any word to hide it — tap again to bring it back
-• Long-press the passage to hide or reveal all of it at once
+• Hide or reveal a whole passage at once from the session menu
 • Long prayers divide into short passages you can move between freely
 • Nothing is locked, timed, or gated — start anywhere, stop anywhere
 
@@ -45,6 +45,17 @@ QUIET BY DESIGN
 • A simple record of how many words you've hidden each day — encouragement, not obligation
 
 Verses is built around one belief: memorization isn't a test to pass, it's a way of carrying words with you. Hide what you know. Read what you don't. Come back tomorrow.
+
+## What's New — 1.7 (4000)
+Moving through a prayer is now a swipe. Pull up past the end of a section to go on, down past the top to go back. A slim bar down the left edge shows how far you've come, and tapping it jumps you anywhere in the passage.
+
+The prayer fills the whole screen. The microphone and its buttons float above the words instead of taking a strip at the bottom.
+
+An eye beside the microphone brings your hidden words back for a moment, then lets them go. You can also recite aloud at any time, whether or not any words are hidden.
+
+Your library counts the prayers you've memorized beside the days you've kept going, and a prayer with no title takes its name from its opening words.
+
+Saved writings have been retired — browsing now goes straight to the writings themselves. Along with small fixes and refinements.
 
 ## What's New — 1.6 (4000)
 Prayers you've finished can now be archived. Swipe a prayer in your library to tuck it into an Archived section, and swipe again to bring it back.

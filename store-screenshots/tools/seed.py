@@ -3,7 +3,10 @@ import json, uuid, sys, datetime, subprocess, os, random
 REPO = "/Users/faizififita/workspace/memorization-game"
 DEV = os.environ.get("SIM_UDID", "1E8D6700-3D51-4887-9A14-92E48D59B4B7")
 BUNDLE = "com.faizififita.MemorizationGame"
-HERO_GROUP = int(os.environ.get("HERO_GROUP", "2"))
+HERO_GROUP = int(os.environ.get("HERO_GROUP", "3"))
+RELEASE_VERSION = subprocess.run(
+    ["python3", f"{REPO}/scripts/project_version.py", "--get", "marketing"],
+    capture_output=True, text=True, check=True).stdout.strip()
 
 entries = json.load(open(f"{REPO}/MemorizationGame/Resources/library.json"))["entries"]
 
@@ -62,7 +65,9 @@ def ramp(n, hi=1.0, lo=0.0, solid=0):
 
 # the session hero, at two stages of the same chunk, so the store tiles can show
 # one passage getting harder rather than two unrelated screens
-HERO_FILLS = [1.0, 0.85, 0.0, 0.0] if os.environ.get("HERO_LATE") else [1.0, 0.4, 0.0, 0.0]
+HERO_FILLS = [0.9, 0.5, 0.0, 0.0] if os.environ.get("HERO_LATE") else [0.5, 0.15, 0.0, 0.0]
+if os.environ.get("HERO_FILLS"):
+    HERO_FILLS = [float(v) for v in os.environ["HERO_FILLS"].split(",")]
 
 # (needle, section, lines-per-chunk, per-chunk fill fractions)
 PICKS = [
@@ -140,38 +145,10 @@ earlier = {15: 12, 16: 19, 18: 9, 19: 22, 21: 15, 22: 8, 24: 17}
 for back, w in earlier.items():
     words_by_day[(today - datetime.timedelta(days=back)).strftime("%Y-%m-%d")] = w
 
-SAVED = [
-    ("Blessed is the spot", None),
-    ("Thy heart is My home", None),
-    ("Tablet of A", "Special Tablets"),
-]
-
-saved_writings = []
-for n, (needle, sec) in enumerate(SAVED):
-    e = find(needle, sec)
-    saved_writings.append({
-        "id": str(uuid.uuid4()).upper(),
-        "prayerID": e["id"],
-        "title": title_of(e),
-        "text": e["text"],
-        "author": e.get("author"),
-        "section": e.get("section"),
-        "savedAt": ((now - datetime.timedelta(days=n * 2 + 1)) - REF).total_seconds(),
-    })
-
-recent_prayer_ids = [find(needle, sec)["id"] for needle, sec in [
-    ("Is there any Remover", None),
-    ("I have turned in repentance unto Thee", None),
-    ("Prayer for the Dead", "General Prayers"),
-    ("Blessed is the spot", None),
-]]
-
 snapshot = {
     "passages": passages,
     "reviewables": reviewables,
     "practiceLog": {"wordsByDay": words_by_day},
-    "savedWritings": saved_writings,
-    "recentPrayerIDs": recent_prayer_ids,
     "settings": {
         "reminderEnabled": False,
         "reminders": [{"id": str(uuid.uuid4()).upper(), "minuteOfDay": 540,
@@ -180,6 +157,7 @@ snapshot = {
         "appTheme": sys.argv[1] if len(sys.argv) > 1 else "light",
         "fontSize": "medium",
         "hasSeenWelcomeTour": True,
+        "lastSeenReleaseNotesVersion": RELEASE_VERSION,
     },
 }
 

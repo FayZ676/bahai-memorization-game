@@ -19,9 +19,9 @@ read in order as one pass through the app — see `Design/StoreFrames/README.md`
 
 | Raw capture | Becomes | Shows |
 |---|---|---|
-| `3-built-in-library.png` | `1-choose.png` | the Writings surface: search, My Writings, bundled collections with counts |
-| `2-hide-words.png` | `2-hide.png` | the hero prayer's second section, 24% hidden |
-| `9-hide-more.png` | `3-hide-more.png` | the *same* section at 33%, which is what makes the set a sequence rather than a gallery |
+| `3-built-in-library.png` | `1-choose.png` | the Writings surface: search, paste-your-own, bundled collections with counts |
+| `2-hide-words.png` | `2-hide.png` | the hero prayer's second section, 20% of the passage hidden |
+| `9-hide-more.png` | `3-hide-more.png` | the *same* section at 48%, which is what makes the set a sequence rather than a gallery |
 | `recite-aloud.png` | `4-recite.png` | the session listening, mic active, words marking as they are spoken |
 | `6-library-dark.png` | `5-know.png` | the library in dark, streak and progress ramps, several passages finished |
 
@@ -32,9 +32,10 @@ the same way the later session stage already is.
 
 Two captures are stage-dependent and must be reshot as a pair if the hero passage changes:
 `2-hide-words.png` from the default seed and `9-hide-more.png` from `HERO_LATE=1`, which
-hides 85% of the same chunk instead of 40%. `HERO_LATE` deliberately leaves the later
+hides 50% of the same chunk instead of 15%. `HERO_LATE` deliberately leaves the later
 chunks empty so the session still lands on section 2 in both, keeping the two tiles
-identical but for the blanks.
+identical but for the blanks. `HERO_FILLS=0.2` overrides the pair outright, which is how
+the iPad is shot.
 
 The dark tile is shot with `python3 tools/seed.py dark` and the simulator in dark
 appearance, from the same picks as the light library, so the streak and the progress ramps
@@ -75,8 +76,10 @@ than scaling them.
 real passages from `MemorizationGame/Resources/library.json`. It mirrors the app's own
 import logic — units split on newlines, `span` = unit index, hidden words scattered across
 word-ish tokens — so the app loads it as if the passages had been imported by hand. It
-also seeds `savedWritings` and `recentPrayerIDs` so the Writings surface has counts to
-show, and sets `hasSeenWelcomeTour` so the guided tour does not cover the first screen.
+sets `hasSeenWelcomeTour` so the guided tour does not cover the first screen, and stamps
+`lastSeenReleaseNotesVersion` with the marketing version `project_version.py` reports, so
+the What's New card does not open over the first shot either — the stamp is read from the
+project rather than hardcoded, so bumping the version before a reshoot brings the card back.
 
 `PICKS` names passages by a substring of their text or heading. The library is rebuilt
 from bahai.org from time to time and passages do disappear — if `seed.py` exits with
@@ -88,8 +91,10 @@ untouched dashes. No uploaded tile draws on it since the set narrowed to four, s
 unset unless you are shooting that screen again; it adds rows to the library.
 
 `HERO_GROUP` sets how many source lines make up one chunk of the session hero passage.
-Leave it at the default `2` for iPhone; use `3` for iPad, where a smaller chunk floats in
-the middle of a much larger page.
+The reading area now runs the full height of the screen, so a chunk that used to fill it
+leaves two-thirds of the page blank. Leave it at the default `3` for iPhone; the iPad is
+shot with `HERO_GROUP=7 HERO_FILLS=0.2`, which puts the whole prayer on the one page —
+anything smaller floats in the middle of a much larger sheet.
 
 `tools/drive.py` taps through the UI using `idb`, locating elements by accessibility label
 so taps don't depend on hardcoded coordinates. Run it from inside `tools/` — it is
