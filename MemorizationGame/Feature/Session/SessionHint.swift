@@ -31,11 +31,11 @@ struct HintBubble: View {
 
     var body: some View {
         Text(text)
-            .appFont(Typography.micro)
+            .appFont(Typography.caption)
             .foregroundStyle(Theme.muted)
             .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)
-            .frame(width: 190)
+            .frame(width: 220)
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
             .background(
