@@ -219,7 +219,7 @@ struct LibraryView: View {
     }
 
     private var streakHeader: some View {
-        StreakView(count: store.streakCount)
+        LibraryTally(streak: store.streakCount, memorized: store.memorizedPassageIDs.count)
             .padding(.horizontal, Spacing.xl)
             .padding(.top, Spacing.sm)
     }
