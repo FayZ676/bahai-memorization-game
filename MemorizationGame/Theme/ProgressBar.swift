@@ -15,7 +15,6 @@ struct ProgressBar: View {
     var axis: Axis = .horizontal
 
     private static let spacing: CGFloat = 3
-    private static let selectionGap: CGFloat = 2.5
 
     var body: some View {
         switch axis {
@@ -135,7 +134,7 @@ struct ProgressBar: View {
             )
             .overlay {
                 if selected {
-                    shape.inset(by: -Self.selectionGap).stroke(Theme.accent, lineWidth: 1.5)
+                    shape.strokeBorder(Theme.accent, lineWidth: 1.5)
                 }
             }
             .zIndex(selected ? 1 : 0)
