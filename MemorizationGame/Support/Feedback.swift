@@ -5,6 +5,13 @@ enum Feedback {
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
 
+    static func tapping(_ action: @escaping () -> Void) -> () -> Void {
+        {
+            tap()
+            action()
+        }
+    }
+
     static func hide() {
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
     }

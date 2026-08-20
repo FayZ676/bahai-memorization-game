@@ -83,8 +83,10 @@ struct LibraryView: View {
             titleVisibility: .visible,
             presenting: pendingDelete
         ) { passage in
-            Button("Delete", role: .destructive) { store.deletePassage(passage) }
-            Button("Cancel", role: .cancel) { pendingDelete = nil }
+            Button("Delete", role: .destructive, action: Feedback.tapping {
+                store.deletePassage(passage)
+            })
+            Button("Cancel", role: .cancel, action: Feedback.tapping { pendingDelete = nil })
         } message: { passage in
             Text("“\(shortened(passage.title))” and all its progress will be removed. This can't be undone.")
         }

@@ -148,7 +148,6 @@ final class SessionViewModel {
         cascade {
             store.setAllWords(card, hidden: hidden)
         }
-        if hidden { Feedback.hide() } else { Feedback.reveal() }
         focus(on: card.id)
     }
 

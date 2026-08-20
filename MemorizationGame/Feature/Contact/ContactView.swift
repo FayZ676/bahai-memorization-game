@@ -77,8 +77,8 @@ struct ContactView: View {
             }
         }
         .alert("Couldn't send", isPresented: $failed) {
-            Button("Try again", action: send)
-            Button("Cancel", role: .cancel) {}
+            Button("Try again", action: Feedback.tapping(send))
+            Button("Cancel", role: .cancel, action: Feedback.tapping {})
         } message: {
             Text("Your message wasn't delivered. Check your connection and try again.")
         }

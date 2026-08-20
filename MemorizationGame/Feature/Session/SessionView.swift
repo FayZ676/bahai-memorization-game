@@ -139,12 +139,12 @@ struct SessionView: View {
         }
         .onDisappear { voice.release() }
         .alert("Microphone Access Needed", isPresented: $showingMicDenied) {
-            Button("Open Settings") {
+            Button("Open Settings", action: Feedback.tapping {
                 if let url = URL(string: UIApplication.openSettingsURLString) {
                     UIApplication.shared.open(url)
                 }
-            }
-            Button("Cancel", role: .cancel) {}
+            })
+            Button("Cancel", role: .cancel, action: Feedback.tapping {})
         } message: {
             Text("Allow microphone access in Settings to practice by reciting.")
         }
@@ -547,32 +547,49 @@ struct SessionView: View {
 
     private var optionsMenu: some View {
         Menu {
-            Button("Edit Passage", systemImage: "pencil") { showingEdit = true }
+            Button(
+                "Edit Passage",
+                systemImage: "pencil",
+                action: Feedback.tapping { showingEdit = true }
+            )
             Section {
-                Button("Hide Every Word", systemImage: "text.page.slash") {
-                    guard !vm.everyWordHidden else {
-                        return hint.show("Every word is already hidden.")
+                Button(
+                    "Hide Every Word",
+                    systemImage: "text.page.slash",
+                    action: Feedback.tapping {
+                        guard !vm.everyWordHidden else {
+                            return hint.show("Every word is already hidden.")
+                        }
+                        vm.setAllWords(hidden: true)
                     }
-                    vm.setAllWords(hidden: true)
-                }
-                Button("Show Every Word", systemImage: "text.page") {
-                    guard !vm.everyWordShowing else {
-                        return hint.show("Every word is already showing.")
+                )
+                Button(
+                    "Show Every Word",
+                    systemImage: "text.page",
+                    action: Feedback.tapping {
+                        guard !vm.everyWordShowing else {
+                            return hint.show("Every word is already showing.")
+                        }
+                        vm.setAllWords(hidden: false)
                     }
-                    vm.setAllWords(hidden: false)
-                }
+                )
             }
             Section {
                 Button(
                     "Speech History",
-                    systemImage: "clock.arrow.trianglehead.counterclockwise.rotate.90"
-                ) { showingSpeechHistory = true }
-                Button("Report Issue", systemImage: "exclamationmark.bubble") {
-                    showingReportIssue = true
-                }
-                Button("Send Feedback", systemImage: "paperplane") {
-                    showingFeedback = true
-                }
+                    systemImage: "clock.arrow.trianglehead.counterclockwise.rotate.90",
+                    action: Feedback.tapping { showingSpeechHistory = true }
+                )
+                Button(
+                    "Report Issue",
+                    systemImage: "exclamationmark.bubble",
+                    action: Feedback.tapping { showingReportIssue = true }
+                )
+                Button(
+                    "Send Feedback",
+                    systemImage: "paperplane",
+                    action: Feedback.tapping { showingFeedback = true }
+                )
             }
         } label: {
             Image(systemName: "ellipsis")
