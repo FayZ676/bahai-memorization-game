@@ -30,23 +30,24 @@ struct HintBubble: View {
     let text: String
 
     var body: some View {
-        Text(text)
-            .appFont(Typography.caption)
-            .foregroundStyle(Theme.muted)
-            .multilineTextAlignment(.center)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(width: 220)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(
-                RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
-                    .fill(Theme.rowBg)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
-                            .stroke(Theme.hairline, lineWidth: 1)
-                    )
-            )
-            .shadow(color: .black.opacity(0.08), radius: 10, y: 3)
-            .allowsHitTesting(false)
+        InfoNote(Typography.caption) {
+            Text(text)
+                .appFont(Typography.caption)
+                .foregroundStyle(Theme.muted)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(width: 236, alignment: .leading)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
+                .fill(Theme.rowBg)
+                .overlay(
+                    RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
+                        .stroke(Theme.hairline, lineWidth: 1)
+                )
+        )
+        .shadow(color: .black.opacity(0.08), radius: 10, y: 3)
+        .allowsHitTesting(false)
     }
 }
