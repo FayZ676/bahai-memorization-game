@@ -55,6 +55,8 @@ An eye beside the microphone brings your hidden words back for a moment, then le
 
 Your library counts the prayers you've memorized beside the days you've kept going, and a prayer with no title takes its name from its opening words.
 
+Prayers you've finished can be archived: swipe one in your library to tuck it into an Archived section, and swipe again to bring it back. Reciting is less strict about order now, and the record of what the app heard has its own row in Settings.
+
 Saved writings have been retired — browsing now goes straight to the writings themselves. Along with small fixes and refinements.
 
 ## What's New — 1.6 (4000)
