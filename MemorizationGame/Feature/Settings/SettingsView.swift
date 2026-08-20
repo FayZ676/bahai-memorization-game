@@ -51,9 +51,9 @@ struct SettingsView: View {
                             DisclosureRow("What's new")
                         }
                         .buttonStyle(.haptic)
+                    }
 
-                        HairlineDivider()
-
+                    OptionSection(label: "Feedback", icon: "envelope") {
                         NavigationLink {
                             SpeechHistoryView()
                         } label: {
