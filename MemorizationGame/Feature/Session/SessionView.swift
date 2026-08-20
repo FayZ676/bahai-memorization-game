@@ -297,7 +297,7 @@ struct SessionView: View {
             animated: false,
             highlight: vm.step,
             completion: vm.hiddenFraction,
-            barHeight: scrubbing ? 12 : 6,
+            barHeight: scrubbing ? 8 : 4,
             axis: .vertical
         )
         .frame(maxWidth: .infinity)
@@ -617,7 +617,7 @@ private struct ReadingMetrics {
         let narrow = width < 390
         textMargin = narrow ? 30 : 42
         railInset = narrow ? 3 : 8
-        railWidth = narrow ? 24 : 28
+        railWidth = narrow ? 22 : 26
         maxStretchPerGap = narrow ? 1.5 : 2.5
     }
 }

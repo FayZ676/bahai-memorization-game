@@ -134,10 +134,17 @@ struct ProgressBar: View {
             )
             .overlay {
                 if selected {
-                    shape.strokeBorder(Theme.accent, lineWidth: 1.5)
+                    Circle()
+                        .fill(Theme.bg)
+                        .overlay { Circle().strokeBorder(Theme.accent, lineWidth: 1.5) }
+                        .frame(width: markerDiameter, height: markerDiameter)
                 }
             }
             .zIndex(selected ? 1 : 0)
+    }
+
+    private var markerDiameter: CGFloat {
+        max((barHeight ?? 6) * 2, 8)
     }
 
     private func fillOpacity(_ t: Double) -> Double {
