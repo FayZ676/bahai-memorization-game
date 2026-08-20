@@ -144,7 +144,7 @@ struct ProgressBar: View {
     }
 
     private var markerDiameter: CGFloat {
-        max((barHeight ?? 6) * 2, 8)
+        max((barHeight ?? 6) * 3, 12)
     }
 
     private func fillOpacity(_ t: Double) -> Double {
