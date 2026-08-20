@@ -103,12 +103,23 @@ Prepend a `ReleaseNote` to `ReleaseNotes.all`; newest first is what `latest` mea
   paragraphs lead with.
 - Three to five `highlights`, one per change worth naming. Each has an SF Symbol the app
   already uses for that thing (`mic`, `eye`, `waveform`, `trophy`, `book`), a two-to-four
-  word `title`, and a `text` of a sentence or two in the voice above.
+  word `title`, and a `text` of a sentence or two.
 - The card scrolls past five, but a release that needs more is a release whose notes are
   not filtered enough.
 - Same filter as the paragraphs: if a change is invisible to someone using the app, it does
   not earn a highlight, and "Small fixes and refinements" is not a highlight — leave it to
   the App Store copy.
+
+Write the card for someone who has never used the app, knows no computer words, and reads
+only basic English. This is stricter than the App Store copy:
+
+- Short, common words and short sentences. "Slide the page up", not "swipe to advance".
+- Say where a thing is and what happens when you touch it: "Tap the eye next to the
+  microphone." Never name a part of the app the reader would have to already know —
+  no "the rail", "the session", "sections", "recitation".
+- Describe what the reader does and sees, never how it was built. No screen names, no
+  settings names, no words like sync, cache, gesture, engine, on-device.
+- No numbers, versions, or measurements in the text.
 
 Check it renders before shipping: Settings → **What's new** always shows the newest entry,
 whatever version is installed, so the card can be read on device before the version is

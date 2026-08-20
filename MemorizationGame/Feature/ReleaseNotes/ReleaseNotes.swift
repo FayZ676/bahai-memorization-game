@@ -20,32 +20,32 @@ enum ReleaseNotes {
     static let all: [ReleaseNote] = [
         ReleaseNote(
             version: "1.7",
-            headline: "A prayer now reads as one page, with the mic and the progress rail resting on top of it.",
+            headline: "Prayers are easier to read and move through.",
             highlights: [
                 ReleaseHighlight(
                     symbol: "arrow.up.and.down",
-                    title: "Turn the page",
-                    text: "Swipe up past the bottom of a section to move on, down past the top to go back. The rail down the left edge says where you are, and takes you anywhere in the prayer."
+                    title: "Moving through a prayer",
+                    text: "Slide the page up to see the next part. Slide it down to go back. The bar on the left of the screen shows you how far along you are, and you can tap it to jump to any part."
                 ),
                 ReleaseHighlight(
                     symbol: "mic",
-                    title: "The mic sits on the page",
-                    text: "It no longer claims a strip at the foot of the screen, so the words run the full height and scroll behind it."
+                    title: "More room to read",
+                    text: "The round buttons now sit on top of the words instead of taking up space below them, so the prayer fills the whole screen."
                 ),
                 ReleaseHighlight(
                     symbol: "eye",
-                    title: "A look at what's hidden",
-                    text: "The eye beside the mic brings the hidden words back for a moment, and says so when there is nothing hidden to show."
+                    title: "A peek at hidden words",
+                    text: "Tap the eye next to the microphone to bring your hidden words back for a moment, then let them go again."
                 ),
                 ReleaseHighlight(
                     symbol: "waveform",
-                    title: "Recite whenever you like",
-                    text: "Reciting aloud no longer waits for words to be hidden — say a section back at any point and it follows you."
+                    title: "Say it out loud any time",
+                    text: "You can read a prayer out loud and have the app listen, even when none of the words are hidden."
                 ),
                 ReleaseHighlight(
                     symbol: "text.quote",
-                    title: "Titled by its opening words",
-                    text: "A prayer with no line breaks used to take its whole text as a title. Every passage is now named by the words it opens with."
+                    title: "Clearer names",
+                    text: "Prayers are now named after the first few words you read, so they are easier to tell apart in your list."
                 )
             ]
         )
