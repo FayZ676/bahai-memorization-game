@@ -9,9 +9,6 @@ enum BrowseRoute: Hashable {
     case prayerExcerpt(id: Int, start: Int, end: Int)
     case pasteOwn
     case importPrayer(Int)
-    case savedWriting(UUID)
-    case savedWritings
-    case recentlyRead
     case importText(title: String, content: String)
 }
 
@@ -53,12 +50,6 @@ extension BrowseRoute {
             }
         case .pasteOwn:
             ImportView()
-        case .savedWriting(let id):
-            SavedWritingDetailView(writingID: id)
-        case .savedWritings:
-            SavedWritingsView()
-        case .recentlyRead:
-            RecentlyReadView()
         case .importText(let title, let content):
             ImportView(initialTitle: title, initialContent: content)
         case .importPrayer(let id):

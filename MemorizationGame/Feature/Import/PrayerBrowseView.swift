@@ -29,9 +29,6 @@ struct PrayerBrowseView: View {
                     LazyVStack(alignment: .leading, spacing: 20) {
                         if trimmedQuery.isEmpty {
                             pasteOwnRow
-                            if hasMyWritings {
-                                myWritingsCard
-                            }
                             ForEach(PrayerLibrary.collections) { collection in
                                 collectionCard(collection)
                             }
@@ -111,47 +108,6 @@ struct PrayerBrowseView: View {
         .padding(.top, 4)
         .padding(.bottom, 12)
         .background(Theme.bg)
-    }
-
-    private var hasMyWritings: Bool {
-        !store.savedWritings.isEmpty || !store.recentlyReadPrayers.isEmpty
-    }
-
-    private var myWritingsCard: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            DisclosureNode(
-                title: "My Writings",
-                font: Typography.passageTitle,
-                color: Theme.ink,
-                initiallyExpanded: !isChoosingTourPassage
-            ) {
-                if !store.savedWritings.isEmpty {
-                    writingsRow(
-                        title: "Saved",
-                        count: store.savedWritings.count,
-                        route: .savedWritings
-                    )
-                }
-                if !store.recentlyReadPrayers.isEmpty {
-                    writingsRow(
-                        title: "Recently read",
-                        count: store.recentlyReadPrayers.count,
-                        route: .recentlyRead
-                    )
-                }
-            }
-        }
-        .cardSurface(cornerRadius: Radius.group)
-    }
-
-    private func writingsRow(title: String, count: Int, route: BrowseRoute) -> some View {
-        VStack(spacing: 0) {
-            Divider().overlay(Theme.hairline)
-            BrowseLink(route) {
-                SectionLinkRow(title: title, count: count)
-            }
-            .buttonStyle(.haptic)
-        }
     }
 
     private func collectionCard(_ collection: PrayerLibrary.Collection) -> some View {

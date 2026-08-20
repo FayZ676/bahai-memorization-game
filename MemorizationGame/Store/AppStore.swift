@@ -6,8 +6,6 @@ final class AppStore {
     private(set) var passages: [Passage]
     private(set) var reviewables: [Reviewable]
     private(set) var practiceLog: PracticeLog
-    private(set) var savedWritings: [SavedWriting]
-    private(set) var recentPrayerIDs: [Int]
     var dailyGoalReached = false
     var justEarned: Achievement?
     var passageJustMemorized = false
@@ -36,15 +34,11 @@ final class AppStore {
             self.reviewables = snapshot.reviewables
             self.practiceLog = snapshot.practiceLog
             self.settings = snapshot.settings
-            self.savedWritings = snapshot.savedWritings
-            self.recentPrayerIDs = snapshot.recentPrayerIDs
         } else {
             self.passages = []
             self.reviewables = []
             self.practiceLog = PracticeLog()
             self.settings = .default
-            self.savedWritings = []
-            self.recentPrayerIDs = []
         }
     }
 
@@ -108,59 +102,6 @@ final class AppStore {
     func passage(forPrayerID prayerID: Int) -> Passage? {
         passages.first { $0.sourceID == prayerID }
     }
-
-    func isSaved(prayerID: Int) -> Bool {
-        savedWritings.contains { $0.prayerID == prayerID }
-    }
-
-    func toggleSaved(prayer: Prayer) {
-        if let index = savedWritings.firstIndex(where: { $0.prayerID == prayer.id }) {
-            savedWritings.remove(at: index)
-        } else {
-            savedWritings.insert(SavedWriting(prayer: prayer), at: 0)
-        }
-        persist()
-    }
-
-    func savedWriting(id: UUID) -> SavedWriting? {
-        savedWritings.first { $0.id == id }
-    }
-
-    @discardableResult
-    func saveWriting(title: String, text: String) -> SavedWriting {
-        let writing = SavedWriting(title: title, text: text)
-        savedWritings.insert(writing, at: 0)
-        persist()
-        return writing
-    }
-
-    func updateSavedWriting(id: UUID, title: String, text: String) {
-        guard let index = savedWritings.firstIndex(where: { $0.id == id }) else { return }
-        savedWritings[index].title = title
-        savedWritings[index].text = text
-        persist()
-    }
-
-    func removeSavedWriting(id: UUID) {
-        savedWritings.removeAll { $0.id == id }
-        persist()
-    }
-
-    func recordRead(prayerID: Int) {
-        guard recentPrayerIDs.first != prayerID else { return }
-        recentPrayerIDs.removeAll { $0 == prayerID }
-        recentPrayerIDs.insert(prayerID, at: 0)
-        if recentPrayerIDs.count > AppStore.recentReadLimit {
-            recentPrayerIDs.removeLast(recentPrayerIDs.count - AppStore.recentReadLimit)
-        }
-        persist()
-    }
-
-    var recentlyReadPrayers: [Prayer] {
-        recentPrayerIDs.compactMap(PrayerLibrary.prayer(id:))
-    }
-
-    private static let recentReadLimit = 20
 
     var memorizedPrayerIDs: Set<Int> {
         Set(passages.filter(isMemorized).compactMap(\.sourceID))
@@ -347,8 +288,6 @@ final class AppStore {
         var reviewables: [Reviewable]
         var practiceLog: PracticeLog
         var settings: AppSettings
-        var savedWritings: [SavedWriting]
-        var recentPrayerIDs: [Int]
     }
 
     private func persist() {
@@ -356,9 +295,7 @@ final class AppStore {
             passages: passages,
             reviewables: reviewables,
             practiceLog: practiceLog,
-            settings: settings,
-            savedWritings: savedWritings,
-            recentPrayerIDs: recentPrayerIDs
+            settings: settings
         )
         guard let data = try? JSONEncoder().encode(snapshot) else { return }
         try? data.write(to: storeURL, options: .atomic)
