@@ -65,7 +65,6 @@ struct SessionView: View {
                                 voice: voice,
                                 hasHiddenWords: !(vm.current?.hiddenWords.isEmpty ?? true),
                                 isPeeking: vm.isPeeking,
-                                isRailVisible: showingRail,
                                 micDeniedAlert: $showingMicDenied,
                                 onStart: startRecitation,
                                 onPeek: { vm.togglePeek() },

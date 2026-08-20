@@ -4,7 +4,6 @@ struct RecitationBar: View {
     let voice: VoiceRecitationController
     let hasHiddenWords: Bool
     let isPeeking: Bool
-    let isRailVisible: Bool
     @Binding var micDeniedAlert: Bool
     let onStart: () -> Void
     let onPeek: () -> Void
@@ -21,7 +20,6 @@ struct RecitationBar: View {
         .padding(.bottom, Spacing.xxs)
         .animation(Self.settle, value: voice.state)
         .animation(Self.settle, value: isPeeking)
-        .animation(Self.settle, value: isRailVisible)
     }
 
     private var peekDisabled: Bool {
@@ -40,7 +38,7 @@ struct RecitationBar: View {
     private var railButton: some View {
         sideButton(
             symbol: "sidebar.squares.leading",
-            on: isRailVisible,
+            on: false,
             disabled: false,
             action: onToggleRail
         )
