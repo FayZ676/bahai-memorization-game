@@ -106,7 +106,6 @@ final class SessionViewModel {
         cascade {
             withAnimation(.easeInOut(duration: 0.32)) { isPeeking.toggle() }
         }
-        Feedback.flip()
     }
 
     func endPeek() {

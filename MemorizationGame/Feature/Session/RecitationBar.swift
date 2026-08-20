@@ -21,6 +21,14 @@ struct RecitationBar: View {
             micButton
             peekButton
         }
+        .overlay(alignment: .top) {
+            if hintShowing {
+                hint
+                    .padding(.bottom, Spacing.xs)
+                    .alignmentGuide(.top) { $0[.bottom] }
+                    .transition(.opacity.combined(with: .scale(scale: 0.94, anchor: .bottom)))
+            }
+        }
         .padding(.bottom, Spacing.xxs)
         .animation(Self.settle, value: voice.state)
         .animation(Self.settle, value: isPeeking)
@@ -41,17 +49,10 @@ struct RecitationBar: View {
             dimmed: peekDisabled,
             action: { peekDisabled ? flashHint() : onPeek() }
         )
-        .overlay(alignment: .top) {
-            if hintShowing {
-                hint
-                    .offset(y: -34)
-                    .transition(.opacity.combined(with: .scale(scale: 0.92, anchor: .bottom)))
-            }
-        }
     }
 
     private var hint: some View {
-        Text("Nothing is hidden yet — tap words to hide them.")
+        Text("Nothing to peek. Try hiding a word first.")
             .appFont(Typography.micro)
             .foregroundStyle(Theme.muted)
             .multilineTextAlignment(.center)
