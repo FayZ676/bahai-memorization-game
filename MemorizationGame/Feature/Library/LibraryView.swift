@@ -69,14 +69,6 @@ struct LibraryView: View {
             onRestart: { isTourPresented = true },
             onFinish: { isTourPresented = false }
         )
-        .task {
-            #if DEBUG
-            if ProcessInfo.processInfo.environment["SHOT_SESSION"] == "1",
-               let first = store.activePassages.first {
-                path.append(first)
-            }
-            #endif
-        }
         .onAppear {
             guard !store.settings.hasSeenWelcomeTour else { return }
             store.settings.hasSeenWelcomeTour = true
