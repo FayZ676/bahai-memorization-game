@@ -55,7 +55,7 @@ struct ImportView: View {
     private var canSaveNow: Bool { !units.isEmpty }
 
     private var savedTitle: String {
-        trimmedTitle.isEmpty ? (units.first ?? "") : trimmedTitle
+        trimmedTitle.isEmpty ? AutoTitle.from(content) : trimmedTitle
     }
 
     private func toggleSavedToWritings() {

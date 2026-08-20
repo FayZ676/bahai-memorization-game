@@ -26,7 +26,7 @@ struct Prayer: Decodable, Identifiable, Hashable {
         primaryTag = try container.decode(String.self, forKey: .primaryTag)
         collection = try container.decode(String.self, forKey: .collection)
         section = try container.decode(String.self, forKey: .section)
-        title = heading.isEmpty ? Prayer.firstLine(of: text) : heading
+        title = AutoTitle.from(heading: heading, text: text)
         wordCount = text.split(whereSeparator: { $0 == " " || $0 == "\n" }).count
     }
 
@@ -37,13 +37,6 @@ struct Prayer: Decodable, Identifiable, Hashable {
                 if components.last != part { components.append(part) }
             }
             .joined(separator: " / ")
-    }
-
-    private static func firstLine(of text: String) -> String {
-        text
-            .split(separator: "\n", omittingEmptySubsequences: true)
-            .first
-            .map { $0.trimmingCharacters(in: .whitespaces) } ?? ""
     }
 }
 
