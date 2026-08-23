@@ -131,13 +131,12 @@ struct LibraryView: View {
                     .listRowSeparator(.hidden)
                     .listRowInsets(EdgeInsets())
             }
-            .listSectionSpacing(Spacing.md)
 
             group(.memorizing, passages: store.activePassages)
             group(.archived, passages: store.archivedPassages)
         }
         .listRowSpacing(Spacing.sm)
-        .listSectionSpacing(Spacing.xxl)
+        .listSectionSpacing(Spacing.md)
         .contentMargins(.top, 0, for: .scrollContent)
         .scrollContentBackground(.hidden)
         .background(Theme.bg)
