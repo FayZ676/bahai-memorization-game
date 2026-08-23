@@ -36,7 +36,7 @@ struct AchievementsView: View {
         let earned = AchievementCatalog.all.count { $0.isEarned(in: memorized) }
         return HStack(alignment: .firstTextBaseline, spacing: Spacing.sm) {
             Text("\(earned)")
-                .appFont(Typography.numeral)
+                .appFont(Typography.tally)
                 .foregroundStyle(Theme.muted)
             Text("of \(AchievementCatalog.all.count) Earned")
                 .appFont(Typography.footnote.mono())

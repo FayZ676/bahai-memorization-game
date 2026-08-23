@@ -98,7 +98,6 @@ enum Typography {
     static let heading      = AppTextToken(32, weight: .semibold, face: .serif)
     static let passageTitle = AppTextToken(21, weight: .semibold, face: .serif)
 
-    static let numeral      = AppTextToken(29, weight: .regular, face: .mono)
     static let tally        = AppTextToken(23, weight: .light, face: .mono)
     static let recite       = AppTextToken(26, face: .serif)
     static let verse        = AppTextToken(20, face: .serif)
