@@ -35,11 +35,13 @@ enum AppFont {
 enum TextFace {
     case sans
     case serif
+    case mono
 
     var opticalScale: CGFloat {
         switch self {
         case .sans: return 1
         case .serif: return 1.08
+        case .mono: return 0.96
         }
     }
 }
@@ -65,6 +67,10 @@ struct AppTextToken {
         AppTextToken(size, weight: weight, face: face, italic: true)
     }
 
+    func mono() -> AppTextToken {
+        AppTextToken(size, weight: weight, face: .mono)
+    }
+
     func font(scale: CGFloat) -> Font {
         let scaled = size * scale * face.opticalScale
         switch face {
@@ -73,6 +79,8 @@ struct AppTextToken {
             return isItalic ? system.italic() : system
         case .serif:
             return .custom(AppFont.serifName(for: weight, italic: isItalic), size: scaled)
+        case .mono:
+            return .system(size: scaled, weight: weight, design: .monospaced)
         }
     }
 }
@@ -90,7 +98,7 @@ enum Typography {
     static let heading      = AppTextToken(32, weight: .semibold, face: .serif)
     static let passageTitle = AppTextToken(21, weight: .semibold, face: .serif)
 
-    static let numeral      = AppTextToken(34, weight: .semibold, face: .serif)
+    static let numeral      = AppTextToken(36, weight: .semibold, face: .mono)
     static let recite       = AppTextToken(26, face: .serif)
     static let verse        = AppTextToken(20, face: .serif)
     static let verseInitial = AppTextToken(32, face: .serif)

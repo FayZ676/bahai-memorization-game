@@ -41,7 +41,7 @@ struct ReleaseNotesOverlay: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
             Text("Version \(note.version)")
-                .appFont(Typography.label)
+                .appFont(Typography.label.mono())
                 .tracking(0.6)
                 .foregroundStyle(Theme.faint)
 

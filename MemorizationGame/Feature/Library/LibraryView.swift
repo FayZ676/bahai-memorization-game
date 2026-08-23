@@ -198,7 +198,7 @@ struct LibraryView: View {
                 .foregroundStyle(Theme.muted)
 
                 Text("\(store.archivedPassages.count)")
-                    .appFont(Typography.footnote)
+                    .appFont(Typography.footnote.mono())
                     .foregroundStyle(Theme.faint)
 
                 Spacer()

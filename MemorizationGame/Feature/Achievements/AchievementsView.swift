@@ -103,7 +103,7 @@ private struct AchievementRow: View {
 
                 if required > 1 && !earned {
                     Text("\(matched) of \(required)")
-                        .appFont(Typography.micro)
+                        .appFont(Typography.micro.mono())
                         .foregroundStyle(matched > 0 ? Theme.gold : Theme.faint)
                 }
             }
@@ -153,12 +153,11 @@ private struct AchievementRing: View {
                 .foregroundStyle(Theme.gold)
         } else if let progress {
             Text("\(ProgressBar.percentValue(progress))")
-                .appFont(Typography.label)
-                .monospacedDigit()
+                .appFont(Typography.label.mono())
                 .foregroundStyle(Theme.accent)
         } else {
             Text("—")
-                .appFont(Typography.label)
+                .appFont(Typography.label.mono())
                 .foregroundStyle(Theme.accent)
         }
     }

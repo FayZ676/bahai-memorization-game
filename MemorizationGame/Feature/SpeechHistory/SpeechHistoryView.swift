@@ -192,7 +192,9 @@ struct AttemptRow: View {
         for (filter, count) in tallies {
             line = line
                 + Text(" · ").foregroundStyle(Theme.faint)
-                + Text("\(count) ").foregroundStyle(filter.tint)
+                + Text("\(count) ")
+                    .font(Typography.micro.mono().font(scale: fontScale))
+                    .foregroundStyle(filter.tint)
                 + filter.symbol(alongside: Typography.micro, scale: fontScale)
         }
         return line
@@ -246,7 +248,10 @@ struct WordReviewBlock: View {
         if count > 1 || (named.isEmpty && count > 0) {
             line = line
                 + Text(" · ").foregroundStyle(Theme.faint)
-                + Text("\(count) tr\(count == 1 ? "y" : "ies")")
+                + Text("\(count)")
+                    .font(Typography.caption.mono().font(scale: fontScale))
+                    .foregroundStyle(review.isRetried ? Theme.retried : Theme.faint)
+                + Text(" tr\(count == 1 ? "y" : "ies")")
                     .foregroundStyle(review.isRetried ? Theme.retried : Theme.faint)
         }
         return line
@@ -256,7 +261,10 @@ struct WordReviewBlock: View {
     }
 
     private func line(try index: Int, heard: String, landed: Bool) -> some View {
-        (Text("try \(index + 1) ").foregroundStyle(Theme.faint)
+        (Text("try ").foregroundStyle(Theme.faint)
+            + Text("\(index + 1) ")
+                .font(Typography.micro.mono().font(scale: fontScale))
+                .foregroundStyle(Theme.faint)
             + inlineSymbol(
                 landed ? "checkmark" : "xmark",
                 tint: landed ? Theme.landed : Theme.missed,
