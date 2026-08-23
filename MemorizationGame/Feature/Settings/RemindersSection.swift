@@ -17,7 +17,7 @@ struct RemindersSection: View {
                         .foregroundStyle(Theme.ink)
                     Spacer()
                     Text(summary)
-                        .appFont(Typography.body)
+                        .appFont(Typography.body.mono())
                         .foregroundStyle(Theme.muted)
                     Image(systemName: "chevron.down")
                         .appIcon(13, weight: .semibold)

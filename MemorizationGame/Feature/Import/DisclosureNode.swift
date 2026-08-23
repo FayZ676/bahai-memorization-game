@@ -45,7 +45,7 @@ struct DisclosureNode<Content: View>: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                     if let subtitle {
                         Text(subtitle)
-                            .appFont(Typography.footnote)
+                            .appFont(Typography.footnote.mono())
                             .foregroundStyle(Theme.faint)
                     }
                     Image(systemName: "chevron.right")

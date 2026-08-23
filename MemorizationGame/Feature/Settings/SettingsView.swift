@@ -91,7 +91,7 @@ struct SettingsView: View {
     private var footer: some View {
         VStack(spacing: Spacing.xs) {
             Text(AppInfo.releaseSummary)
-                .appFont(Typography.micro)
+                .appFont(Typography.micro.mono())
                 .foregroundStyle(Theme.faint)
 
             Button {
