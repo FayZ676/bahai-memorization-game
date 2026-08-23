@@ -6,7 +6,7 @@ final class RailVisibility {
     private(set) var isShowing = true
     private var idle: Task<Void, Never>?
 
-    private static let linger = Duration.seconds(2.5)
+    private static let linger = Duration.seconds(1.8)
     private static let fade = Animation.easeInOut(duration: 0.28)
 
     func stir() {
