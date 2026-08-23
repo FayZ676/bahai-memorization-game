@@ -233,7 +233,7 @@ private struct SectionLinkRow: View {
                 .appFont(Typography.footnote.mono())
                 .foregroundStyle(Theme.faint)
             Image(systemName: "chevron.right")
-                .appIcon(12, weight: .semibold)
+                .appIcon(12, weight: .regular)
                 .foregroundStyle(Theme.faint)
         }
         .padding(.leading, 20)
@@ -259,7 +259,7 @@ private struct CategoryRow: View {
                 .appFont(Typography.footnote.mono())
                 .foregroundStyle(Theme.faint)
             Image(systemName: "chevron.right")
-                .appIcon(13, weight: .semibold)
+                .appIcon(13, weight: .regular)
                 .foregroundStyle(Theme.faint)
         }
         .padding(.leading, 32)

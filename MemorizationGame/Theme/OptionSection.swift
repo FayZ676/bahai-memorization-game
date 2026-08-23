@@ -76,7 +76,7 @@ struct DisclosureRow: View {
                 .foregroundStyle(Theme.ink)
             Spacer()
             Image(systemName: "chevron.right")
-                .appIcon(13, weight: .semibold)
+                .appIcon(13, weight: .regular)
                 .foregroundStyle(Theme.faint)
         }
         .optionRow()

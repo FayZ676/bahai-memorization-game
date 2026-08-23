@@ -204,7 +204,7 @@ struct LibraryView: View {
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .appIcon(12, weight: .semibold)
+                    .appIcon(12, weight: .regular)
                     .foregroundStyle(Theme.faint)
                     .rotationEffect(.degrees(isArchiveExpanded ? 90 : 0))
             }

@@ -49,7 +49,7 @@ struct DisclosureNode<Content: View>: View {
                             .foregroundStyle(Theme.faint)
                     }
                     Image(systemName: "chevron.right")
-                        .appIcon(12, weight: .semibold)
+                        .appIcon(12, weight: .regular)
                         .foregroundStyle(Theme.faint)
                         .rotationEffect(.degrees(expanded ? 90 : 0))
                 }

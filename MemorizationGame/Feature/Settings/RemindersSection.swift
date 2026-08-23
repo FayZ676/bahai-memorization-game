@@ -20,7 +20,7 @@ struct RemindersSection: View {
                         .appFont(Typography.body.mono())
                         .foregroundStyle(Theme.muted)
                     Image(systemName: "chevron.down")
-                        .appIcon(13, weight: .semibold)
+                        .appIcon(13, weight: .regular)
                         .foregroundStyle(Theme.faint)
                         .rotationEffect(.degrees(expanded ? 180 : 0))
                 }

@@ -172,7 +172,7 @@ struct AttemptRow: View {
             Spacer(minLength: 0)
             if attempt.hasDetail {
                 Image(systemName: "chevron.down")
-                    .appIcon(11, weight: .semibold)
+                    .appIcon(11, weight: .regular)
                     .foregroundStyle(Theme.faint)
                     .rotationEffect(.degrees(expanded ? 180 : 0))
             }
