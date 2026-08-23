@@ -3,15 +3,11 @@ import CoreText
 
 enum AppFont {
     static let files = [
-        "CormorantGaramond-Regular",
-        "CormorantGaramond-Medium",
-        "CormorantGaramond-SemiBold",
-        "CormorantGaramond-Bold",
-        "CormorantGaramond-Italic",
         "EBGaramond-Regular",
         "EBGaramond-Medium",
         "EBGaramond-SemiBold",
         "EBGaramond-Bold",
+        "EBGaramond-ExtraBold",
         "EBGaramond-Italic"
     ]
 
@@ -22,35 +18,25 @@ enum AppFont {
         }
     }
 
-    static func scriptureName(for weight: Font.Weight) -> String {
+    static func serifName(for weight: Font.Weight) -> String {
         switch weight {
         case .medium: return "EBGaramond-Medium"
         case .semibold: return "EBGaramond-SemiBold"
-        case .bold, .heavy, .black: return "EBGaramond-Bold"
+        case .bold: return "EBGaramond-Bold"
+        case .heavy, .black: return "EBGaramond-ExtraBold"
         default: return "EBGaramond-Regular"
-        }
-    }
-
-    static func displayName(for weight: Font.Weight) -> String {
-        switch weight {
-        case .medium: return "CormorantGaramond-Medium"
-        case .semibold: return "CormorantGaramond-SemiBold"
-        case .bold, .heavy, .black: return "CormorantGaramond-Bold"
-        default: return "CormorantGaramond-Regular"
         }
     }
 }
 
 enum TextFace {
     case sans
-    case display
-    case scripture
+    case serif
 
     var opticalScale: CGFloat {
         switch self {
         case .sans: return 1
-        case .display: return 1.22
-        case .scripture: return 1.08
+        case .serif: return 1.08
         }
     }
 }
@@ -75,10 +61,8 @@ struct AppTextToken {
         switch face {
         case .sans:
             return .system(size: scaled, weight: weight)
-        case .display:
-            return .custom(AppFont.displayName(for: weight), size: scaled)
-        case .scripture:
-            return .custom(AppFont.scriptureName(for: weight), size: scaled)
+        case .serif:
+            return .custom(AppFont.serifName(for: weight), size: scaled)
         }
     }
 }
@@ -93,14 +77,14 @@ enum Typography {
     static let footnote = AppTextToken(12, weight: .regular)
     static let micro    = AppTextToken(11, weight: .regular)
 
-    static let heading      = AppTextToken(28, weight: .bold, face: .display)
-    static let passageTitle = AppTextToken(19, weight: .bold, face: .display)
+    static let heading      = AppTextToken(32, weight: .heavy, face: .serif)
+    static let passageTitle = AppTextToken(21, weight: .heavy, face: .serif)
 
-    static let numeral      = AppTextToken(34, weight: .semibold, face: .scripture)
-    static let recite       = AppTextToken(26, face: .scripture)
-    static let verse        = AppTextToken(20, face: .scripture)
-    static let verseInitial = AppTextToken(32, face: .scripture)
-    static let excerpt      = AppTextToken(15, face: .scripture)
+    static let numeral      = AppTextToken(34, weight: .semibold, face: .serif)
+    static let recite       = AppTextToken(26, face: .serif)
+    static let verse        = AppTextToken(20, face: .serif)
+    static let verseInitial = AppTextToken(32, face: .serif)
+    static let excerpt      = AppTextToken(15, face: .serif)
 }
 
 private struct FontScaleKey: EnvironmentKey {
