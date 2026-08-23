@@ -58,7 +58,7 @@ extension BrowseRoute {
                     initialTitle: prayer.title,
                     initialContent: prayer.text,
                     author: prayer.author,
-                    section: prayer.section,
+                    section: prayer.deepestSection,
                     sourceID: prayer.id
                 )
             } else {

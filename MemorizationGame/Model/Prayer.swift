@@ -30,6 +30,10 @@ struct Prayer: Decodable, Identifiable, Hashable {
         wordCount = text.split(whereSeparator: { $0 == " " || $0 == "\n" }).count
     }
 
+    var deepestSection: String {
+        primaryTag.isEmpty || primaryTag == section ? section : primaryTag
+    }
+
     var path: String {
         [collection, section, primaryTag]
             .filter { !$0.isEmpty }
