@@ -25,11 +25,8 @@ struct ProgressBar: View {
                 completionLabel
             }
         case .vertical:
-            VStack(spacing: Self.spacing * 2) {
-                completionLabel
-                bar
-                    .frame(width: barHeight)
-            }
+            bar
+                .frame(width: barHeight)
         }
     }
 
@@ -37,7 +34,7 @@ struct ProgressBar: View {
     private var completionLabel: some View {
         if let completion {
             Text(Self.percentLabel(completion))
-                .appFont(axis == .horizontal ? Typography.footnote : Typography.micro.weight(.bold))
+                .appFont(Typography.footnote)
                 .monospacedDigit()
                 .foregroundStyle(Theme.accent)
                 .fixedSize()

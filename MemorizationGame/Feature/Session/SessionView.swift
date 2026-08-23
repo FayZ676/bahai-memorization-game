@@ -296,7 +296,6 @@ struct SessionView: View {
             weights: weights,
             animated: false,
             highlight: vm.step,
-            completion: vm.hiddenFraction,
             barHeight: scrubbing ? 8 : 4,
             axis: .vertical
         )
