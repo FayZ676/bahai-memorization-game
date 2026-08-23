@@ -37,9 +37,9 @@ struct AchievementsView: View {
         return HStack(alignment: .firstTextBaseline, spacing: Spacing.sm) {
             Text("\(earned)")
                 .appFont(Typography.numeral)
-                .foregroundStyle(Theme.ink)
+                .foregroundStyle(Theme.muted)
             Text("of \(AchievementCatalog.all.count) Earned")
-                .appFont(Typography.footnote)
+                .appFont(Typography.footnote.mono())
                 .tracking(0.5)
                 .foregroundStyle(Theme.faint)
         }
