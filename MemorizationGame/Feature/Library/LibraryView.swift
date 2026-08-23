@@ -178,7 +178,7 @@ struct LibraryView: View {
                     ? Label("Unarchive", systemImage: "tray.and.arrow.up")
                     : Label("Archive", systemImage: "archivebox")
             }
-            .tint(Theme.muted)
+            .tint(Theme.faint)
         }
     }
 
@@ -195,7 +195,7 @@ struct LibraryView: View {
                     Text("Archived")
                         .appFont(Typography.label)
                 }
-                .foregroundStyle(Theme.muted)
+                .foregroundStyle(Theme.faint)
 
                 Text("\(store.archivedPassages.count)")
                     .appFont(Typography.footnote.mono())
@@ -205,7 +205,7 @@ struct LibraryView: View {
 
                 Image(systemName: "chevron.right")
                     .appIcon(12, weight: .semibold)
-                    .foregroundStyle(Theme.muted)
+                    .foregroundStyle(Theme.faint)
                     .rotationEffect(.degrees(isArchiveExpanded ? 90 : 0))
             }
             .padding(.horizontal, Spacing.xl)
@@ -237,7 +237,7 @@ struct LibraryView: View {
 
             Text("Choose a prayer to get started")
                 .appFont(Typography.body)
-                .foregroundStyle(Theme.muted)
+                .foregroundStyle(Theme.faint)
                 .multilineTextAlignment(.center)
 
             Spacer()
