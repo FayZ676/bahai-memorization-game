@@ -478,6 +478,7 @@ struct SessionView: View {
                         WordView(
                             token: String(words[idx]),
                             concealed: vm.concealing && card.hiddenWords.contains(idx),
+                            marked: card.hiddenWords.contains(idx),
                             recited: live && highlights.recited.contains(idx),
                             missed: live && highlights.missed.contains(idx),
                             missFlashing: live && highlights.isFlashing(idx),
