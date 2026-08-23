@@ -50,7 +50,7 @@ struct DisclosureNode<Content: View>: View {
                     }
                     Image(systemName: "chevron.right")
                         .appIcon(12, weight: .semibold)
-                        .foregroundStyle(Theme.muted)
+                        .foregroundStyle(Theme.faint)
                         .rotationEffect(.degrees(expanded ? 90 : 0))
                 }
                 .padding(.leading, 16 + indent)

@@ -234,7 +234,7 @@ private struct SectionLinkRow: View {
                 .foregroundStyle(Theme.faint)
             Image(systemName: "chevron.right")
                 .appIcon(12, weight: .semibold)
-                .foregroundStyle(Theme.muted)
+                .foregroundStyle(Theme.faint)
         }
         .padding(.leading, 20)
         .padding(.trailing, 16)
@@ -260,7 +260,7 @@ private struct CategoryRow: View {
                 .foregroundStyle(Theme.faint)
             Image(systemName: "chevron.right")
                 .appIcon(13, weight: .semibold)
-                .foregroundStyle(Theme.muted)
+                .foregroundStyle(Theme.faint)
         }
         .padding(.leading, 32)
         .padding(.trailing, 16)
