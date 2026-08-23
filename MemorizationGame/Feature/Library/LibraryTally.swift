@@ -17,7 +17,7 @@ struct LibraryTally: View {
     private func count(_ value: Int) -> some View {
         Text("\(value)")
             .appFont(Typography.numeral)
-            .foregroundStyle(Theme.faint)
+            .foregroundStyle(Theme.muted)
             .contentTransition(.numericText())
     }
 
@@ -25,6 +25,6 @@ struct LibraryTally: View {
         Text(text)
             .appFont(Typography.footnote)
             .tracking(0.5)
-            .foregroundStyle(Theme.faint)
+            .foregroundStyle(Theme.muted)
     }
 }
