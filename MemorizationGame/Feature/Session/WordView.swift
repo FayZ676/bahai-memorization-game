@@ -3,7 +3,6 @@ import SwiftUI
 struct WordView: View {
     let token: String
     let concealed: Bool
-    var marked: Bool = false
     var recited: Bool = false
     var missed: Bool = false
     var missFlashing: Bool = false
@@ -35,9 +34,8 @@ struct WordView: View {
                     .blur(radius: concealed ? 2 : 0)
                     .overlay(alignment: .bottom) {
                         reciteLine
-                            .opacity(marked ? (concealed ? 1 : 0.45) : 0)
+                            .opacity(concealed ? 1 : 0)
                             .animation(concealed ? Motion.lineFadeIn.delay(staggerDelay) : .easeInOut(duration: 0.18), value: concealed)
-                            .animation(.easeInOut(duration: 0.18), value: marked)
                     }
             }
             if !p.trail.isEmpty { Text(p.trail).foregroundStyle(Theme.ink) }
