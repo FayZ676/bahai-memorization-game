@@ -234,7 +234,7 @@ struct LibraryView: View {
                     .rotationEffect(.degrees(expandedGroups.contains(group) ? 90 : 0))
             }
             .padding(.horizontal, Spacing.xl)
-            .padding(.vertical, Spacing.sm)
+            .padding(.top, Spacing.sm)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
