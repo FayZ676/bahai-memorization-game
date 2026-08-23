@@ -12,7 +12,12 @@ enum AppFont {
         "CormorantGaramond-Medium",
         "CormorantGaramond-SemiBold",
         "CormorantGaramond-Bold",
-        "CormorantGaramond-Italic"
+        "CormorantGaramond-Italic",
+        "EBGaramond-Regular",
+        "EBGaramond-Medium",
+        "EBGaramond-SemiBold",
+        "EBGaramond-Bold",
+        "EBGaramond-Italic"
     ]
 
     static func register() {
@@ -31,6 +36,15 @@ enum AppFont {
         }
     }
 
+    static func textName(for weight: Font.Weight) -> String {
+        switch weight {
+        case .medium: return "EBGaramond-Medium"
+        case .semibold: return "EBGaramond-SemiBold"
+        case .bold, .heavy, .black: return "EBGaramond-Bold"
+        default: return "EBGaramond-Regular"
+        }
+    }
+
     static func displayName(for weight: Font.Weight) -> String {
         switch weight {
         case .medium: return "CormorantGaramond-Medium"
@@ -42,13 +56,13 @@ enum AppFont {
 }
 
 enum TextFace {
-    case sans
+    case text
     case display
     case scripture
 
     var opticalScale: CGFloat {
         switch self {
-        case .sans: return 1
+        case .text: return 1.14
         case .display: return 1.22
         case .scripture: return 0.93
         }
@@ -60,7 +74,7 @@ struct AppTextToken {
     let weight: Font.Weight
     let face: TextFace
 
-    init(_ size: CGFloat, weight: Font.Weight = .regular, face: TextFace = .sans) {
+    init(_ size: CGFloat, weight: Font.Weight = .regular, face: TextFace = .text) {
         self.size = size
         self.weight = weight
         self.face = face
@@ -73,8 +87,8 @@ struct AppTextToken {
     func font(scale: CGFloat) -> Font {
         let scaled = size * scale * face.opticalScale
         switch face {
-        case .sans:
-            return .system(size: scaled, weight: weight)
+        case .text:
+            return .custom(AppFont.textName(for: weight), size: scaled)
         case .display:
             return .custom(AppFont.displayName(for: weight), size: scaled)
         case .scripture:
