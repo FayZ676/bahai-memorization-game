@@ -478,7 +478,6 @@ struct SessionView: View {
                         WordView(
                             token: String(words[idx]),
                             concealed: vm.concealing && card.hiddenWords.contains(idx),
-                            marked: card.hiddenWords.contains(idx),
                             recited: live && highlights.recited.contains(idx),
                             missed: live && highlights.missed.contains(idx),
                             missFlashing: live && highlights.isFlashing(idx),
@@ -508,7 +507,7 @@ struct SessionView: View {
             }
         }
         .contentShape(Rectangle())
-        .allowsHitTesting(live && !vm.concealing)
+        .allowsHitTesting(live)
         .simultaneousGesture(
             SpatialTapGesture(coordinateSpace: .global)
                 .onEnded { value in
@@ -518,7 +517,6 @@ struct SessionView: View {
         )
         .gesture(PaintRecognizer(
             onBegan: { location in
-                guard !vm.concealing else { return }
                 painting.begin()
                 Feedback.flip()
                 paint(at: location)

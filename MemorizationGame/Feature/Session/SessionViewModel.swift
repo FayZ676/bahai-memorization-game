@@ -45,10 +45,12 @@ final class SessionViewModel {
     }
 
     func toggleWord(_ idx: Int) {
-        guard let card = current, !concealing else { return }
+        guard let card = current else { return }
         let wasHidden = card.hiddenWords.contains(idx)
         store.toggleWord(card, index: idx)
         if wasHidden { Feedback.reveal() } else { Feedback.hideTick() }
+        let anyHidden = !(current?.hiddenWords.isEmpty ?? true)
+        withAnimation(.easeInOut(duration: 0.32)) { concealing = anyHidden }
         focus(on: card.id)
     }
 

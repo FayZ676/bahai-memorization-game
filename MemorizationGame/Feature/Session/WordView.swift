@@ -3,7 +3,6 @@ import SwiftUI
 struct WordView: View {
     let token: String
     let concealed: Bool
-    var marked: Bool = false
     var recited: Bool = false
     var missed: Bool = false
     var missFlashing: Bool = false
@@ -31,7 +30,7 @@ struct WordView: View {
             if !p.core.isEmpty {
                 Text(p.core)
                     .foregroundStyle(Theme.ink)
-                    .opacity(coreOpacity)
+                    .opacity(concealed ? 0 : 1)
                     .blur(radius: concealed ? 2 : 0)
                     .overlay(alignment: .bottom) {
                         reciteLine
@@ -51,7 +50,6 @@ struct WordView: View {
         }
         .scaleEffect(pulsing ? 1.07 : 1)
         .animation(Motion.fade.delay(staggerDelay), value: concealed)
-        .animation(Motion.toggle, value: marked)
         .onChange(of: recited) { wasRecited, isRecited in
             guard isRecited, !wasRecited else { return }
             withAnimation(.easeOut(duration: 0.12)) { pulsing = true }
@@ -67,11 +65,6 @@ struct WordView: View {
             .fill(lineColor)
             .frame(height: 2)
             .offset(y: 3)
-    }
-
-    private var coreOpacity: Double {
-        if concealed { return 0 }
-        return marked ? 0.72 : 1
     }
 
     private var lineColor: Color {
