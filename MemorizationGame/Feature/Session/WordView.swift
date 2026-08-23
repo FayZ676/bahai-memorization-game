@@ -35,9 +35,8 @@ struct WordView: View {
                     .blur(radius: concealed ? 2 : 0)
                     .overlay(alignment: .bottom) {
                         reciteLine
-                            .opacity(lineOpacity)
+                            .opacity(concealed ? 1 : 0)
                             .animation(concealed ? Motion.lineFadeIn.delay(staggerDelay) : .easeInOut(duration: 0.18), value: concealed)
-                            .animation(Motion.toggle, value: marked)
                     }
             }
             if !p.trail.isEmpty { Text(p.trail).foregroundStyle(Theme.ink) }
@@ -73,11 +72,6 @@ struct WordView: View {
     private var coreOpacity: Double {
         if concealed { return 0 }
         return marked ? 0.72 : 1
-    }
-
-    private var lineOpacity: Double {
-        if concealed { return 1 }
-        return marked ? 0.55 : 0
     }
 
     private var lineColor: Color {
