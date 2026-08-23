@@ -10,13 +10,32 @@ extension EnvironmentValues {
 
 private let deleteTitleWordLimit = 6
 
+private enum PassageGroup {
+    case memorizing
+    case archived
+
+    var label: String {
+        switch self {
+        case .memorizing: "Memorizing"
+        case .archived: "Archived"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .memorizing: "text.word.spacing"
+        case .archived: "archivebox"
+        }
+    }
+}
+
 struct LibraryView: View {
     @Environment(AppStore.self) private var store
     @State private var pendingDelete: Passage?
     @State private var path = NavigationPath()
     @State private var isTourPresented = false
     @State private var releaseNote: ReleaseNote?
-    @State private var isArchiveExpanded = false
+    @State private var expandedGroups: Set<PassageGroup> = [.memorizing]
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -113,23 +132,8 @@ struct LibraryView: View {
                     .listRowInsets(EdgeInsets())
             }
 
-            Section {
-                ForEach(store.activePassages) { passage in
-                    row(for: passage)
-                }
-            }
-
-            if !store.archivedPassages.isEmpty {
-                Section {
-                    archivedHeader
-
-                    if isArchiveExpanded {
-                        ForEach(store.archivedPassages) { passage in
-                            row(for: passage)
-                        }
-                    }
-                }
-            }
+            group(.memorizing, passages: store.activePassages)
+            group(.archived, passages: store.archivedPassages)
         }
         .listRowSpacing(Spacing.md)
         .listSectionSpacing(Spacing.md)
@@ -182,22 +186,43 @@ struct LibraryView: View {
         }
     }
 
-    private var archivedHeader: some View {
+    @ViewBuilder
+    private func group(_ group: PassageGroup, passages: [Passage]) -> some View {
+        if !passages.isEmpty {
+            Section {
+                groupHeader(group, count: passages.count)
+
+                if expandedGroups.contains(group) {
+                    ForEach(passages) { passage in
+                        row(for: passage)
+                    }
+                }
+            }
+        }
+    }
+
+    private func groupHeader(_ group: PassageGroup, count: Int) -> some View {
         Button {
             Feedback.tap()
-            withAnimation(.easeInOut(duration: 0.22)) { isArchiveExpanded.toggle() }
+            withAnimation(.easeInOut(duration: 0.22)) {
+                if expandedGroups.contains(group) {
+                    expandedGroups.remove(group)
+                } else {
+                    expandedGroups.insert(group)
+                }
+            }
         } label: {
             HStack(spacing: Spacing.sm) {
                 HStack(spacing: Spacing.xs) {
-                    Image(systemName: "archivebox")
+                    Image(systemName: group.symbol)
                         .appIcon(13, weight: .regular)
 
-                    Text("Archived")
+                    Text(group.label)
                         .appFont(Typography.label.weight(.regular))
                 }
                 .foregroundStyle(Theme.faint)
 
-                Text("\(store.archivedPassages.count)")
+                Text("\(count)")
                     .appFont(Typography.footnote.mono())
                     .foregroundStyle(Theme.faint)
 
@@ -206,7 +231,7 @@ struct LibraryView: View {
                 Image(systemName: "chevron.right")
                     .appIcon(12, weight: .regular)
                     .foregroundStyle(Theme.faint)
-                    .rotationEffect(.degrees(isArchiveExpanded ? 90 : 0))
+                    .rotationEffect(.degrees(expandedGroups.contains(group) ? 90 : 0))
             }
             .padding(.horizontal, Spacing.xl)
             .padding(.vertical, Spacing.sm)
