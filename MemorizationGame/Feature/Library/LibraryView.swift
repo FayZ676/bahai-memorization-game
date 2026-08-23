@@ -190,10 +190,10 @@ struct LibraryView: View {
             HStack(spacing: Spacing.sm) {
                 HStack(spacing: Spacing.xs) {
                     Image(systemName: "archivebox")
-                        .appIcon(13, weight: .medium)
+                        .appIcon(13, weight: .regular)
 
                     Text("Archived")
-                        .appFont(Typography.label)
+                        .appFont(Typography.label.weight(.regular))
                 }
                 .foregroundStyle(Theme.faint)
 
