@@ -3,7 +3,7 @@ import SwiftUI
 struct RecitationBar: View {
     let voice: VoiceRecitationController
     let hasHiddenWords: Bool
-    let isPeeking: Bool
+    let isConcealing: Bool
     @Binding var micDeniedAlert: Bool
     let onStart: () -> Void
     let onPeek: () -> Void
@@ -32,7 +32,7 @@ struct RecitationBar: View {
         }
         .padding(.bottom, Spacing.xxs)
         .animation(Self.settle, value: voice.state)
-        .animation(Self.settle, value: isPeeking)
+        .animation(Self.settle, value: isConcealing)
         .onChange(of: hint.message) { _, message in
             guard let message else { return }
             standingMessage = message
@@ -44,13 +44,13 @@ struct RecitationBar: View {
     }
 
     private var peekDisabled: Bool {
-        !hasHiddenWords && !isPeeking
+        !hasHiddenWords && !isConcealing
     }
 
     private var peekButton: some View {
         sideButton(
-            symbol: isPeeking ? "eye.slash" : "eye",
-            on: isPeeking,
+            symbol: isConcealing ? "eye.slash" : "eye",
+            on: isConcealing,
             dimmed: peekDisabled,
             action: {
                 peekDisabled ? hint.show("Nothing to peek. Try hiding a word first.") : onPeek()

@@ -65,10 +65,10 @@ struct SessionView: View {
                             RecitationBar(
                                 voice: voice,
                                 hasHiddenWords: !(vm.current?.hiddenWords.isEmpty ?? true),
-                                isPeeking: vm.isPeeking,
+                                isConcealing: vm.concealing,
                                 micDeniedAlert: $showingMicDenied,
                                 onStart: startRecitation,
-                                onPeek: { vm.togglePeek() },
+                                onPeek: { vm.toggleConcealment() },
                                 onToggleRail: {
                                     withAnimation(.easeInOut(duration: 0.28)) { showingRail.toggle() }
                                 },
@@ -268,7 +268,7 @@ struct SessionView: View {
 
     private func startRecitation() {
         guard let card = vm.current else { return }
-        vm.endPeek()
+        vm.conceal()
         var remaining = highlights.unattempted(in: card)
         if remaining.isEmpty {
             highlights.clear()
@@ -475,7 +475,8 @@ struct SessionView: View {
                     ForEach(range, id: \.self) { idx in
                         WordView(
                             token: String(words[idx]),
-                            hidden: live ? vm.isHidden(idx) : card.hiddenWords.contains(idx),
+                            concealed: vm.concealing && card.hiddenWords.contains(idx),
+                            marked: card.hiddenWords.contains(idx),
                             recited: live && highlights.recited.contains(idx),
                             missed: live && highlights.missed.contains(idx),
                             missFlashing: live && highlights.isFlashing(idx),
@@ -505,7 +506,7 @@ struct SessionView: View {
             }
         }
         .contentShape(Rectangle())
-        .allowsHitTesting(live && !vm.wordsRevealed)
+        .allowsHitTesting(live && !vm.concealing)
         .simultaneousGesture(
             SpatialTapGesture(coordinateSpace: .global)
                 .onEnded { value in
@@ -515,7 +516,7 @@ struct SessionView: View {
         )
         .gesture(PaintRecognizer(
             onBegan: { location in
-                guard !vm.wordsRevealed else { return }
+                guard !vm.concealing else { return }
                 painting.begin()
                 Feedback.flip()
                 paint(at: location)
@@ -536,7 +537,7 @@ struct SessionView: View {
 
     private func paint(at location: CGPoint) {
         guard let idx = wordIndex(at: location) else { return }
-        guard painting.shouldToggle(vm.isHidden(idx)) else { return }
+        guard painting.shouldToggle(vm.isMarked(idx)) else { return }
         withAnimation(Motion.toggle) { vm.toggleWord(idx) }
     }
 

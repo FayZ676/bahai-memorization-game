@@ -9,10 +9,8 @@ final class SessionViewModel {
 
     var step = 0
     var presentationEpoch = 0
-    private(set) var isPeeking = false
-    private(set) var grounding = false
+    private(set) var concealing = false
     private(set) var cascading = false
-    private var groundingTask: Task<Void, Never>?
     private var cascadeResetTask: Task<Void, Never>?
 
     init(passage: Passage, store: AppStore) {
@@ -37,15 +35,17 @@ final class SessionViewModel {
     var canGoForward: Bool { step < queueLength - 1 }
     var canGoBack: Bool { step > 0 }
 
-    var wordsRevealed: Bool { isPeeking || grounding }
-
-    func isHidden(_ idx: Int) -> Bool {
-        guard !wordsRevealed, let card = current else { return false }
+    func isConcealed(_ idx: Int) -> Bool {
+        guard concealing, let card = current else { return false }
         return card.hiddenWords.contains(idx)
     }
 
+    func isMarked(_ idx: Int) -> Bool {
+        current?.hiddenWords.contains(idx) ?? false
+    }
+
     func toggleWord(_ idx: Int) {
-        guard let card = current, !wordsRevealed else { return }
+        guard let card = current, !concealing else { return }
         let wasHidden = card.hiddenWords.contains(idx)
         store.toggleWord(card, index: idx)
         if wasHidden { Feedback.reveal() } else { Feedback.hideTick() }
@@ -74,14 +74,13 @@ final class SessionViewModel {
         let q = store.queue(for: passage)
         guard canMerge, q.indices.contains(step + 1) else { return }
         store.merge(q[step], with: q[step + 1])
-        beginGrounding()
         presentationEpoch += 1
     }
 
     func start() {
         let q = store.queue(for: passage)
         step = q.lastIndex { !$0.hiddenWords.isEmpty } ?? 0
-        beginGrounding()
+        concealing = false
         presentationEpoch += 1
     }
 
@@ -94,7 +93,6 @@ final class SessionViewModel {
         let target = max(0, min(index, queueLength - 1))
         guard target != step else { return }
         step = target
-        beginGrounding()
         presentationEpoch += 1
         Feedback.scrub()
     }
@@ -102,39 +100,27 @@ final class SessionViewModel {
     func skip(forward: Bool) {
         guard forward ? canGoForward : canGoBack else { return }
         step += forward ? 1 : -1
-        beginGrounding()
         presentationEpoch += 1
         Feedback.navigate(forward: forward)
     }
 
-    func togglePeek() {
-        groundingTask?.cancel()
-        grounding = false
-        ripple(current?.hiddenWords ?? [])
+    func toggleConcealment() {
+        concealing ? reveal() : conceal()
+    }
+
+    func conceal() {
+        guard !concealing, let card = current, !card.hiddenWords.isEmpty else { return }
+        ripple(card.hiddenWords)
         cascade {
-            withAnimation(.easeInOut(duration: 0.32)) { isPeeking.toggle() }
+            withAnimation(.easeInOut(duration: 0.32)) { concealing = true }
         }
     }
 
-    func endPeek() {
-        guard isPeeking else { return }
+    func reveal() {
+        guard concealing else { return }
         ripple(current?.hiddenWords ?? [])
         cascade {
-            withAnimation(.easeInOut(duration: 0.32)) { isPeeking = false }
-        }
-    }
-
-    private func beginGrounding() {
-        groundingTask?.cancel()
-        isPeeking = false
-        grounding = true
-        groundingTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(1.4))
-            guard !Task.isCancelled, let self else { return }
-            ripple(current?.hiddenWords ?? [])
-            cascade {
-                withAnimation(.easeInOut(duration: 0.6)) { self.grounding = false }
-            }
+            withAnimation(.easeInOut(duration: 0.32)) { concealing = false }
         }
     }
 
