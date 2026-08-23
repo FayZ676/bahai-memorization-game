@@ -136,7 +136,7 @@ struct LibraryView: View {
             group(.memorizing, passages: store.activePassages)
             group(.archived, passages: store.archivedPassages)
         }
-        .listRowSpacing(Spacing.md)
+        .listRowSpacing(Spacing.sm)
         .listSectionSpacing(Spacing.xxl)
         .contentMargins(.top, 0, for: .scrollContent)
         .scrollContentBackground(.hidden)
