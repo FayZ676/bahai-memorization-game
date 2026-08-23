@@ -175,7 +175,7 @@ def build_page(tile, device):
 
     return PAGE.format(
         w=width, h=height,
-        display_font=(FONTS / "CormorantGaramond-Bold.ttf").as_uri(),
+        display_font=(FONTS / "EBGaramond-Bold.ttf").as_uri(),
         ground=theme["ground"], ink=theme["ink"], muted=theme["muted"],
         bezel=theme["bezel"], shadow=theme["shadow"], rim=theme["rim"],
         lift=0.022 if tile.get("theme") != "dark" else 0.0,

@@ -46,6 +46,17 @@ QUIET BY DESIGN
 
 Verses is built around one belief: memorization isn't a test to pass, it's a way of carrying words with you. Hide what you know. Read what you don't. Come back tomorrow.
 
+## What's New — 1.8 (4000)
+Verses reads in a new typeface. Prayers, headings, and the writings all share it, and the reading page now holds more of the passage at once, at whichever text size you've chosen.
+
+Hidden words work one way now. A hidden word leaves a line where it was, and tapping any word hides or reveals it straight away. The eye beside the microphone shows everything hidden for as long as you want to look.
+
+The bar down the left edge fades away while you read, and comes back when you move.
+
+Your library keeps the prayers you're memorizing under their own heading, with Archived below it.
+
+Small fixes and refinements.
+
 ## What's New — 1.7 (4000)
 Moving through a prayer is now a swipe. Pull up past the end of a section to go on, down past the top to go back. A slim bar down the left edge shows how far you've come, and tapping it jumps you anywhere in the passage.
 

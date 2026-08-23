@@ -19,6 +19,37 @@ struct ReleaseNote: Identifiable {
 enum ReleaseNotes {
     static let all: [ReleaseNote] = [
         ReleaseNote(
+            version: "1.8",
+            headline: "New letters, and one clear way to hide a word.",
+            highlights: [
+                ReleaseHighlight(
+                    symbol: "textformat",
+                    title: "A new look",
+                    text: "The prayers are drawn in a new letter shape, and the lines sit closer together, so you can see more of a prayer at once."
+                ),
+                ReleaseHighlight(
+                    symbol: "minus",
+                    title: "A line where a word was",
+                    text: "Hide a word and a small line stays in its place. Tap the line to bring the word back, and tap any word to hide it."
+                ),
+                ReleaseHighlight(
+                    symbol: "eye",
+                    title: "Look at what is hidden",
+                    text: "Tap the eye next to the microphone to see every hidden word. Tap it again, or touch any word, to hide them once more."
+                ),
+                ReleaseHighlight(
+                    symbol: "sidebar.squares.leading",
+                    title: "The side bar rests",
+                    text: "The thin bar at the left of a prayer fades away while you read, and comes back as soon as you move the page."
+                ),
+                ReleaseHighlight(
+                    symbol: "book",
+                    title: "Your prayers in groups",
+                    text: "The prayers you are learning now sit together under their own heading, with the ones you have put away below them."
+                )
+            ]
+        ),
+        ReleaseNote(
             version: "1.7",
             headline: "Prayers are easier to read and move through.",
             highlights: [

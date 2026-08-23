@@ -30,6 +30,11 @@ Every raw here feeds a tile; there are no spares left. The iPad has no dark capt
 override. There is no iPad recitation tile — the raw was never shot there, so it is skipped
 the same way the later session stage already is.
 
+A session now opens with every word showing — hiding is what the eye button does, not what
+entering a session does. So the two hide tiles and the recitation tile are each shot by
+tapping the eye (`drive.tap("Show")`) once the session has settled, and only then taking
+the picture. Without that tap the page photographs as plain prose with nothing hidden.
+
 Two captures are stage-dependent and must be reshot as a pair if the hero passage changes:
 `2-hide-words.png` from the default seed and `9-hide-more.png` from `HERO_LATE=1`, which
 hides 50% of the same chunk instead of 15%. `HERO_LATE` deliberately leaves the later
@@ -124,7 +129,9 @@ Then drive it:
 import drive, time
 drive.shot("1-library.png")
 drive.tap("I have turned in repentance", pause=2)
-time.sleep(6)                              # let the 1.4s grounding reveal finish
+time.sleep(7)                              # let the session settle on its section
+drive.tap("Show", pause=2)                 # the eye: hide what the seed marked
+time.sleep(2)
 drive.shot("2-hide-words.png")
 ```
 
