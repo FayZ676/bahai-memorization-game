@@ -188,7 +188,10 @@ struct AttemptRow: View {
     }
 
     private var header: Text {
-        var line = Text(occasion).foregroundStyle(Theme.faint)
+        var line = Text(timestamp)
+            .font(Typography.micro.mono().font(scale: fontScale))
+            .foregroundStyle(Theme.faint)
+            + Text(" · \(attempt.passageTitle)").foregroundStyle(Theme.faint)
         for (filter, count) in tallies {
             line = line
                 + Text(" · ").foregroundStyle(Theme.faint)
@@ -205,10 +208,14 @@ struct AttemptRow: View {
         return ([occasion] + counts).joined(separator: ", ")
     }
 
-    private var occasion: String {
+    private var timestamp: String {
         let day = attempt.date.formatted(.dateTime.month(.abbreviated).day())
         let time = attempt.date.formatted(date: .omitted, time: .shortened)
-        return "\(day), \(time) · \(attempt.passageTitle)"
+        return "\(day), \(time)"
+    }
+
+    private var occasion: String {
+        "\(timestamp) · \(attempt.passageTitle)"
     }
 
     private var tallies: [(filter: RecitationFilter, count: Int)] {
