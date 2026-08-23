@@ -7,7 +7,10 @@ enum AppFont {
         "EBGaramond-Medium",
         "EBGaramond-SemiBold",
         "EBGaramond-Bold",
-        "EBGaramond-Italic"
+        "EBGaramond-Italic",
+        "EBGaramond-MediumItalic",
+        "EBGaramond-SemiBoldItalic",
+        "EBGaramond-BoldItalic"
     ]
 
     static func register() {
@@ -18,13 +21,14 @@ enum AppFont {
     }
 
     static func serifName(for weight: Font.Weight, italic: Bool) -> String {
-        if italic { return "EBGaramond-Italic" }
+        let stem: String
         switch weight {
-        case .medium: return "EBGaramond-Medium"
-        case .semibold: return "EBGaramond-SemiBold"
-        case .bold, .heavy, .black: return "EBGaramond-Bold"
-        default: return "EBGaramond-Regular"
+        case .medium: stem = "Medium"
+        case .semibold: stem = "SemiBold"
+        case .bold, .heavy, .black: stem = "Bold"
+        default: stem = italic ? "" : "Regular"
         }
+        return "EBGaramond-" + stem + (italic ? "Italic" : "")
     }
 }
 
@@ -92,8 +96,8 @@ enum Typography {
     static let verseInitial = AppTextToken(32, face: .serif)
     static let excerpt      = AppTextToken(15, face: .serif)
 
-    static let attribution  = AppTextToken(20, face: .serif, italic: true)
-    static let byline       = AppTextToken(13, face: .serif, italic: true)
+    static let attribution  = AppTextToken(20, weight: .semibold, face: .serif, italic: true)
+    static let byline       = AppTextToken(13, weight: .semibold, face: .serif, italic: true)
 }
 
 private struct FontScaleKey: EnvironmentKey {
