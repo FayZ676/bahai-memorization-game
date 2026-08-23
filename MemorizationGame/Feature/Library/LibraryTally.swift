@@ -25,6 +25,6 @@ struct LibraryTally: View {
         Text(text)
             .appFont(Typography.footnote.mono())
             .tracking(0.5)
-            .foregroundStyle(Theme.muted)
+            .foregroundStyle(Theme.faint)
     }
 }
