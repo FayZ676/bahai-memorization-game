@@ -7,7 +7,6 @@ enum AppFont {
         "EBGaramond-Medium",
         "EBGaramond-SemiBold",
         "EBGaramond-Bold",
-        "EBGaramond-ExtraBold",
         "EBGaramond-Italic"
     ]
 
@@ -22,8 +21,7 @@ enum AppFont {
         switch weight {
         case .medium: return "EBGaramond-Medium"
         case .semibold: return "EBGaramond-SemiBold"
-        case .bold: return "EBGaramond-Bold"
-        case .heavy, .black: return "EBGaramond-ExtraBold"
+        case .bold, .heavy, .black: return "EBGaramond-Bold"
         default: return "EBGaramond-Regular"
         }
     }
@@ -77,8 +75,8 @@ enum Typography {
     static let footnote = AppTextToken(12, weight: .regular)
     static let micro    = AppTextToken(11, weight: .regular)
 
-    static let heading      = AppTextToken(32, weight: .heavy, face: .serif)
-    static let passageTitle = AppTextToken(21, weight: .heavy, face: .serif)
+    static let heading      = AppTextToken(32, weight: .semibold, face: .serif)
+    static let passageTitle = AppTextToken(21, weight: .semibold, face: .serif)
 
     static let numeral      = AppTextToken(34, weight: .semibold, face: .serif)
     static let recite       = AppTextToken(26, face: .serif)
