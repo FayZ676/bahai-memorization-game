@@ -473,7 +473,7 @@ struct SessionView: View {
         let words = card.words
         return VStack(alignment: .leading, spacing: 18) {
             ForEach(Array(card.paragraphs.enumerated()), id: \.offset) { _, range in
-                FlowLayout(spacing: 7, lineSpacing: 8, justified: true, maxStretchPerGap: metrics.maxStretchPerGap) {
+                FlowLayout(spacing: 7, lineSpacing: 5, justified: true, maxStretchPerGap: metrics.maxStretchPerGap) {
                     ForEach(range, id: \.self) { idx in
                         WordView(
                             token: String(words[idx]),

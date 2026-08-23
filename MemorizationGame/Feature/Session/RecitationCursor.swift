@@ -9,7 +9,9 @@ struct RecitationCursor: View {
     @State private var height: CGFloat = 0
     @State private var visible = false
 
-    private static let inset = CGSize(width: -4, height: -5)
+    private static let sidePad: CGFloat = 4
+    private static let trimAboveCap: CGFloat = 6
+    private static let trimBelowBaseline: CGFloat = 2
     private static let leadingEdge = Animation.spring(response: 0.15, dampingFraction: 0.86)
     private static let trailingEdge = Animation.spring(response: 0.22, dampingFraction: 0.9)
     private static let lineBreak = Animation.spring(response: 0.24, dampingFraction: 0.86)
@@ -36,7 +38,12 @@ struct RecitationCursor: View {
             withAnimation(.easeOut(duration: 0.22)) { visible = false }
             return
         }
-        let box = target.insetBy(dx: Self.inset.width, dy: Self.inset.height)
+        let box = CGRect(
+            x: target.minX - Self.sidePad,
+            y: target.minY + Self.trimAboveCap,
+            width: target.width + Self.sidePad * 2,
+            height: target.height - Self.trimAboveCap - Self.trimBelowBaseline
+        )
         guard visible else {
             settle(on: box)
             withAnimation(.easeOut(duration: 0.2)) { visible = true }
