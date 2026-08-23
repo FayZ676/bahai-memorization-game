@@ -10,7 +10,7 @@ struct SessionView: View {
     @State private var started = false
     @State private var showingMicDenied = false
     @State private var scrubbing = false
-    @State private var showingRail = true
+    @State private var rail = RailVisibility()
     @State private var barBounds: CGRect = .zero
     @State private var highlights = RecitationHighlights()
     @State private var painting = WordPainting()
@@ -56,7 +56,7 @@ struct SessionView: View {
                         let metrics = ReadingMetrics(width: geo.size.width)
                         readingArea(metrics)
                         .overlay(alignment: .leading) {
-                            if showingRail {
+                            if rail.isShowing {
                                 progressRail(metrics)
                                     .transition(.move(edge: .leading).combined(with: .opacity))
                             }
@@ -69,9 +69,7 @@ struct SessionView: View {
                                 micDeniedAlert: $showingMicDenied,
                                 onStart: startRecitation,
                                 onPeek: { vm.toggleConcealment() },
-                                onToggleRail: {
-                                    withAnimation(.easeInOut(duration: 0.28)) { showingRail.toggle() }
-                                },
+                                onToggleRail: { rail.toggle() },
                                 hint: hint
                             )
                         }
@@ -108,6 +106,7 @@ struct SessionView: View {
         .task {
             guard !started else { return }
             started = true
+            rail.stir()
             vm.start()
             voice.onWordsMatched = { registerRecited($0) }
             voice.onMiss = { registerMiss($0, movedOn: $1) }
@@ -307,6 +306,7 @@ struct SessionView: View {
                     if !scrubbing {
                         withAnimation(.easeOut(duration: 0.16)) { scrubbing = true }
                     }
+                    rail.hold()
                     withAnimation(.easeInOut(duration: 0.18)) {
                         vm.scrub(to: Self.segmentIndex(
                             at: value.location.y - barBounds.minY,
@@ -317,6 +317,7 @@ struct SessionView: View {
                 }
                 .onEnded { _ in
                     withAnimation(.easeOut(duration: 0.2)) { scrubbing = false }
+                    rail.stir()
                 }
         )
         .onPreferenceChange(ProgressBarBounds.self) { barBounds = $0 }
@@ -384,9 +385,10 @@ struct SessionView: View {
                 top: geometry.contentOffset.y + geometry.contentInsets.top,
                 bottom: geometry.contentSize.height - geometry.contentOffset.y - geometry.containerSize.height
             )
-        } action: { _, reach in
+        } action: { previous, reach in
             scrollOffset.y = reach.top
             scrollReach = reach
+            if abs(reach.top - previous.top) > 0.5 { rail.stir() }
         }
         .simultaneousGesture(
             DragGesture(minimumDistance: 24)
