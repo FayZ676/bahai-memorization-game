@@ -3,6 +3,8 @@ import SwiftUI
 struct RecitationCursor: View {
     let target: CGRect?
 
+    @Environment(\.fontScale) private var fontScale
+
     @State private var leading: CGFloat = 0
     @State private var trailing: CGFloat = 0
     @State private var top: CGFloat = 0
@@ -38,11 +40,14 @@ struct RecitationCursor: View {
             withAnimation(.easeOut(duration: 0.22)) { visible = false }
             return
         }
+        let sidePad = Self.sidePad * fontScale
+        let above = Self.trimAboveCap * fontScale
+        let below = Self.trimBelowBaseline * fontScale
         let box = CGRect(
-            x: target.minX - Self.sidePad,
-            y: target.minY + Self.trimAboveCap,
-            width: target.width + Self.sidePad * 2,
-            height: target.height - Self.trimAboveCap - Self.trimBelowBaseline
+            x: target.minX - sidePad,
+            y: target.minY + above,
+            width: target.width + sidePad * 2,
+            height: target.height - above - below
         )
         guard visible else {
             settle(on: box)

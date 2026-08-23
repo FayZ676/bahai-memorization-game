@@ -3,6 +3,7 @@ import SwiftUI
 
 struct SessionView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.fontScale) private var fontScale
     @Environment(\.tour) private var tour
     @Environment(\.requestReview) private var requestReview
     @State private var vm: SessionViewModel
@@ -53,7 +54,7 @@ struct SessionView: View {
                 }
                 if vm.current != nil {
                     GeometryReader { geo in
-                        let metrics = ReadingMetrics(width: geo.size.width)
+                        let metrics = ReadingMetrics(width: geo.size.width, fontScale: fontScale)
                         readingArea(metrics)
                         .overlay(alignment: .leading) {
                             if rail.isShowing {
@@ -473,7 +474,7 @@ struct SessionView: View {
         let words = card.words
         return VStack(alignment: .leading, spacing: 18) {
             ForEach(Array(card.paragraphs.enumerated()), id: \.offset) { _, range in
-                FlowLayout(spacing: 7, lineSpacing: 5, justified: true, maxStretchPerGap: metrics.maxStretchPerGap) {
+                FlowLayout(spacing: metrics.wordSpacing, lineSpacing: metrics.lineSpacing, justified: true, maxStretchPerGap: metrics.maxStretchPerGap) {
                     ForEach(range, id: \.self) { idx in
                         WordView(
                             token: String(words[idx]),
@@ -612,13 +613,17 @@ private struct ReadingMetrics {
     let railInset: CGFloat
     let railWidth: CGFloat
     let maxStretchPerGap: CGFloat
+    let wordSpacing: CGFloat
+    let lineSpacing: CGFloat
 
-    init(width: CGFloat) {
+    init(width: CGFloat, fontScale: CGFloat) {
         let narrow = width < 390
         textMargin = narrow ? 30 : 42
         railInset = narrow ? 3 : 8
         railWidth = narrow ? 22 : 26
-        maxStretchPerGap = narrow ? 1.5 : 2.5
+        maxStretchPerGap = (narrow ? 1.5 : 2.5) * fontScale
+        wordSpacing = 7 * fontScale
+        lineSpacing = 8 * fontScale
     }
 }
 
