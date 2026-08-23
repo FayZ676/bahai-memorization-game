@@ -5,8 +5,7 @@ struct Colophon: View {
 
     var body: some View {
         Text("—\u{00A0}\(author)")
-            .appFont(Typography.verse)
-            .italic()
+            .appFont(Typography.attribution)
             .foregroundStyle(Theme.faint)
             .frame(maxWidth: .infinity, alignment: .trailing)
     }

@@ -19,7 +19,7 @@ struct PassageCard<Accessory: View>: View {
                 HStack(spacing: Spacing.xs) {
                     if let author {
                         Text(author)
-                            .italic()
+                            .appFont(Typography.byline)
                     }
                     if let section {
                         if author != nil {

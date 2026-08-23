@@ -17,7 +17,8 @@ enum AppFont {
         }
     }
 
-    static func serifName(for weight: Font.Weight) -> String {
+    static func serifName(for weight: Font.Weight, italic: Bool) -> String {
+        if italic { return "EBGaramond-Italic" }
         switch weight {
         case .medium: return "EBGaramond-Medium"
         case .semibold: return "EBGaramond-SemiBold"
@@ -43,24 +44,31 @@ struct AppTextToken {
     let size: CGFloat
     let weight: Font.Weight
     let face: TextFace
+    let isItalic: Bool
 
-    init(_ size: CGFloat, weight: Font.Weight = .regular, face: TextFace = .sans) {
+    init(_ size: CGFloat, weight: Font.Weight = .regular, face: TextFace = .sans, italic: Bool = false) {
         self.size = size
         self.weight = weight
         self.face = face
+        self.isItalic = italic
     }
 
     func weight(_ weight: Font.Weight) -> AppTextToken {
-        AppTextToken(size, weight: weight, face: face)
+        AppTextToken(size, weight: weight, face: face, italic: isItalic)
+    }
+
+    func italic() -> AppTextToken {
+        AppTextToken(size, weight: weight, face: face, italic: true)
     }
 
     func font(scale: CGFloat) -> Font {
         let scaled = size * scale * face.opticalScale
         switch face {
         case .sans:
-            return .system(size: scaled, weight: weight)
+            let system = Font.system(size: scaled, weight: weight)
+            return isItalic ? system.italic() : system
         case .serif:
-            return .custom(AppFont.serifName(for: weight), size: scaled)
+            return .custom(AppFont.serifName(for: weight, italic: isItalic), size: scaled)
         }
     }
 }
@@ -83,6 +91,9 @@ enum Typography {
     static let verse        = AppTextToken(20, face: .serif)
     static let verseInitial = AppTextToken(32, face: .serif)
     static let excerpt      = AppTextToken(15, face: .serif)
+
+    static let attribution  = AppTextToken(20, face: .serif, italic: true)
+    static let byline       = AppTextToken(13, face: .serif, italic: true)
 }
 
 private struct FontScaleKey: EnvironmentKey {
