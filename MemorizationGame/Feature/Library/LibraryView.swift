@@ -244,9 +244,15 @@ struct LibraryView: View {
     }
 
     private var streakHeader: some View {
-        LibraryTally(streak: store.streakCount, memorized: store.memorizedPassageIDs.count)
-            .padding(.horizontal, Spacing.xl)
-            .padding(.top, Spacing.sm)
+        VStack(spacing: Spacing.md) {
+            LibraryTally(streak: store.streakCount, memorized: store.memorizedPassageIDs.count)
+
+            Rectangle()
+                .fill(Theme.faint)
+                .frame(height: 1)
+        }
+        .padding(.horizontal, Spacing.xl)
+        .padding(.top, Spacing.sm)
     }
 
     private var emptyState: some View {
