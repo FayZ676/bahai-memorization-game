@@ -3,11 +3,6 @@ import CoreText
 
 enum AppFont {
     static let files = [
-        "Merriweather-Regular",
-        "Merriweather-Medium",
-        "Merriweather-SemiBold",
-        "Merriweather-Bold",
-        "Merriweather-Italic",
         "CormorantGaramond-Regular",
         "CormorantGaramond-Medium",
         "CormorantGaramond-SemiBold",
@@ -29,15 +24,6 @@ enum AppFont {
 
     static func scriptureName(for weight: Font.Weight) -> String {
         switch weight {
-        case .medium: return "Merriweather-Medium"
-        case .semibold: return "Merriweather-SemiBold"
-        case .bold, .heavy, .black: return "Merriweather-Bold"
-        default: return "Merriweather-Regular"
-        }
-    }
-
-    static func textName(for weight: Font.Weight) -> String {
-        switch weight {
         case .medium: return "EBGaramond-Medium"
         case .semibold: return "EBGaramond-SemiBold"
         case .bold, .heavy, .black: return "EBGaramond-Bold"
@@ -56,15 +42,15 @@ enum AppFont {
 }
 
 enum TextFace {
-    case text
+    case sans
     case display
     case scripture
 
     var opticalScale: CGFloat {
         switch self {
-        case .text: return 1.14
+        case .sans: return 1
         case .display: return 1.22
-        case .scripture: return 0.93
+        case .scripture: return 1.08
         }
     }
 }
@@ -74,7 +60,7 @@ struct AppTextToken {
     let weight: Font.Weight
     let face: TextFace
 
-    init(_ size: CGFloat, weight: Font.Weight = .regular, face: TextFace = .text) {
+    init(_ size: CGFloat, weight: Font.Weight = .regular, face: TextFace = .sans) {
         self.size = size
         self.weight = weight
         self.face = face
@@ -87,8 +73,8 @@ struct AppTextToken {
     func font(scale: CGFloat) -> Font {
         let scaled = size * scale * face.opticalScale
         switch face {
-        case .text:
-            return .custom(AppFont.textName(for: weight), size: scaled)
+        case .sans:
+            return .system(size: scaled, weight: weight)
         case .display:
             return .custom(AppFont.displayName(for: weight), size: scaled)
         case .scripture:
