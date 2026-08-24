@@ -233,6 +233,15 @@ final class AppStore {
         mutate(card) { $0.setAllWords(hidden: hidden) }
     }
 
+    @discardableResult
+    func hideRandomWords(_ card: Reviewable, count: Int) -> Set<Int> {
+        let candidates = Set(card.words.indices).subtracting(card.hiddenWords)
+        guard !candidates.isEmpty else { return [] }
+        let chosen = Set(candidates.shuffled().prefix(count))
+        mutate(card) { $0.hiddenWords.formUnion(chosen) }
+        return chosen
+    }
+
     func toggleWord(_ card: Reviewable, index: Int) {
         mutate(card) { $0.toggleWord(index) }
     }

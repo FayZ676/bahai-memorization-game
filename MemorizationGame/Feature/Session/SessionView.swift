@@ -66,11 +66,19 @@ struct SessionView: View {
                             RecitationBar(
                                 voice: voice,
                                 hasHiddenWords: !(vm.current?.hiddenWords.isEmpty ?? true),
+                                canHideWords: !vm.everyWordHidden,
                                 isConcealing: vm.concealing,
                                 micDeniedAlert: $showingMicDenied,
                                 onStart: startRecitation,
                                 onPeek: { vm.toggleConcealment() },
-                                onToggleRail: { rail.toggle() },
+                                onHideWords: { count in
+                                    vm.hideRandomWords(count)
+                                    rail.stir()
+                                },
+                                hideCount: Binding(
+                                    get: { vm.randomHideCount },
+                                    set: { vm.randomHideCount = $0 }
+                                ),
                                 hint: hint
                             )
                         }

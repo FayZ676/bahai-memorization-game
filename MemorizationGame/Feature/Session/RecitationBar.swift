@@ -3,11 +3,13 @@ import SwiftUI
 struct RecitationBar: View {
     let voice: VoiceRecitationController
     let hasHiddenWords: Bool
+    let canHideWords: Bool
     let isConcealing: Bool
     @Binding var micDeniedAlert: Bool
     let onStart: () -> Void
     let onPeek: () -> Void
-    let onToggleRail: () -> Void
+    let onHideWords: (Int) -> Void
+    @Binding var hideCount: Int
     let hint: SessionHint
 
     @State private var hintHeight: CGFloat = 0
@@ -15,10 +17,11 @@ struct RecitationBar: View {
 
     private static let settle = Animation.easeInOut(duration: 0.22)
     private static let halo: CGFloat = 10
+    private static let hideCounts = [2, 4, 6, 8, 10]
 
     var body: some View {
         HStack(alignment: .bottom, spacing: -Self.halo) {
-            railButton
+            hideButton
             micButton
             peekButton
         }
@@ -58,13 +61,31 @@ struct RecitationBar: View {
         )
     }
 
-    private var railButton: some View {
-        sideButton(
-            symbol: "sidebar.squares.leading",
-            on: false,
-            dimmed: false,
-            action: onToggleRail
-        )
+    private var hideButton: some View {
+        Menu {
+            ForEach(Self.hideCounts, id: \.self) { count in
+                Button(action: Feedback.tapping { hide(count) }) {
+                    if count == hideCount {
+                        Label("\(count) words", systemImage: "checkmark")
+                    } else {
+                        Text("\(count) words")
+                    }
+                }
+            }
+        } label: {
+            sideFace(symbol: "text.word.spacing", on: false, dimmed: !canHideWords)
+        } primaryAction: {
+            Feedback.tap()
+            hide(hideCount)
+        }
+    }
+
+    private func hide(_ count: Int) {
+        hideCount = count
+        guard canHideWords else {
+            return hint.show("Every word is already hidden.")
+        }
+        onHideWords(count)
     }
 
     private func sideButton(
@@ -74,19 +95,23 @@ struct RecitationBar: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            Image(systemName: symbol)
-                .font(.system(size: 20, weight: .regular))
-                .foregroundStyle(sideSymbolColor(on: on, dimmed: dimmed))
-                .contentTransition(.symbolEffect(.replace.offUp))
-                .frame(width: 54, height: 54)
-                .background(on ? Theme.accent.opacity(0.18) : Theme.surface, in: Circle())
-                .background(Theme.surface, in: Circle())
-                .overlay(Circle().stroke(sideStroke(on: on, dimmed: dimmed), lineWidth: 1))
-                .shadow(color: .black.opacity(0.05), radius: 7, y: 2)
-                .padding(Self.halo)
-                .contentShape(Circle())
+            sideFace(symbol: symbol, on: on, dimmed: dimmed)
         }
         .buttonStyle(.haptic)
+    }
+
+    private func sideFace(symbol: String, on: Bool, dimmed: Bool) -> some View {
+        Image(systemName: symbol)
+            .font(.system(size: 20, weight: .regular))
+            .foregroundStyle(sideSymbolColor(on: on, dimmed: dimmed))
+            .contentTransition(.symbolEffect(.replace.offUp))
+            .frame(width: 54, height: 54)
+            .background(on ? Theme.accent.opacity(0.18) : Theme.surface, in: Circle())
+            .background(Theme.surface, in: Circle())
+            .overlay(Circle().stroke(sideStroke(on: on, dimmed: dimmed), lineWidth: 1))
+            .shadow(color: .black.opacity(0.05), radius: 7, y: 2)
+            .padding(Self.halo)
+            .contentShape(Circle())
     }
 
     private func sideSymbolColor(on: Bool, dimmed: Bool) -> Color {

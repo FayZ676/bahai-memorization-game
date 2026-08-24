@@ -16,11 +16,6 @@ final class RailVisibility {
         restartIdle()
     }
 
-    func toggle() {
-        withAnimation(Self.fade) { isShowing.toggle() }
-        if isShowing { restartIdle() } else { hold() }
-    }
-
     func hold() {
         idle?.cancel()
         idle = nil

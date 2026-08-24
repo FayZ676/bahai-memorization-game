@@ -61,6 +61,7 @@ struct AppSettings: Codable, Equatable {
     var appTheme: AppTheme = .light
     var fontSize: FontSize = .medium
     var hasSeenWelcomeTour: Bool = false
+    var randomHideCount: Int = 2
     var lastReviewRequestVersion: String?
     var lastSeenReleaseNotesVersion: String?
 
@@ -73,6 +74,7 @@ struct AppSettings: Codable, Equatable {
         case hasSeenWelcomeTour, hasCompletedOnboarding
         case lastReviewRequestVersion
         case lastSeenReleaseNotesVersion
+        case randomHideCount
     }
 
     init() {}
@@ -89,6 +91,7 @@ struct AppSettings: Codable, Equatable {
             ?? AppSettings.seenWhenSnapshotPredatesWelcomeTour
         lastReviewRequestVersion = try container.decodeIfPresent(String.self, forKey: .lastReviewRequestVersion)
         lastSeenReleaseNotesVersion = try container.decodeIfPresent(String.self, forKey: .lastSeenReleaseNotesVersion)
+        randomHideCount = try container.decodeIfPresent(Int.self, forKey: .randomHideCount) ?? d.randomHideCount
         if let stored = try container.decodeIfPresent([Reminder].self, forKey: .reminders) {
             reminders = stored
         } else {
@@ -108,5 +111,6 @@ struct AppSettings: Codable, Equatable {
         try container.encode(hasSeenWelcomeTour, forKey: .hasSeenWelcomeTour)
         try container.encodeIfPresent(lastReviewRequestVersion, forKey: .lastReviewRequestVersion)
         try container.encodeIfPresent(lastSeenReleaseNotesVersion, forKey: .lastSeenReleaseNotesVersion)
+        try container.encode(randomHideCount, forKey: .randomHideCount)
     }
 }
