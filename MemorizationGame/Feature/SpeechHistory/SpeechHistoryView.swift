@@ -256,7 +256,6 @@ struct WordReviewBlock: View {
             line = line
                 + Text(" · ").foregroundStyle(Theme.faint)
                 + Text("\(count) tr\(count == 1 ? "y" : "ies")")
-                    .font(Typography.caption.mono().font(scale: fontScale))
                     .foregroundStyle(review.isRetried ? Theme.retried : Theme.faint)
         }
         return line
@@ -267,7 +266,6 @@ struct WordReviewBlock: View {
 
     private func line(try index: Int, heard: String, landed: Bool) -> some View {
         (Text("try \(index + 1) ")
-            .font(Typography.micro.mono().font(scale: fontScale))
             .foregroundStyle(Theme.faint)
             + inlineSymbol(
                 landed ? "checkmark" : "xmark",
