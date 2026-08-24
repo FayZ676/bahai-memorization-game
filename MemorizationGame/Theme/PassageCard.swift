@@ -33,6 +33,7 @@ struct PassageCard<Accessory: View>: View {
 
                     if let detail {
                         Text(detail)
+                            .appFont(Typography.footnote.mono())
                             .fixedSize()
                     }
                 }
