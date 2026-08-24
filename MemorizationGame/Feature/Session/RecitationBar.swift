@@ -87,7 +87,7 @@ struct RecitationBar: View {
                 }
                 onHideWords(hideCount)
             }
-            .onLongPressGesture(minimumDuration: 0.32) {
+            .onLongPressGesture(minimumDuration: 0.18) {
                 Feedback.hide()
                 hint.dismiss()
                 showingCounts = true
