@@ -20,37 +20,37 @@ enum ReleaseNotes {
     static let all: [ReleaseNote] = [
         ReleaseNote(
             version: "1.8",
-            headline: "New letters, and one clear way to hide a word.",
+            headline: "A new look, and a faster way to hide words.",
             highlights: [
                 ReleaseHighlight(
                     symbol: "textformat",
-                    title: "A new look",
-                    text: "The prayers are drawn in a new letter shape, and the lines sit closer together, so you can see more of a prayer at once."
+                    title: "New text",
+                    text: "Prayers use a new font, and the lines sit closer together. More of the prayer fits on the screen."
                 ),
                 ReleaseHighlight(
                     symbol: "minus",
-                    title: "A line where a word was",
-                    text: "Hide a word and a small line stays in its place. Tap the line to bring the word back, and tap any word to hide it."
+                    title: "A line marks a hidden word",
+                    text: "When you hide a word, a line takes its place. Tap any word to hide it. Tap the line to show the word again."
                 ),
                 ReleaseHighlight(
                     symbol: "eye",
-                    title: "Look at what is hidden",
-                    text: "Tap the eye next to the microphone to see every hidden word. Tap it again, or touch any word, to hide them once more."
+                    title: "See every hidden word",
+                    text: "Tap the eye next to the microphone to show all the hidden words. Tap it again to hide them."
                 ),
                 ReleaseHighlight(
                     symbol: "text.word.spacing",
-                    title: "Let it choose for you",
-                    text: "The button beside the microphone hides a few of the words in front of you. Hold it to set how many go at a time, from two up to ten."
+                    title: "Hide a few words at once",
+                    text: "Tap the new button next to the microphone to hide a few of the words on the screen at random. Hold the button to pick how many: 2, 4, 6, 8, or 10."
                 ),
                 ReleaseHighlight(
                     symbol: "sidebar.squares.leading",
-                    title: "The side bar rests",
-                    text: "The thin bar at the left of a prayer fades away while you read, and comes back as soon as you move the page."
+                    title: "The side bar hides itself",
+                    text: "The thin bar on the left of a prayer fades out while you read, and comes back when you scroll."
                 ),
                 ReleaseHighlight(
                     symbol: "book",
-                    title: "Your prayers in groups",
-                    text: "The prayers you are learning now sit together under their own heading, with the ones you have put away below them."
+                    title: "A sorted library",
+                    text: "The prayers you are memorizing sit at the top of the library. The ones you have archived are below them."
                 )
             ]
         ),

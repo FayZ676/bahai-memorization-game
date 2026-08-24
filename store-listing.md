@@ -47,17 +47,17 @@ QUIET BY DESIGN
 Verses is built around one belief: memorization isn't a test to pass, it's a way of carrying words with you. Hide what you know. Read what you don't. Come back tomorrow.
 
 ## What's New — 1.8 (4000)
-Verses reads in a new typeface. Prayers, headings, and the writings all share it, and the reading page now holds more of the passage at once, at whichever text size you've chosen.
+Verses uses a new font. Prayers, headings, and the writings all share it, and more of a prayer fits on the screen at whichever text size you have chosen.
 
-Hidden words work one way now. A hidden word leaves a line where it was, and tapping any word hides or reveals it straight away. The eye beside the microphone shows everything hidden for as long as you want to look.
+Hiding words works one way now. When you hide a word, a line takes its place. Tap any word to hide it, and tap the line to show the word again. Tap the eye next to the microphone to show every hidden word for as long as you want to look.
 
-You can also let the app choose. The new button beside the microphone hides a few of the words in front of you at random, so you are not deciding which ones to give up. Hold it to set how many go at a time, from two up to ten.
+There is a new button next to the microphone. Tap it to hide a few of the words on the screen at random, so you do not have to choose them yourself. Hold the button to pick how many go at a time: 2, 4, 6, 8, or 10.
 
-The bar down the left edge fades away while you read, and comes back when you move.
+The thin bar on the left of a prayer fades out while you read, and comes back when you scroll.
 
-Your library keeps the prayers you're memorizing under their own heading, with Archived below it.
+The library keeps the prayers you are memorizing at the top, with the archived ones below them.
 
-Small fixes and refinements.
+Small fixes and improvements.
 
 ## What's New — 1.7 (4000)
 Moving through a prayer is now a swipe. Pull up past the end of a section to go on, down past the top to go back. A slim bar down the left edge shows how far you've come, and tapping it jumps you anywhere in the passage.
