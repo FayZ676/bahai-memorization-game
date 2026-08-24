@@ -12,6 +12,7 @@ struct SessionView: View {
     @State private var showingMicDenied = false
     @State private var scrubbing = false
     @State private var rail = RailVisibility()
+    @State private var showingHideCounts = false
     @State private var barBounds: CGRect = .zero
     @State private var highlights = RecitationHighlights()
     @State private var painting = WordPainting()
@@ -62,6 +63,13 @@ struct SessionView: View {
                                     .transition(.move(edge: .leading).combined(with: .opacity))
                             }
                         }
+                        .overlay {
+                            if showingHideCounts {
+                                Color.clear
+                                    .contentShape(Rectangle())
+                                    .onTapGesture { showingHideCounts = false }
+                            }
+                        }
                         .overlay(alignment: .bottom) {
                             RecitationBar(
                                 voice: voice,
@@ -79,6 +87,7 @@ struct SessionView: View {
                                     get: { vm.randomHideCount },
                                     set: { vm.randomHideCount = $0 }
                                 ),
+                                showingCounts: $showingHideCounts,
                                 hint: hint
                             )
                         }

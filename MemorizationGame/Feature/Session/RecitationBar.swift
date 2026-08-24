@@ -10,11 +10,11 @@ struct RecitationBar: View {
     let onPeek: () -> Void
     let onHideWords: (Int) -> Void
     @Binding var hideCount: Int
+    @Binding var showingCounts: Bool
     let hint: SessionHint
 
     @State private var hintHeight: CGFloat = 0
     @State private var standingMessage = ""
-    @State private var showingCounts = false
     @State private var countsHeight: CGFloat = 0
 
     private static let settle = Animation.easeInOut(duration: 0.22)
@@ -38,6 +38,7 @@ struct RecitationBar: View {
                 .opacity(showingCounts ? 1 : 0)
                 .scaleEffect(showingCounts ? 1 : 0.8, anchor: .bottom)
                 .allowsHitTesting(showingCounts)
+                .animation(Self.countsReveal, value: showingCounts)
         }
         .overlay(alignment: .top) {
             HintBubble(text: standingMessage)
@@ -89,7 +90,7 @@ struct RecitationBar: View {
             .onLongPressGesture(minimumDuration: 0.32) {
                 Feedback.hide()
                 hint.dismiss()
-                withAnimation(Self.countsReveal) { showingCounts = true }
+                showingCounts = true
             }
     }
 
@@ -117,8 +118,7 @@ struct RecitationBar: View {
     }
 
     private func closeCounts() {
-        guard showingCounts else { return }
-        withAnimation(Self.countsReveal) { showingCounts = false }
+        showingCounts = false
     }
 
     private func sideButton(
