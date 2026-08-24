@@ -14,16 +14,30 @@ struct RecitationBar: View {
 
     @State private var hintHeight: CGFloat = 0
     @State private var standingMessage = ""
+    @State private var showingCounts = false
+    @State private var countsHeight: CGFloat = 0
 
     private static let settle = Animation.easeInOut(duration: 0.22)
     private static let halo: CGFloat = 10
     private static let hideCounts = [2, 4, 6, 8, 10]
+    private static let sideDiameter: CGFloat = 54
+    private static let countDiameter: CGFloat = 44
+    private static let countsReveal = Animation.snappy(duration: 0.26, extraBounce: 0.1)
 
     var body: some View {
         HStack(alignment: .bottom, spacing: -Self.halo) {
             hideButton
             micButton
             peekButton
+        }
+        .overlay(alignment: .topLeading) {
+            countOptions
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { countsHeight = $0 }
+                .frame(width: Self.sideDiameter + 2 * Self.halo)
+                .offset(y: -countsHeight)
+                .opacity(showingCounts ? 1 : 0)
+                .scaleEffect(showingCounts ? 1 : 0.8, anchor: .bottom)
+                .allowsHitTesting(showingCounts)
         }
         .overlay(alignment: .top) {
             HintBubble(text: standingMessage)
@@ -56,31 +70,55 @@ struct RecitationBar: View {
             on: isConcealing,
             dimmed: peekDisabled,
             action: {
+                closeCounts()
                 peekDisabled ? hint.show("Nothing to peek. Try hiding a word first.") : onPeek()
             }
         )
     }
 
     private var hideButton: some View {
-        Menu {
-            ForEach(Self.hideCounts, id: \.self) { count in
-                Button(action: Feedback.tapping { hideCount = count }) {
-                    if count == hideCount {
-                        Label("\(count) words", systemImage: "checkmark")
-                    } else {
-                        Text("\(count) words")
-                    }
+        sideFace(symbol: "text.word.spacing", on: showingCounts, dimmed: !canHideWords)
+            .onTapGesture {
+                Feedback.tap()
+                guard !showingCounts else { return closeCounts() }
+                guard canHideWords else {
+                    return hint.show("Every word is already hidden.")
                 }
+                onHideWords(hideCount)
             }
-        } label: {
-            sideFace(symbol: "text.word.spacing", on: false, dimmed: !canHideWords)
-        } primaryAction: {
-            Feedback.tap()
-            guard canHideWords else {
-                return hint.show("Every word is already hidden.")
+            .onLongPressGesture(minimumDuration: 0.32) {
+                Feedback.hide()
+                hint.dismiss()
+                withAnimation(Self.countsReveal) { showingCounts = true }
             }
-            onHideWords(hideCount)
+    }
+
+    private var countOptions: some View {
+        VStack(spacing: Spacing.xxs) {
+            ForEach(Self.hideCounts.reversed(), id: \.self) { count in
+                Button {
+                    hideCount = count
+                    closeCounts()
+                } label: {
+                    Text("\(count)")
+                        .appFont(Typography.button)
+                        .foregroundStyle(count == hideCount ? Theme.accent : Theme.navIcon)
+                        .frame(width: Self.countDiameter, height: Self.countDiameter)
+                        .background(count == hideCount ? Theme.accent.opacity(0.18) : .clear, in: Circle())
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.haptic)
+            }
         }
+        .padding(Spacing.xxs)
+        .background(Theme.surface, in: Capsule())
+        .overlay(Capsule().stroke(Theme.hairline, lineWidth: 1))
+        .shadow(color: .black.opacity(0.09), radius: 12, y: 4)
+    }
+
+    private func closeCounts() {
+        guard showingCounts else { return }
+        withAnimation(Self.countsReveal) { showingCounts = false }
     }
 
     private func sideButton(
@@ -121,6 +159,7 @@ struct RecitationBar: View {
 
     private var micButton: some View {
         Button {
+            closeCounts()
             switch voice.state {
             case .listening: voice.stop()
             case .micDenied: micDeniedAlert = true
