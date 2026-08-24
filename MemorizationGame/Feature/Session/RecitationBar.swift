@@ -64,7 +64,7 @@ struct RecitationBar: View {
     private var hideButton: some View {
         Menu {
             ForEach(Self.hideCounts, id: \.self) { count in
-                Button(action: Feedback.tapping { hide(count) }) {
+                Button(action: Feedback.tapping { hideCount = count }) {
                     if count == hideCount {
                         Label("\(count) words", systemImage: "checkmark")
                     } else {
@@ -76,16 +76,11 @@ struct RecitationBar: View {
             sideFace(symbol: "text.word.spacing", on: false, dimmed: !canHideWords)
         } primaryAction: {
             Feedback.tap()
-            hide(hideCount)
+            guard canHideWords else {
+                return hint.show("Every word is already hidden.")
+            }
+            onHideWords(hideCount)
         }
-    }
-
-    private func hide(_ count: Int) {
-        hideCount = count
-        guard canHideWords else {
-            return hint.show("Every word is already hidden.")
-        }
-        onHideWords(count)
     }
 
     private func sideButton(
