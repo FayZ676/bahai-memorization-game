@@ -234,8 +234,8 @@ final class AppStore {
     }
 
     @discardableResult
-    func hideRandomWords(_ card: Reviewable, count: Int) -> Set<Int> {
-        let candidates = Set(card.words.indices).subtracting(card.hiddenWords)
+    func hideRandomWords(_ card: Reviewable, count: Int, among visible: Set<Int>) -> Set<Int> {
+        let candidates = visible.intersection(card.words.indices).subtracting(card.hiddenWords)
         guard !candidates.isEmpty else { return [] }
         let chosen = Set(candidates.shuffled().prefix(count))
         mutate(card) { $0.hiddenWords.formUnion(chosen) }

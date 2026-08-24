@@ -36,6 +36,7 @@ struct SessionView: View {
     private let store: AppStore
 
     private static let followInsets = (top: CGFloat(56), bottom: CGFloat(120))
+    private static let visibleInsets = (top: CGFloat(4), bottom: CGFloat(100))
     private static let followAnchor = UnitPoint(x: 0, y: 0.34)
     private static let followSettleDelays: [Duration] = [.milliseconds(140), .milliseconds(450)]
     private static let sectionSlide = Animation.smooth(duration: 0.62, extraBounce: 0)
@@ -80,7 +81,9 @@ struct SessionView: View {
                                 onStart: startRecitation,
                                 onPeek: { vm.toggleConcealment() },
                                 onHideWords: { count in
-                                    vm.hideRandomWords(count)
+                                    guard vm.hideRandomWords(count, among: visibleWordIndices) else {
+                                        return hint.show("Every word in view is already hidden.")
+                                    }
                                     rail.stir()
                                 },
                                 hideCount: Binding(
@@ -462,6 +465,16 @@ struct SessionView: View {
                 departing = nil
             }
         }
+    }
+
+    private var visibleWordIndices: Set<Int> {
+        guard readingViewport != .zero, let card = vm.current else { return [] }
+        let ceiling = readingViewport.minY + Self.visibleInsets.top
+        let floor = readingViewport.maxY - Self.visibleInsets.bottom
+        return Set(card.words.indices.filter { idx in
+            guard let frame = wordFrames.frame(at: idx) else { return false }
+            return frame.minY >= ceiling && frame.maxY <= floor
+        })
     }
 
     private func follow(_ index: Int?, force: Bool = false) {

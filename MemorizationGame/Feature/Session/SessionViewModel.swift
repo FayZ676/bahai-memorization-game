@@ -143,15 +143,17 @@ final class SessionViewModel {
         set { store.settings.randomHideCount = newValue }
     }
 
-    func hideRandomWords(_ count: Int) {
-        guard let card = current else { return }
-        let hidden = store.hideRandomWords(card, count: count)
-        guard !hidden.isEmpty else { return }
+    @discardableResult
+    func hideRandomWords(_ count: Int, among visible: Set<Int>) -> Bool {
+        guard let card = current else { return false }
+        let hidden = store.hideRandomWords(card, count: count, among: visible)
+        guard !hidden.isEmpty else { return false }
         ripple(hidden)
         cascade {
             withAnimation(.easeInOut(duration: 0.32)) { concealing = true }
         }
         focus(on: card.id)
+        return true
     }
 
     private func cascade(_ mutate: () -> Void) {
