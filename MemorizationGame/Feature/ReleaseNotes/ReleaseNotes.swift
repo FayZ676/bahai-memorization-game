@@ -38,6 +38,11 @@ enum ReleaseNotes {
                     text: "Tap the eye next to the microphone to see every hidden word. Tap it again, or touch any word, to hide them once more."
                 ),
                 ReleaseHighlight(
+                    symbol: "text.word.spacing",
+                    title: "Let it choose for you",
+                    text: "The button beside the microphone hides a few of the words in front of you. Hold it to set how many go at a time, from two up to ten."
+                ),
+                ReleaseHighlight(
                     symbol: "sidebar.squares.leading",
                     title: "The side bar rests",
                     text: "The thin bar at the left of a prayer fades away while you read, and comes back as soon as you move the page."

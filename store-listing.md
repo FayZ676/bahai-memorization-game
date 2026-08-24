@@ -51,6 +51,8 @@ Verses reads in a new typeface. Prayers, headings, and the writings all share it
 
 Hidden words work one way now. A hidden word leaves a line where it was, and tapping any word hides or reveals it straight away. The eye beside the microphone shows everything hidden for as long as you want to look.
 
+You can also let the app choose. The new button beside the microphone hides a few of the words in front of you at random, so you are not deciding which ones to give up. Hold it to set how many go at a time, from two up to ten.
+
 The bar down the left edge fades away while you read, and comes back when you move.
 
 Your library keeps the prayers you're memorizing under their own heading, with Archived below it.

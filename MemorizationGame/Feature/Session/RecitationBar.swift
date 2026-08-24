@@ -92,6 +92,11 @@ struct RecitationBar: View {
                 hint.dismiss()
                 showingCounts = true
             }
+            .accessibilityElement()
+            .accessibilityLabel("Hide words")
+            .accessibilityValue("\(hideCount) at a time")
+            .accessibilityHint("Double tap to hide \(hideCount) words in view. Touch and hold to choose how many.")
+            .accessibilityAddTraits(.isButton)
     }
 
     private var countOptions: some View {
