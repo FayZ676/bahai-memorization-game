@@ -189,14 +189,14 @@ struct AttemptRow: View {
 
     private var header: Text {
         var line = Text(timestamp)
-            .font(Typography.micro.mono().font(scale: fontScale))
+            .font(Typography.micro.font(scale: fontScale))
             .foregroundStyle(Theme.faint)
             + Text(" · \(attempt.passageTitle)").foregroundStyle(Theme.faint)
         for (filter, count) in tallies {
             line = line
                 + Text(" · ").foregroundStyle(Theme.faint)
                 + Text("\(count) ")
-                    .font(Typography.micro.mono().font(scale: fontScale))
+                    .font(Typography.micro.font(scale: fontScale))
                     .foregroundStyle(filter.tint)
                 + filter.symbol(alongside: Typography.micro, scale: fontScale)
         }

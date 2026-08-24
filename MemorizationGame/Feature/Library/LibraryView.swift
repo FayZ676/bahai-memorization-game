@@ -223,7 +223,7 @@ struct LibraryView: View {
                 .foregroundStyle(Theme.faint)
 
                 Text("\(count)")
-                    .appFont(Typography.footnote.mono())
+                    .appFont(Typography.footnote)
                     .foregroundStyle(Theme.faint)
 
                 Spacer()

@@ -153,11 +153,11 @@ private struct AchievementRing: View {
                 .foregroundStyle(Theme.gold)
         } else if let progress {
             Text(ProgressBar.percentLabel(progress))
-                .appFont(Typography.label.mono())
+                .appFont(Typography.label)
                 .foregroundStyle(Theme.accent)
         } else {
             Text("—")
-                .appFont(Typography.label.mono())
+                .appFont(Typography.label)
                 .foregroundStyle(Theme.accent)
         }
     }
