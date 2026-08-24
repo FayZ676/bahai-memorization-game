@@ -23,7 +23,7 @@ struct LibraryTally: View {
 
     private func label(_ text: String) -> some View {
         Text(text)
-            .appFont(Typography.footnote.mono())
+            .appFont(Typography.footnote)
             .tracking(0.5)
             .foregroundStyle(Theme.faint)
     }

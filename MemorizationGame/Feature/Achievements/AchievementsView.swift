@@ -39,7 +39,7 @@ struct AchievementsView: View {
                 .appFont(Typography.tally)
                 .foregroundStyle(Theme.muted)
             Text("of \(AchievementCatalog.all.count) Earned")
-                .appFont(Typography.footnote.mono())
+                .appFont(Typography.footnote)
                 .tracking(0.5)
                 .foregroundStyle(Theme.faint)
         }
@@ -103,7 +103,7 @@ private struct AchievementRow: View {
 
                 if required > 1 && !earned {
                     Text("\(matched) of \(required)")
-                        .appFont(Typography.micro.mono())
+                        .appFont(Typography.micro)
                         .foregroundStyle(matched > 0 ? Theme.gold : Theme.faint)
                 }
             }
