@@ -60,17 +60,26 @@ struct WordView: View {
         }
     }
 
+    private static let lineTaper = LinearGradient(
+        stops: [
+            .init(color: .black.opacity(0.5), location: 0),
+            .init(color: .black, location: 0.14),
+            .init(color: .black, location: 0.86),
+            .init(color: .black.opacity(0.5), location: 1)
+        ],
+        startPoint: .leading,
+        endPoint: .trailing
+    )
+
     private var reciteLine: some View {
-        RoundedRectangle(cornerRadius: Radius.line, style: .continuous)
-            .fill(lineColor)
-            .frame(height: 2)
-            .offset(y: 3)
+        HairlineDivider(color: lineColor)
+            .mask(Self.lineTaper)
     }
 
     private var lineColor: Color {
         if missFlashing || missed { return Theme.warn }
         if recited { return Theme.accent }
-        return Theme.muted
+        return Theme.faint
     }
 
     private var highlight: Color? {

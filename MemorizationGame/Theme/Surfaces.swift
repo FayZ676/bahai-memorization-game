@@ -19,9 +19,11 @@ extension View {
 }
 
 struct HairlineDivider: View {
+    var color: Color = Theme.hairline
+
     var body: some View {
         Rectangle()
-            .fill(Theme.hairline)
+            .fill(color)
             .frame(height: 1)
     }
 }
