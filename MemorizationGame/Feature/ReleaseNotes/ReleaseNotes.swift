@@ -19,6 +19,32 @@ struct ReleaseNote: Identifiable {
 enum ReleaseNotes {
     static let all: [ReleaseNote] = [
         ReleaseNote(
+            version: "1.9",
+            headline: "Reading aloud keeps up with you, and hidden words sit lighter on the page.",
+            highlights: [
+                ReleaseHighlight(
+                    symbol: "mic",
+                    title: "The page follows you",
+                    text: "When you read a prayer out loud, the page moves on its own. The words you are saying stay in the middle of the screen, so you do not have to move the page yourself."
+                ),
+                ReleaseHighlight(
+                    symbol: "waveform",
+                    title: "Say it and see it",
+                    text: "Say a hidden word out loud and the word comes back on the page, so you know you got it right."
+                ),
+                ReleaseHighlight(
+                    symbol: "minus",
+                    title: "A lighter line",
+                    text: "The line that takes the place of a hidden word is thinner now, and it sits right under the word."
+                ),
+                ReleaseHighlight(
+                    symbol: "book",
+                    title: "A clearer walkthrough",
+                    text: "The short tour of the app has arrows at the bottom. Tap them to go back to something you missed, or to move ahead."
+                )
+            ]
+        ),
+        ReleaseNote(
             version: "1.8",
             headline: "A new look, and a faster way to hide words.",
             highlights: [
