@@ -4,44 +4,30 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-iOS SwiftUI app for memorizing Bahá'í prayers/scripture by hiding words. Hiding is manual and permanent until you show a word again — tap words to hide/reveal, paint across them to sweep. No decay, no scoring, no streak-gating; the streak card and achievements are a record, never a gate.
+Verses — an iOS SwiftUI app for memorizing Bahá'í prayers and scripture by hiding words. Hiding is
+manual and permanent until you show a word again — tap words to hide/reveal, paint across them to
+sweep. No decay, no scoring, no streak-gating; the streak card and achievements are a record, never
+a gate. All chunks are freely reachable; a session opens on the furthest chunk that still has hidden
+words.
 
 ## Build
 
-Xcode project `MemorizationGame.xcodeproj`, scheme `MemorizationGame`. Tested live on a physical device, not the simulator.
+Xcode project `MemorizationGame.xcodeproj`, scheme `MemorizationGame`. Tested live on a physical
+device, not the simulator.
+
 `xcodebuild -project MemorizationGame.xcodeproj -scheme MemorizationGame -configuration Debug build`
 
-## Architecture
+## Rules
 
-- `Store/AppStore.swift` — single `@Observable` source of truth (`passages`, `reviewables`), persisted to JSON in documents dir on every mutation. Views call methods on it; never mutate models directly.
-- `Model/Models.swift` — `Passage` and `Reviewable` (a chunk with `expectedText` + `hiddenWords: Set<Int>`). Hand-written `Codable` for backward compat with old snapshots — use `decodeIfPresent` + fallback when adding fields.
-- `Logic/` — pure, view-free rules: `HiddenWordAlignment` (remap hidden indices when a passage is edited), `PracticeLog` (words-per-day + streak), `RecitationMatcher`/`RecitationContext` (speech matching), `StreakReminder`, `Tunables` (`AppSettings`).
-- `Feature/` — one folder per screen (`Library`, `Session`, `Import`, `Settings`, `Achievements`, `Onboarding`, `Contact`).
-- Contact — `Feature/Contact/ContactView.swift` is the one screen behind both "Report Issue" and
-  "Send Feedback"; `ContactPurpose` supplies the title, copy, form kind, and whether the recitation
-  record shows. Both are reachable from Settings and from the session options menu. `RecitationMatcher`
-  records every burnt word (expected word, what was heard in its place, both phonetic keys, and
-  how it ended) *and* every failed try — an utterance spoken while a word was owed that did not
-  credit it — so a word said repeatedly but never registered still shows up. The log keeps
-  trouble only: a word matched first time is never written down, and the try that finally lands
-  is kept only for a word that had already failed. The history filters on misses, skipped, and
-  retries — a miss was voiced and refused, a skip was never voiced at all, so those two are
-  disjoint.
-  `Store/RecitationLog.swift` persists the last few attempts per chunk to `recitation-log.json`.
-  That record lives on its own screen — `Feature/SpeechHistory/SpeechHistoryView.swift`, reachable
-  from Settings and from the session options menu — and the report purpose offers a toggle for
-  sending it along with the note.
-- `Theme/` — all colors/type/spacing as design tokens (`Theme.swift`, `Typography.swift`, etc.); never hardcode values in views. `design-theme.html` at repo root is the canonical visual reference.
-- `Design/` — generators for art that ships as an asset, one folder per thing, each with a README that is the source of truth for it: `AppIcon/` (the nine-pointed star, rasterised into `Assets.xcassets`) and `StoreFrames/` (App Store screenshots). The asset is the artefact — edit the generator, never the output. Read the folder's README before changing anything there.
+Conventions live in `.claude/rules/`, most of them scoped by path so they load only when you touch
+the code they govern.
 
-## Releasing
-
-`/release` is the single door for shipping — it drives the helpers in `scripts/`
-(`release-diff.sh`, `check-listing.py`, `project_version.py`, `push-build.sh`).
-See `scripts/README.md` for the one-time App Store Connect API key setup.
-
-## Conventions
-
-- No code comments. Naming and structure carry the explanation.
-- Every button press fires haptic feedback via centralized button styles/`Support/Feedback.swift`.
-- NEVER push to `origin` (or any other remote) unless the user explicitly asks for that push. Commit locally on `main` and stop there.
+| Rule | Loads when |
+| --- | --- |
+| `git.md` — never commit, never push | always |
+| `swift-style.md` — no comments, theme tokens, haptics | any app `.swift` |
+| `architecture.md` — store, model, logic, feature layering | any app `.swift` |
+| `persistence.md` — hand-written `Codable`, back-compat | `Model/`, `Store/` |
+| `recitation.md` — forced alignment, the trouble log, Contact | recitation and its screens |
+| `design-assets.md` — the generator is the source | `Design/`, `Assets.xcassets` |
+| `releasing.md` — `/release` is the single door | `scripts/`, store listing |
