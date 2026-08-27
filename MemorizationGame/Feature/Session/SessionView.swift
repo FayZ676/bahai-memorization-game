@@ -251,6 +251,10 @@ struct SessionView: View {
         tour?.complete(.recite)
     }
 
+    private func revealedByRecitation(_ index: Int, live: Bool) -> Bool {
+        live && voice.isListening && highlights.recited.contains(index)
+    }
+
     private var cursorTarget: CGRect? {
         guard voice.isListening,
               let index = voice.cursorIndex,
@@ -511,7 +515,7 @@ struct SessionView: View {
                     ForEach(range, id: \.self) { idx in
                         WordView(
                             token: String(words[idx]),
-                            concealed: vm.concealing && card.hiddenWords.contains(idx),
+                            concealed: vm.concealing && card.hiddenWords.contains(idx) && !revealedByRecitation(idx, live: live),
                             recited: live && highlights.recited.contains(idx),
                             missed: live && highlights.missed.contains(idx),
                             missFlashing: live && highlights.isFlashing(idx),
