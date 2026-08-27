@@ -44,3 +44,4 @@ See `scripts/README.md` for the one-time App Store Connect API key setup.
 
 - No code comments. Naming and structure carry the explanation.
 - Every button press fires haptic feedback via centralized button styles/`Support/Feedback.swift`.
+- NEVER push to `origin` (or any other remote) unless the user explicitly asks for that push. Commit locally on `main` and stop there.
