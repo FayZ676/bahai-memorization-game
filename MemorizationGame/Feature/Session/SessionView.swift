@@ -35,9 +35,8 @@ struct SessionView: View {
     let passage: Passage
     private let store: AppStore
 
-    private static let followInsets = (top: CGFloat(56), bottom: CGFloat(120))
     private static let visibleInsets = (top: CGFloat(4), bottom: CGFloat(100))
-    private static let followAnchor = UnitPoint(x: 0, y: 0.34)
+    private static let followAnchor = UnitPoint(x: 0, y: 0.5)
     private static let followSettleDelays: [Duration] = [.milliseconds(140), .milliseconds(450)]
     private static let sectionSlide = Animation.smooth(duration: 0.62, extraBounce: 0)
 
@@ -488,11 +487,9 @@ struct SessionView: View {
         guard let index,
               let frame = wordFrames.frame(at: index),
               readingViewport != .zero else { return }
-        let ceiling = readingViewport.minY + Self.followInsets.top
-        let floor = readingViewport.maxY - Self.followInsets.bottom
-        guard force || frame.minY < ceiling || frame.maxY > floor else { return }
-        let anchorY = readingViewport.minY + readingViewport.height * Self.followAnchor.y
+        let anchorY = readingViewport.minY + readingViewport.height * Self.followAnchor.y - frame.height / 2
         let target = max(scrollOffset.y + frame.minY - anchorY, 0)
+        guard force || abs(target - scrollOffset.y) > 0.5 else { return }
         withAnimation(.easeInOut(duration: 0.35)) {
             readingPosition.scrollTo(y: target)
         }
