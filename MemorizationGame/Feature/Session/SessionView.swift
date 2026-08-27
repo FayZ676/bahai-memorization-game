@@ -79,12 +79,15 @@ struct SessionView: View {
                                 isConcealing: vm.concealing,
                                 micDeniedAlert: $showingMicDenied,
                                 onStart: startRecitation,
-                                onPeek: { vm.toggleConcealment() },
+                                onPeek: {
+                                    vm.toggleConcealment()
+                                    tour?.complete(.peek, onlyIfCurrent: true)
+                                },
                                 onHideWords: { count in
                                     guard vm.hideRandomWords(count, among: visibleWordIndices) else {
                                         return hint.show("Every word in view is already hidden.")
                                     }
-                                    rail.stir()
+                                    tour?.complete(.hideMany, onlyIfCurrent: true)
                                 },
                                 hideCount: Binding(
                                     get: { vm.randomHideCount },
@@ -543,7 +546,7 @@ struct SessionView: View {
             SpatialTapGesture(coordinateSpace: .global)
                 .onEnded { value in
                     guard !painting.isActive, let idx = wordIndex(at: value.location) else { return }
-                    withAnimation(Motion.toggle) { vm.toggleWord(idx) }
+                    toggleWord(idx)
                 }
         )
         .gesture(PaintRecognizer(
@@ -569,7 +572,12 @@ struct SessionView: View {
     private func paint(at location: CGPoint) {
         guard let idx = wordIndex(at: location) else { return }
         guard painting.shouldToggle(vm.isMarked(idx)) else { return }
+        toggleWord(idx)
+    }
+
+    private func toggleWord(_ idx: Int) {
         withAnimation(Motion.toggle) { vm.toggleWord(idx) }
+        tour?.complete(.hideWord, onlyIfCurrent: true)
     }
 
     private func wordIndex(at location: CGPoint) -> Int? {

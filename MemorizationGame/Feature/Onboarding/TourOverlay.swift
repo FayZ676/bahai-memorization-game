@@ -4,6 +4,10 @@ struct TourOverlay: View {
     @Environment(\.fontScale) private var fontScale
     let step: TourStep
     let isPromptVisible: Bool
+    let canGoBack: Bool
+    let canGoForward: Bool
+    let onBack: () -> Void
+    let onForward: () -> Void
     let onSkip: () -> Void
     let onDismissPrompt: () -> Void
     let onShowPrompt: () -> Void
@@ -28,13 +32,13 @@ struct TourOverlay: View {
         Rectangle()
             .fill(Theme.bg.opacity(0.88))
             .ignoresSafeArea()
+            .contentShape(Rectangle())
+            .onTapGesture(perform: Feedback.tapping(onDismissPrompt))
     }
 
     private var card: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            Text(step.title)
-                .appFont(Typography.passageTitle)
-                .foregroundStyle(Theme.inkBright)
+            titleRow
 
             step.body(scale: fontScale)
                 .appFont(Typography.callout)
@@ -66,15 +70,35 @@ struct TourOverlay: View {
         .shadow(color: .black.opacity(0.16), radius: 18, y: 6)
     }
 
-    @ViewBuilder
+    private var titleRow: some View {
+        HStack(alignment: .firstTextBaseline, spacing: Spacing.sm) {
+            Text(step.title)
+                .appFont(Typography.passageTitle)
+                .foregroundStyle(Theme.inkBright)
+
+            Spacer(minLength: Spacing.sm)
+
+            Text(stepCounter)
+                .appFont(Typography.label)
+                .tracking(0.5)
+                .foregroundStyle(Theme.faint)
+                .fixedSize()
+        }
+    }
+
+    private var stepCounter: String {
+        let index = TourStep.allCases.firstIndex(of: step) ?? 0
+        return "\(index + 1)/\(TourStep.allCases.count)"
+    }
+
     private var footer: some View {
-        if step == .finished {
-            primaryButton("Start for real", action: onFinish)
-        } else {
-            VStack(spacing: Spacing.md) {
+        VStack(spacing: Spacing.md) {
+            if step == .finished {
+                primaryButton("Start for real", action: onFinish)
+            } else {
                 primaryButton("Try it", action: onDismissPrompt)
-                progressRow
             }
+            progressRow
         }
     }
 
@@ -92,30 +116,39 @@ struct TourOverlay: View {
     }
 
     private var progressRow: some View {
-        HStack(spacing: Spacing.md) {
-            dots
-            Spacer(minLength: Spacing.md)
-            Button(action: onSkip) {
-                Text("Skip Walkthrough")
-                    .appFont(Typography.label)
-                    .tracking(0.5)
-                    .foregroundStyle(Theme.muted)
-                    .padding(.vertical, Spacing.xs)
-                    .padding(.leading, Spacing.md)
-                    .contentShape(Rectangle())
+        HStack(spacing: Spacing.xs) {
+            if step != .finished {
+                skipButton
             }
-            .buttonStyle(.haptic)
+            Spacer(minLength: Spacing.sm)
+            arrow("chevron.left", enabled: canGoBack, action: onBack)
+            arrow("chevron.right", enabled: canGoForward, action: onForward)
         }
     }
 
-    private var dots: some View {
-        HStack(spacing: Spacing.xs) {
-            ForEach(TourStep.allCases.dropLast(), id: \.rawValue) { entry in
-                Circle()
-                    .fill(entry == step ? Theme.accent : Theme.accentMuted)
-                    .frame(width: 6, height: 6)
-            }
+    private func arrow(_ symbol: String, enabled: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(enabled ? Theme.muted : Theme.faint)
+                .frame(width: 34, height: 48)
+                .contentShape(Rectangle())
         }
+        .buttonStyle(.haptic)
+        .disabled(!enabled)
+    }
+
+    private var skipButton: some View {
+        Button(action: onSkip) {
+            Text("Skip Walkthrough")
+                .appFont(Typography.label)
+                .tracking(0.5)
+                .foregroundStyle(Theme.muted)
+                .padding(.vertical, Spacing.xs)
+                .padding(.trailing, Spacing.md)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.haptic)
     }
 
     private var helpButton: some View {

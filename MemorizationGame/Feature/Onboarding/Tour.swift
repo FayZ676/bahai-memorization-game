@@ -7,7 +7,9 @@ enum TourStep: Int, CaseIterable {
     case addPrayer
     case importPrayer
     case openPassage
+    case hideMany
     case hideWord
+    case peek
     case recite
     case nextSection
     case achievements
@@ -20,7 +22,9 @@ enum TourStep: Int, CaseIterable {
         case .addPrayer: "Memorizing a Prayer"
         case .importPrayer: "Importing Prayers"
         case .openPassage: "Open a Memorization"
-        case .hideWord: "Hiding Words"
+        case .hideMany: "Hiding Words (Option 1)"
+        case .hideWord: "Hiding Words (Option 2)"
+        case .peek: "Peeking"
         case .recite: "Reciting Words"
         case .nextSection: "Moving Between Sections"
         case .achievements: "Earning Achievements"
@@ -43,10 +47,14 @@ enum TourStep: Int, CaseIterable {
             Text("Tap the \(symbol("text.word.spacing")) button to memorize the prayer.")
         case .importPrayer: Text("Tap the \(symbol("plus")) button to add the prayer to your Memorization Library.")
         case .openPassage: Text("Tap the prayer to start memorizing it.")
-        case .hideWord: Text("Tap a word to hide it. Tap it again to bring it back. Press and glide over words to hide or reveal multiple words at once.")
+        case .hideMany:
+            Text("Tap the \(symbol("text.word.spacing")) button to hide a handful of words in view at once. Press and hold the button to choose how many words it should hide.")
+        case .hideWord: Text("You can also tap a word directly to hide it. Tap it again to bring it back. Press, hold, and glide over multiple words to hide or reveal them at once.")
+        case .peek:
+            Text("Tap the \(symbol("eye")) button to bring every hidden word back into view. Tap it again to hide them once more.")
         case .recite: Text("Tap the \(symbol("mic")) button to practice saying the words aloud.")
         case .nextSection:
-            Text("Paragraphs get split into sections. Swipe up the screen to move to the next section, down to go back. Or tap the progress bar on the left.")
+            Text("Paragraphs get split into sections. Swipe up or down to move between sections. You can also tap the progress bar on the left rail.")
         case .achievements:
             Text("Certain prayers earn an achievement once every word is hidden. Tap the \(symbol("chevron.left")) button to return to your Library, then tap the \(symbol("trophy")) button to see them all.")
         case .finished: Text("You're ready to start memorizing.")
@@ -101,6 +109,27 @@ final class Tour {
             try? await Task.sleep(for: Self.promptDelay)
             guard !Task.isCancelled else { return }
             showPrompt()
+        }
+    }
+
+    var canGoBack: Bool { step != TourStep.allCases.first }
+
+    var canGoForward: Bool { step != TourStep.allCases.last }
+
+    func goBack() {
+        move(to: step.rawValue - 1)
+    }
+
+    func goForward() {
+        move(to: step.rawValue + 1)
+    }
+
+    private func move(to index: Int) {
+        guard let destination = TourStep(rawValue: index) else { return }
+        pendingPrompt?.cancel()
+        withAnimation(Motion.standard) {
+            step = destination
+            isPromptVisible = true
         }
     }
 
