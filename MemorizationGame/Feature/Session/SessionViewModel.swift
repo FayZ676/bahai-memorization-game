@@ -143,6 +143,11 @@ final class SessionViewModel {
         set { store.settings.randomHideCount = newValue }
     }
 
+    var recitationMode: RecitationMode {
+        get { store.settings.recitationMode }
+        set { store.settings.recitationMode = newValue }
+    }
+
     @discardableResult
     func hideRandomWords(_ count: Int, among visible: Set<Int>) -> Bool {
         guard let card = current else { return false }

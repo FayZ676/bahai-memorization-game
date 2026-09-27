@@ -45,6 +45,18 @@ enum FontSize: String, Codable, CaseIterable {
     }
 }
 
+enum RecitationMode: String, Codable, CaseIterable {
+    case aloud
+    case silent
+
+    var label: String {
+        switch self {
+        case .aloud: "Recite aloud"
+        case .silent: "Tap silently"
+        }
+    }
+}
+
 struct Reminder: Codable, Equatable, Identifiable {
     var id: UUID = UUID()
     var minuteOfDay: Int = 9 * 60
@@ -62,6 +74,7 @@ struct AppSettings: Codable, Equatable {
     var fontSize: FontSize = .medium
     var hasSeenWelcomeTour: Bool = false
     var randomHideCount: Int = 2
+    var recitationMode: RecitationMode = .aloud
     var lastReviewRequestVersion: String?
     var lastSeenReleaseNotesVersion: String?
 
@@ -75,6 +88,7 @@ struct AppSettings: Codable, Equatable {
         case lastReviewRequestVersion
         case lastSeenReleaseNotesVersion
         case randomHideCount
+        case recitationMode
     }
 
     init() {}
@@ -92,6 +106,7 @@ struct AppSettings: Codable, Equatable {
         lastReviewRequestVersion = try container.decodeIfPresent(String.self, forKey: .lastReviewRequestVersion)
         lastSeenReleaseNotesVersion = try container.decodeIfPresent(String.self, forKey: .lastSeenReleaseNotesVersion)
         randomHideCount = try container.decodeIfPresent(Int.self, forKey: .randomHideCount) ?? d.randomHideCount
+        recitationMode = try container.decodeIfPresent(RecitationMode.self, forKey: .recitationMode) ?? d.recitationMode
         if let stored = try container.decodeIfPresent([Reminder].self, forKey: .reminders) {
             reminders = stored
         } else {
@@ -112,5 +127,6 @@ struct AppSettings: Codable, Equatable {
         try container.encodeIfPresent(lastReviewRequestVersion, forKey: .lastReviewRequestVersion)
         try container.encodeIfPresent(lastSeenReleaseNotesVersion, forKey: .lastSeenReleaseNotesVersion)
         try container.encode(randomHideCount, forKey: .randomHideCount)
+        try container.encode(recitationMode, forKey: .recitationMode)
     }
 }

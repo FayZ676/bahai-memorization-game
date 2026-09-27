@@ -12,9 +12,10 @@ struct SessionView: View {
     @State private var showingMicDenied = false
     @State private var scrubbing = false
     @State private var rail = RailVisibility()
-    @State private var showingHideCounts = false
+    @State private var openBarMenu: RecitationBarMenu?
     @State private var barBounds: CGRect = .zero
     @State private var highlights = RecitationHighlights()
+    @State private var silent = SilentRecitation()
     @State private var painting = WordPainting()
     @State private var hint = SessionHint()
     @State private var scriptureFrame: CGRect = .zero
@@ -64,10 +65,10 @@ struct SessionView: View {
                             }
                         }
                         .overlay {
-                            if showingHideCounts {
+                            if openBarMenu != nil {
                                 Color.clear
                                     .contentShape(Rectangle())
-                                    .onTapGesture { showingHideCounts = false }
+                                    .onTapGesture { openBarMenu = nil }
                             }
                         }
                         .overlay(alignment: .bottom) {
@@ -76,8 +77,14 @@ struct SessionView: View {
                                 hasHiddenWords: !(vm.current?.hiddenWords.isEmpty ?? true),
                                 canHideWords: !vm.everyWordHidden,
                                 isConcealing: vm.concealing,
+                                isTappingSilently: silent.isActive,
                                 micDeniedAlert: $showingMicDenied,
+                                mode: Binding(
+                                    get: { vm.recitationMode },
+                                    set: { vm.recitationMode = $0 }
+                                ),
                                 onStart: startRecitation,
+                                onRevealNext: revealNextSilently,
                                 onPeek: {
                                     vm.toggleConcealment()
                                     tour?.complete(.peek, onlyIfCurrent: true)
@@ -92,7 +99,7 @@ struct SessionView: View {
                                     get: { vm.randomHideCount },
                                     set: { vm.randomHideCount = $0 }
                                 ),
-                                showingCounts: $showingHideCounts,
+                                openMenu: $openBarMenu,
                                 hint: hint
                             )
                         }
@@ -152,12 +159,18 @@ struct SessionView: View {
         }
         .onChange(of: vm.presentationEpoch) {
             voice.stop()
+            silent.stop()
             highlights.clear()
             voice.prepare(for: vm.passageText)
         }
         .onChange(of: vm.current?.hiddenWords) {
             guard let card = vm.current else { return }
             voice.updateHiddenIndices(highlights.unattempted(in: card))
+            silent.updateOwed(highlights.unattempted(in: card))
+        }
+        .onChange(of: vm.recitationMode) {
+            if voice.isListening { voice.stop() }
+            silent.stop()
         }
         .onDisappear { voice.release() }
         .alert("Microphone Access Needed", isPresented: $showingMicDenied) {
@@ -250,13 +263,21 @@ struct SessionView: View {
         tour?.complete(.recite)
     }
 
+    private var isReciting: Bool {
+        voice.isListening || silent.isActive
+    }
+
+    private var recitationCursor: Int? {
+        voice.isListening ? voice.cursorIndex : silent.cursorIndex
+    }
+
     private func revealedByRecitation(_ index: Int, live: Bool) -> Bool {
-        live && voice.isListening && highlights.recited.contains(index)
+        live && isReciting && highlights.recited.contains(index)
     }
 
     private var cursorTarget: CGRect? {
-        guard voice.isListening,
-              let index = voice.cursorIndex,
+        guard isReciting,
+              let index = recitationCursor,
               let frame = wordFrames.frame(at: index),
               scriptureFrame != .zero else { return nil }
         return frame.offsetBy(dx: -scriptureFrame.minX, dy: -scriptureFrame.minY)
@@ -300,11 +321,15 @@ struct SessionView: View {
             highlights.clear()
             remaining = card.recitableIndices
         }
-        Feedback.prepareRecitation()
-        recitingChunkID = card.id
         if let first = remaining.first {
             scrollRequest = ScrollRequest(index: first)
         }
+        guard vm.recitationMode == .aloud else {
+            silent.start(owing: remaining)
+            return revealNextSilently()
+        }
+        Feedback.prepareRecitation()
+        recitingChunkID = card.id
         Task {
             await voice.start(
                 words: card.words.map(String.init),
@@ -313,6 +338,14 @@ struct SessionView: View {
                 hiddenIndices: remaining
             )
         }
+    }
+
+    private func revealNextSilently() {
+        guard let index = silent.reveal() else { return }
+        withAnimation(Motion.toggle) { registerRecited([index]) }
+        guard silent.isFinished else { return }
+        silent.stop()
+        completeChunk()
     }
 
     private func progressRail(_ metrics: ReadingMetrics) -> some View {
@@ -384,16 +417,16 @@ struct SessionView: View {
             } action: { frame in
                 readingViewport = frame
             }
-            .onChange(of: voice.cursorIndex) { _, index in
-                guard voice.isListening else { return }
+            .onChange(of: recitationCursor) { _, index in
+                guard isReciting else { return }
                 follow(index)
             }
             .onChange(of: scrollRequest) { _, request in
                 guard let request else { return }
                 Task { await settleCursorInView(from: request.index) }
             }
-            .onChange(of: voice.isListening) { _, listening in
-                guard listening, let index = voice.cursorIndex else { return }
+            .onChange(of: isReciting) { _, reciting in
+                guard reciting, let index = recitationCursor else { return }
                 follow(index, force: true)
             }
         }
@@ -500,7 +533,7 @@ struct SessionView: View {
         for delay in Self.followSettleDelays {
             try? await Task.sleep(for: delay)
             guard scrollRequest?.index == index else { return }
-            follow(voice.isListening ? (voice.cursorIndex ?? index) : index, force: true)
+            follow(isReciting ? (recitationCursor ?? index) : index, force: true)
         }
     }
 
