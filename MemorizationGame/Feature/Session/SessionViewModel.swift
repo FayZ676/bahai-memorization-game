@@ -128,12 +128,14 @@ final class SessionViewModel {
 
     func setAllWords(hidden: Bool) {
         guard let card = current else { return }
+        let everyWord = Set(card.words.indices)
         let changing = hidden
-            ? Set(card.words.indices).subtracting(card.hiddenWords)
+            ? (concealing ? everyWord.subtracting(card.hiddenWords) : everyWord)
             : card.hiddenWords
         ripple(changing)
         cascade {
             store.setAllWords(card, hidden: hidden)
+            withAnimation(.easeInOut(duration: 0.32)) { concealing = hidden }
         }
         focus(on: card.id)
     }
