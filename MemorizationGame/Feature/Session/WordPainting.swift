@@ -12,9 +12,18 @@ final class WordFrames {
     }
 
     func index(at location: CGPoint, wordCount: Int) -> Int? {
-        frames.first { index, frame in
-            index < wordCount && frame.insetBy(dx: -3.5, dy: -6).contains(location)
-        }?.key
+        frames
+            .filter { index, frame in
+                index < wordCount && frame.insetBy(dx: -3.5, dy: -6).contains(location)
+            }
+            .min { Self.squaredDistance(from: location, to: $0.value) < Self.squaredDistance(from: location, to: $1.value) }?
+            .key
+    }
+
+    private static func squaredDistance(from point: CGPoint, to frame: CGRect) -> CGFloat {
+        let dx = max(frame.minX - point.x, 0, point.x - frame.maxX)
+        let dy = max(frame.minY - point.y, 0, point.y - frame.maxY)
+        return dx * dx + dy * dy
     }
 }
 
