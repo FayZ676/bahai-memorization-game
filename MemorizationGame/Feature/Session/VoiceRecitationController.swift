@@ -80,10 +80,7 @@ final class VoiceRecitationController {
             RecitationTrace.emit("prepare", "analyzer format=\(format?.description ?? "nil")")
             let analyzer = SpeechAnalyzer(modules: [transcriber], options: Self.analyzerOptions)
             let context = AnalysisContext()
-            let strings = RecitationContext.contextualStrings(
-                for: text,
-                hidden: Set(Reviewable.tokens(in: text).indices)
-            )
+            let strings = RecitationContext.contextualStrings(for: text)
             RecitationTrace.emit("prepare", "contextualStrings=\(strings.count)")
             context.contextualStrings = [.general: strings]
             await RecitationTrace.measure("prepare", "setContext") {
@@ -414,7 +411,7 @@ final class VoiceRecitationController {
         customizing configuration: SFSpeechLanguageModel.Configuration? = nil
     ) -> DictationTranscriber {
         var preset = DictationTranscriber.Preset.progressiveShortDictation
-        preset.reportingOptions = [.volatileResults, .frequentFinalization]
+        preset.reportingOptions = [.volatileResults]
         preset.attributeOptions = [.audioTimeRange, .transcriptionConfidence]
         if let configuration {
             preset.contentHints.insert(.customizedLanguage(modelConfiguration: configuration))

@@ -17,6 +17,29 @@ lines that carry everything needed to replay a session offline.
 
 ---
 
+## Direction decided 2026-09-13
+
+The open items below are symptoms of one design: the matcher judges (irreversible
+`skipped`/`exhausted` verdicts from evidence the recognizer cannot give), realigns the
+whole transcript from a free start on every result, and compensates for a starved
+recognizer. It is being replaced, in this order:
+
+1. **Hear** — best possible transcript first. Hint budget and finalization fixed today
+   (see below). LM re-weighting waits for the corpus, because it can fabricate words and
+   nothing can measure that yet.
+2. **Measure** — capture each recitation's raw transcriber results, audio, passage and
+   hidden set as one replayable file; a Mac harness scores the tracker against them, and
+   the audio is replayed through the analyzer on device to score recognition.
+3. **Follow** — a position tracker replaces `RecitationMatcher`: a cursor plus a credited
+   set, local alignment anchored near the cursor, split/merge moves, volatiles recompute a
+   provisional cursor, finals commit credit. An uncredited word the cursor passed is
+   *pending*, never condemned mid-session.
+4. **Judge** — verdicts only at session end or on reveal.
+
+Constraints agreed with the user: no live misses (pending only); the reciter says the
+whole chunk, visible words included, so visible words are anchors and hidden-only
+recitation is not supported; "myself"/"thyself"-class confusions must still fail.
+
 ## 1. The audio-timing guard switches off at passage boundaries
 
 `RecitationMatcher.unheardSpan` returns `nil` unless an aligned reference word
@@ -44,30 +67,7 @@ miss, or introduce a third outcome — deferred — that advances the cursor
 without ever claiming the word was wrong. `nextExpectedIndex` derives from the
 matched/missed sets, so deferral needs to exist as its own concept.
 
-## 3. Contextual strings never reach individual words or ASCII twins
-
-`VoiceRecitationController` passes `hidden: Set(Reviewable.tokens(in: text).indices)`
-— every index — so `RecitationContext.contextualStrings` treats the whole
-passage as hidden and its first loop emits one four-word window per word. That
-saturates `entryLimit` (100) before the ASCII-twin pass and the individual
-hidden-word pass ever run. Device traces show `contextualStrings=100` on every
-prepare.
-
-Consequences: `Bahá'u'lláh` and friends never get their accent-free twin
-submitted, and the archaic function words that actually fail recognition —
-`Thee`, `Thy`, `Thyself`, `didst`, `unto` — are never offered as standalone
-hints on any passage longer than about a hundred words.
-
-This is the highest-value open item for recognition quality. A stock-dictation
-comparison in Notes showed the custom language model already beats Apple's
-default decisively on rare vocabulary (`befitteth`, `beseemeth`, `abode`,
-`hast`, `inasmuch`) while both fail on the archaic function words — which is
-precisely the class this budget is starving.
-
-**Fix direction:** submit individual hidden words before the windows, and pass
-the real hidden set rather than every index.
-
-## 4. Differential language-model weighting
+## 3. Differential language-model weighting
 
 `RecitationLanguageModel` gives every phrase the same `count: 20` — the whole
 text and every three- and five-word window alike. `PhraseCount(phrase:count:)`
@@ -86,7 +86,7 @@ reintroduce a false pass upstream of the matcher, where no trace can see it.
 `Thee`, `Thy`, `Thou`, `didst`, `hast` and `unto` are safe — their competitors
 are meaning-preserving.
 
-## 5. One word heard as two
+## 4. One word heard as two
 
 The aligner pairs one spoken token with one reference word. When the
 transcriber splits a word — `Thyself unto` arriving as `"self", "on"`, or
@@ -97,7 +97,7 @@ unresolved forever. The mirror case, three words merged into one (`I yield Thee`
 **Fix direction:** allow the alignment to consider a merge of two adjacent
 spoken tokens against a single reference word.
 
-## 6. `replaceHidden` leaves stale state
+## 5. `replaceHidden` leaves stale state
 
 It resets `attempts` but not `matched`, `missed`, `frontier`, `judged`,
 `unexplainedSinceProgress` or `misses`. A word un-hidden and re-hidden within a
@@ -105,7 +105,7 @@ session reads as already resolved, and `misses` retains records for words that
 are no longer hidden — those records feed `expectedCount` and the recitation
 log. One caller, in `VoiceRecitationController`.
 
-## 7. A lone token can still match a distant word
+## 6. A lone token can still match a distant word
 
 Reference deletions before the first spoken token are free (`cost[0][column]`
 is left at zero), which is what lets a reciter resume mid-passage. Combined
@@ -121,7 +121,7 @@ having said something that sounds like the word.
 **Fix direction:** if it proves to matter, require corroboration for a match
 that lands far beyond the frontier, in the same spirit as the moved-on test.
 
-## 8. Efficiency
+## 7. Efficiency
 
 None of these are hot enough to matter today — alignment measured 8–18 ms per
 result on device — but they are all avoidable:
@@ -136,7 +136,7 @@ result on device — but they are all avoidable:
 - `PhoneticKey.encode` allocates a filtered `String` on every call purely to
   test whether the token is the literal `"0"`.
 
-## 9. Housekeeping
+## 8. Housekeeping
 
 - `RecitationCapture` writes one `.wav` per recitation to the documents
   directory and never prunes. Fifty-odd files, tens of megabytes, accumulated on
@@ -148,6 +148,24 @@ result on device — but they are all avoidable:
   block, splitting the constants in two.
 
 ---
+
+## Fixed on 2026-09-13
+
+- **Contextual strings never reached individual words or ASCII twins.**
+  `VoiceRecitationController` passed every token index as hidden, so
+  `contextualStrings` spent its whole budget of 100 on four-word windows and
+  never submitted a standalone word or an accent-free twin — device traces
+  showed `contextualStrings=100` on every prepare. The hidden set was also the
+  wrong input: `prepare(for:)` runs on the passage before `start` knows the
+  chunk's hidden indices, and the reciter says every word regardless. The
+  hints now take only the text and submit each uncommon word first, its ASCII
+  twin second, and a window around it last.
+- **Finalization chopped speech mid-phrase.** `frequentFinalization` was on,
+  which is where words were being split (`befitteth` → "we fitted") and merged
+  (`I yield Thee` → "he"). Removed; finals now land on natural pauses and the
+  1200 ms idle finalize. Whether `progressiveLongDictation` beats
+  `progressiveShortDictation` for a prayer-length passage is an open A/B for
+  the corpus.
 
 ## Fixed on 2026-08-12
 

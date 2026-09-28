@@ -3,7 +3,7 @@ import Foundation
 enum RecitationContext {
     static let entryLimit = 100
 
-    static func contextualStrings(for text: String, hidden: Set<Int>) -> [String] {
+    static func contextualStrings(for text: String) -> [String] {
         let written = writtenWords(in: text)
         guard !written.isEmpty else { return [] }
 
@@ -18,26 +18,20 @@ enum RecitationContext {
             result.append(trimmed)
         }
 
-        let hiddenWritten = written.indices.filter { index in
-            hidden.contains { written[index].tokens.contains($0) }
-        }
+        let uncommon = written.indices.filter { !stopwords.contains(written[$0].text.lowercased()) }
 
-        for index in hiddenWritten {
-            let lower = max(0, index - 1)
-            let upper = min(written.count - 1, index + 2)
-            append(written[lower...upper].map(\.text).joined(separator: " "))
-        }
-
-        for word in written where needsASCIITwin(word.text) {
-            append(asciiTwin(word.text))
-        }
-
-        for index in hiddenWritten {
+        for index in uncommon {
             append(written[index].text)
         }
 
-        for word in written where !stopwords.contains(word.text.lowercased()) {
-            append(word.text)
+        for index in uncommon where needsASCIITwin(written[index].text) {
+            append(asciiTwin(written[index].text))
+        }
+
+        for index in uncommon {
+            let lower = max(0, index - 1)
+            let upper = min(written.count - 1, index + 2)
+            append(written[lower...upper].map(\.text).joined(separator: " "))
         }
 
         return result
@@ -45,7 +39,6 @@ enum RecitationContext {
 
     private struct WrittenWord {
         let text: String
-        let tokens: Range<Int>
     }
 
     private static func writtenWords(in text: String) -> [WrittenWord] {
@@ -58,7 +51,7 @@ enum RecitationContext {
             let joined = tokens[start..<end].joined()
             let stripped = stripOuterPunctuation(joined)
             if !stripped.isEmpty {
-                words.append(WrittenWord(text: stripped, tokens: start..<end))
+                words.append(WrittenWord(text: stripped))
             }
             start = end
         }
