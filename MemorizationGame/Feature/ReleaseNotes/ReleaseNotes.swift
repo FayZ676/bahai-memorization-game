@@ -19,6 +19,27 @@ struct ReleaseNote: Identifiable {
 enum ReleaseNotes {
     static let all: [ReleaseNote] = [
         ReleaseNote(
+            version: "1.10",
+            headline: "Practice without speaking, and a few things feel more natural.",
+            highlights: [
+                ReleaseHighlight(
+                    symbol: "hand.tap",
+                    title: "Practice without speaking",
+                    text: "Hold the microphone button, then choose the hand. Now each tap shows the next hidden word, so you can practice where you cannot speak out loud."
+                ),
+                ReleaseHighlight(
+                    symbol: "chevron.left",
+                    title: "Go back with a swipe",
+                    text: "Put your finger on the left edge of the screen and slide it to the right to go back."
+                ),
+                ReleaseHighlight(
+                    symbol: "textformat",
+                    title: "Names look right",
+                    text: "Letters with a dot under them, like the h in Aḥmad, now match the rest of the words."
+                )
+            ]
+        ),
+        ReleaseNote(
             version: "1.9",
             headline: "Reading aloud keeps up with you, and hidden words sit lighter on the page.",
             highlights: [

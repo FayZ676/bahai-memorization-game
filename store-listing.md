@@ -33,6 +33,7 @@ MEMORIZE AT YOUR OWN PACE
 RECITE ALOUD
 • Speak the passage and Verses follows you word by word
 • Speech recognition happens on your device
+• Somewhere you can't speak? Tap to show each hidden word in turn
 
 BRING YOUR OWN
 • Paste any text you want to learn — a quotation, a poem, a passage in any language
@@ -45,6 +46,15 @@ QUIET BY DESIGN
 • A simple record of how many words you've hidden each day — encouragement, not obligation
 
 Verses is built around one belief: memorization isn't a test to pass, it's a way of carrying words with you. Hide what you know. Read what you don't. Come back tomorrow.
+
+## What's New — 1.10 (4000)
+When you can't read aloud, you can still practice. Touch and hold the microphone and choose the hand, then tap it to show each hidden word in turn, as if you had said it.
+
+Swipe from the left edge of the screen to go back, as in other iPhone apps.
+
+Names like Aḥmad and Ṭihrán now appear in the same type as the rest of the prayer.
+
+Small fixes and refinements.
 
 ## What's New — 1.9 (4000)
 Reciting a passage now keeps up with you. The page scrolls on its own so the line you are reading stays in the middle of the screen, and a hidden word shows itself as soon as you say it.
