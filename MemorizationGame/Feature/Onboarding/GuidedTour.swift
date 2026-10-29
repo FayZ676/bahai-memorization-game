@@ -46,7 +46,7 @@ private struct GuidedTourModifier: ViewModifier {
                 if active { tour = Tour() }
             }
             .onChange(of: store.passages.count) { _, count in
-                if isActive, count > 0 { tour.complete(.importPrayer) }
+                if isActive, count > 0 { tour.complete(.addPrayer) }
             }
     }
 

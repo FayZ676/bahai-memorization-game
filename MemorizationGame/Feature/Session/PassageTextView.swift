@@ -6,7 +6,7 @@ struct PassageTextView: View {
     let store: AppStore
 
     private var fullText: String {
-        store.queue(for: passage).map(\.expectedText).joined(separator: "\n\n")
+        (store.passage(withID: passage.id)?.text ?? passage.text).replacingOccurrences(of: "\n", with: "\n\n")
     }
 
     var body: some View {

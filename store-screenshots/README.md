@@ -23,7 +23,7 @@ read in order as one pass through the app — see `Design/StoreFrames/README.md`
 | `2-hide-words.png` | `2-hide.png` | the hero prayer's second section, 20% of the passage hidden |
 | `9-hide-more.png` | `3-hide-more.png` | the *same* section at 48%, which is what makes the set a sequence rather than a gallery |
 | `recite-aloud.png` | `4-recite.png` | the session listening, mic active, words marking as they are spoken |
-| `6-library-dark.png` | `5-know.png` | the library in dark, streak and progress ramps, several passages finished |
+| `6-library-dark.png` | `5-know.png` | the library in dark, each passage's completion percentage, several passages finished |
 
 Every raw here feeds a tile; there are no spares left. The iPad has no dark capture, so its
 `5-know.png` falls back to `ipad-13/1-library.png` through the tile's `per_device`
@@ -37,27 +37,26 @@ the picture. Without that tap the page photographs as plain prose with nothing h
 
 Two captures are stage-dependent and must be reshot as a pair if the hero passage changes:
 `2-hide-words.png` from the default seed and `9-hide-more.png` from `HERO_LATE=1`, which
-hides 50% of the same chunk instead of 15%. `HERO_LATE` deliberately leaves the later
-chunks empty so the session still lands on section 2 in both, keeping the two tiles
-identical but for the blanks. `HERO_FILLS=0.2` overrides the pair outright, which is how
-the iPad is shot.
+hides 50% of the same opening paragraphs instead of 15%. A session always opens at the top of
+the prayer, so the two tiles show the same page, identical but for the blanks.
+`HERO_FILLS=0.2` overrides the pair outright, which is how the iPad is shot.
 
 The dark tile is shot with `python3 tools/seed.py dark` and the simulator in dark
-appearance, from the same picks as the light library, so the streak and the progress ramps
-read identically in both.
+appearance, from the same picks as the light library, so the percentages read identically
+in both.
 
 If you drop the iPad build (`TARGETED_DEVICE_FAMILY = 1`), `ipad-13/` is no longer needed.
 
 ## Staging the recitation shot
 
-`recite-aloud.png` is the one capture the simulator cannot reach on its own. Speech
-recognition never enters its listening state there — no on-device speech model and no audio
-input — so the mic falls straight back to idle and there is nothing to photograph.
+`recite-aloud.png` is the one capture the simulator cannot reach on its own. There is no one
+to recite into the simulator's microphone, so no word is ever credited and there is nothing to
+photograph.
 
 `SHOT_RECITING=1` puts the session into that state without speaking: it marks the first half
-of the section's hidden words as recited, parks the cursor on the next one, and fills the
-heard line with the words leading up to it. The UI is the same one a real device draws; only
-the trigger is staged, the way `seed.py` stages persisted state. It is `#if DEBUG` in
+of the section's hidden words as recited and parks the cursor on the next one. The UI is the
+same one a real device draws; only the trigger is staged, the way `seed.py` stages persisted
+state. It is `#if DEBUG` in
 `SessionView` and `VoiceRecitationController`, so it cannot reach a release build.
 
 It must be passed through to the app, not to `simctl` itself:
@@ -95,11 +94,10 @@ second earned badge and three rings part-way round, so the screen is not a colum
 untouched dashes. No uploaded tile draws on it since the set narrowed to four, so leave it
 unset unless you are shooting that screen again; it adds rows to the library.
 
-`HERO_GROUP` sets how many source lines make up one chunk of the session hero passage.
-The reading area now runs the full height of the screen, so a chunk that used to fill it
-leaves two-thirds of the page blank. Leave it at the default `3` for iPhone; the iPad is
-shot with `HERO_GROUP=7 HERO_FILLS=0.2`, which puts the whole prayer on the one page —
-anything smaller floats in the middle of a much larger sheet.
+`HERO_GROUP` sets how many source lines share one fill fraction in the session hero passage.
+Leave it at the default `3` for iPhone; the iPad is shot with `HERO_GROUP=7 HERO_FILLS=0.2`.
+`LONG=1` adds the Tablet of Aḥmad, a long prayer for checking scrolling and the rail. The
+seeder writes the 2.0 format, `verses.json`.
 
 `tools/drive.py` taps through the UI using `idb`, locating elements by accessibility label
 so taps don't depend on hardcoded coordinates. Run it from inside `tools/` — it is

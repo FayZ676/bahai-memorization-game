@@ -45,18 +45,6 @@ enum FontSize: String, Codable, CaseIterable {
     }
 }
 
-enum RecitationMode: String, Codable, CaseIterable {
-    case aloud
-    case silent
-
-    var label: String {
-        switch self {
-        case .aloud: "Recite aloud"
-        case .silent: "Tap silently"
-        }
-    }
-}
-
 struct Reminder: Codable, Equatable, Identifiable {
     var id: UUID = UUID()
     var minuteOfDay: Int = 9 * 60
@@ -69,12 +57,10 @@ struct AppSettings: Codable, Equatable {
 
     var reminderEnabled: Bool = false
     var reminders: [Reminder] = [Reminder()]
-    var streakReminderEnabled: Bool = true
     var appTheme: AppTheme = .light
     var fontSize: FontSize = .medium
     var hasSeenWelcomeTour: Bool = false
     var randomHideCount: Int = 2
-    var recitationMode: RecitationMode = .aloud
     var lastReviewRequestVersion: String?
     var lastSeenReleaseNotesVersion: String?
 
@@ -82,13 +68,11 @@ struct AppSettings: Codable, Equatable {
 
     private enum CodingKeys: String, CodingKey {
         case reminderEnabled, reminders, appTheme, fontSize
-        case streakReminderEnabled
         case reminderMinuteOfDay, reminderMessage
         case hasSeenWelcomeTour, hasCompletedOnboarding
         case lastReviewRequestVersion
         case lastSeenReleaseNotesVersion
         case randomHideCount
-        case recitationMode
     }
 
     init() {}
@@ -99,14 +83,12 @@ struct AppSettings: Codable, Equatable {
         reminderEnabled = try container.decodeIfPresent(Bool.self, forKey: .reminderEnabled) ?? d.reminderEnabled
         appTheme = try container.decodeIfPresent(AppTheme.self, forKey: .appTheme) ?? d.appTheme
         fontSize = try container.decodeIfPresent(FontSize.self, forKey: .fontSize) ?? d.fontSize
-        streakReminderEnabled = try container.decodeIfPresent(Bool.self, forKey: .streakReminderEnabled) ?? d.streakReminderEnabled
         hasSeenWelcomeTour = try container.decodeIfPresent(Bool.self, forKey: .hasSeenWelcomeTour)
             ?? container.decodeIfPresent(Bool.self, forKey: .hasCompletedOnboarding)
             ?? AppSettings.seenWhenSnapshotPredatesWelcomeTour
         lastReviewRequestVersion = try container.decodeIfPresent(String.self, forKey: .lastReviewRequestVersion)
         lastSeenReleaseNotesVersion = try container.decodeIfPresent(String.self, forKey: .lastSeenReleaseNotesVersion)
         randomHideCount = try container.decodeIfPresent(Int.self, forKey: .randomHideCount) ?? d.randomHideCount
-        recitationMode = try container.decodeIfPresent(RecitationMode.self, forKey: .recitationMode) ?? d.recitationMode
         if let stored = try container.decodeIfPresent([Reminder].self, forKey: .reminders) {
             reminders = stored
         } else {
@@ -120,13 +102,11 @@ struct AppSettings: Codable, Equatable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(reminderEnabled, forKey: .reminderEnabled)
         try container.encode(reminders, forKey: .reminders)
-        try container.encode(streakReminderEnabled, forKey: .streakReminderEnabled)
         try container.encode(appTheme, forKey: .appTheme)
         try container.encode(fontSize, forKey: .fontSize)
         try container.encode(hasSeenWelcomeTour, forKey: .hasSeenWelcomeTour)
         try container.encodeIfPresent(lastReviewRequestVersion, forKey: .lastReviewRequestVersion)
         try container.encodeIfPresent(lastSeenReleaseNotesVersion, forKey: .lastSeenReleaseNotesVersion)
         try container.encode(randomHideCount, forKey: .randomHideCount)
-        try container.encode(recitationMode, forKey: .recitationMode)
     }
 }

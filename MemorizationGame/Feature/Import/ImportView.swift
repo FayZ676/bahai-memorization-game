@@ -29,9 +29,7 @@ struct ImportView: View {
 
     init(editing passage: Passage, store: AppStore) {
         _title = State(initialValue: passage.title)
-        _content = State(initialValue: store.queue(for: passage)
-            .map { $0.expectedText.replacingOccurrences(of: "\n", with: " ") }
-            .joined(separator: "\n"))
+        _content = State(initialValue: store.passage(withID: passage.id)?.text ?? passage.text)
         self.author = passage.author
         self.section = passage.section
         self.sourceID = passage.sourceID
@@ -40,14 +38,11 @@ struct ImportView: View {
 
     private var trimmedTitle: String { title.trimmingCharacters(in: .whitespacesAndNewlines) }
 
-    private var units: [String] {
-        content
-            .split(separator: "\n", omittingEmptySubsequences: true)
-            .map { $0.trimmingCharacters(in: .whitespaces) }
-            .filter { !$0.isEmpty }
+    private var paragraphs: [String] {
+        Passage.paragraphs(in: content)
     }
 
-    private var isValid: Bool { !trimmedTitle.isEmpty && !units.isEmpty }
+    private var isValid: Bool { !trimmedTitle.isEmpty && !paragraphs.isEmpty }
 
     var body: some View {
         Screen {
@@ -58,12 +53,12 @@ struct ImportView: View {
             ) {
                 Button {
                     if let editing {
-                        store.updatePassage(editing, title: trimmedTitle, units: units)
+                        store.updatePassage(editing, title: trimmedTitle, text: paragraphs.joined(separator: "\n"))
                         dismiss()
                     } else {
                         store.createPassage(
                             title: trimmedTitle,
-                            units: units,
+                            text: paragraphs.joined(separator: "\n"),
                             author: author,
                             section: section,
                             sourceID: sourceID
@@ -92,7 +87,7 @@ struct ImportView: View {
                     }
 
                     InfoNote(Typography.caption) {
-                        Text("Every line of text becomes one chunk for memorization.")
+                        Text("Every line of text becomes its own paragraph.")
                             .appFont(Typography.caption)
                             .foregroundStyle(Theme.muted)
                     }
@@ -120,7 +115,6 @@ struct ImportView: View {
                 .padding(.bottom, 16)
             }
         }
-        .completesTourStep(.addPrayer)
     }
 
     private static let placeholder =

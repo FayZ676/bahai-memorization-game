@@ -6,28 +6,10 @@ enum LibraryRoute: Hashable {
 
 extension EnvironmentValues {
     @Entry var popToLibrary: () -> Void = {}
+    @Entry var openInLibrary: (Passage) -> Void = { _ in }
 }
 
 private let deleteTitleWordLimit = 6
-
-private enum PassageGroup {
-    case memorizing
-    case archived
-
-    var label: String {
-        switch self {
-        case .memorizing: "Memorizing"
-        case .archived: "Archived"
-        }
-    }
-
-    var symbol: String {
-        switch self {
-        case .memorizing: "text.word.spacing"
-        case .archived: "archivebox"
-        }
-    }
-}
 
 struct LibraryView: View {
     @Environment(AppStore.self) private var store
@@ -35,7 +17,7 @@ struct LibraryView: View {
     @State private var path = NavigationPath()
     @State private var isTourPresented = false
     @State private var releaseNote: ReleaseNote?
-    @State private var expandedGroups: Set<PassageGroup> = [.memorizing]
+    @State private var showsArchived = false
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -84,6 +66,11 @@ struct LibraryView: View {
             .browseDestinations()
         }
         .environment(\.popToLibrary) { path = NavigationPath() }
+        .environment(\.openInLibrary) { passage in
+            var opened = NavigationPath()
+            opened.append(passage)
+            path = opened
+        }
         .guidedTour(
             isActive: isTourPresented,
             onRestart: { isTourPresented = true },
@@ -126,14 +113,11 @@ struct LibraryView: View {
     private var list: some View {
         List {
             Section {
-                streakHeader
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets())
+                ForEach(store.activePassages) { passage in
+                    row(for: passage)
+                }
             }
-
-            group(.memorizing, passages: store.activePassages)
-            group(.archived, passages: store.archivedPassages)
+            archived
         }
         .listRowSpacing(Spacing.sm)
         .listSectionSpacing(Spacing.md)
@@ -151,15 +135,8 @@ struct LibraryView: View {
                 title: passage.title,
                 author: passage.author,
                 section: passage.section,
-                detail: passage.dateAdded.elapsedDuration
-            ) {
-                ProgressBar(
-                    heats: store.sectionHeats(for: passage),
-                    weights: store.sectionWeights(for: passage),
-                    completion: store.hiddenFraction(for: passage),
-                    barHeight: 6
-                )
-            }
+                detail: Percent.label(store.hiddenFraction(for: passage))
+            )
         }
         .buttonStyle(.plain)
         .listRowInsets(EdgeInsets())
@@ -187,12 +164,13 @@ struct LibraryView: View {
     }
 
     @ViewBuilder
-    private func group(_ group: PassageGroup, passages: [Passage]) -> some View {
+    private var archived: some View {
+        let passages = store.archivedPassages
         if !passages.isEmpty {
             Section {
-                groupHeader(group, count: passages.count)
+                archivedHeader(count: passages.count)
 
-                if expandedGroups.contains(group) {
+                if showsArchived {
                     ForEach(passages) { passage in
                         row(for: passage)
                     }
@@ -201,23 +179,17 @@ struct LibraryView: View {
         }
     }
 
-    private func groupHeader(_ group: PassageGroup, count: Int) -> some View {
+    private func archivedHeader(count: Int) -> some View {
         Button {
             Feedback.tap()
-            withAnimation(.easeInOut(duration: 0.22)) {
-                if expandedGroups.contains(group) {
-                    expandedGroups.remove(group)
-                } else {
-                    expandedGroups.insert(group)
-                }
-            }
+            withAnimation(.easeInOut(duration: 0.22)) { showsArchived.toggle() }
         } label: {
             HStack(spacing: Spacing.sm) {
                 HStack(spacing: Spacing.xs) {
-                    Image(systemName: group.symbol)
+                    Image(systemName: "archivebox")
                         .appIcon(13, weight: .regular)
 
-                    Text(group.label)
+                    Text("Archived")
                         .appFont(Typography.label.weight(.regular))
                 }
                 .foregroundStyle(Theme.faint)
@@ -231,7 +203,7 @@ struct LibraryView: View {
                 Image(systemName: "chevron.right")
                     .appIcon(12, weight: .regular)
                     .foregroundStyle(Theme.faint)
-                    .rotationEffect(.degrees(expandedGroups.contains(group) ? 90 : 0))
+                    .rotationEffect(.degrees(showsArchived ? 90 : 0))
             }
             .padding(.horizontal, Spacing.xl)
             .padding(.top, Spacing.sm)
@@ -241,16 +213,6 @@ struct LibraryView: View {
         .listRowInsets(EdgeInsets())
         .listRowBackground(Color.clear)
         .listRowSeparator(.hidden)
-    }
-
-    private var streakHeader: some View {
-        VStack(spacing: Spacing.xl) {
-            LibraryTally(streak: store.streakCount, memorized: store.memorizedPassageIDs.count)
-
-            HairlineDivider()
-        }
-        .padding(.horizontal, Spacing.xl)
-        .padding(.top, Spacing.sm)
     }
 
     private var emptyState: some View {
@@ -272,30 +234,5 @@ struct LibraryView: View {
             Spacer()
         }
         .frame(maxWidth: .infinity)
-    }
-}
-
-private extension Date {
-    var elapsedDuration: String {
-        let now = Date()
-        let units: [(Calendar.Component, String)] = [
-            (.year, "y"), (.month, "mo"), (.weekOfYear, "w"), (.day, "d"), (.hour, "h"), (.minute, "m")
-        ]
-        let parts = Calendar.current.dateComponents(
-            [.year, .month, .weekOfYear, .day, .hour, .minute],
-            from: self, to: now
-        )
-        guard let leadIndex = units.firstIndex(where: { (parts.value(for: $0.0) ?? 0) > 0 }) else {
-            return "now"
-        }
-        let lead = units[leadIndex]
-        var text = "\(parts.value(for: lead.0) ?? 0)\(lead.1)"
-        if leadIndex + 1 < units.count {
-            let next = units[leadIndex + 1]
-            if let value = parts.value(for: next.0), value > 0 {
-                text += " \(value)\(next.1)"
-            }
-        }
-        return text
     }
 }

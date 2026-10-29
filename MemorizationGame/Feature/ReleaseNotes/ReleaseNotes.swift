@@ -19,6 +19,37 @@ struct ReleaseNote: Identifiable {
 enum ReleaseNotes {
     static let all: [ReleaseNote] = [
         ReleaseNote(
+            version: "2.0",
+            headline: "Verses has been rebuilt from the ground up, to be better in every way.",
+            highlights: [
+                ReleaseHighlight(
+                    symbol: "arrow.counterclockwise",
+                    title: "A fresh start",
+                    text: "Rebuilding the app meant starting your library over. Your prayers and the words you had hidden could not come with us, and we are sorry. Add your prayers again with the book button, and they will be ready to memorize."
+                ),
+                ReleaseHighlight(
+                    symbol: "waveform",
+                    title: "It hears every word",
+                    text: "Saying a prayer out loud now uses a new listener that runs entirely on your iPhone. It can tell Thy from my. If you miss a word twice, it shows you that word."
+                ),
+                ReleaseHighlight(
+                    symbol: "mic",
+                    title: "Just you and the prayer",
+                    text: "Tap Recite and everything else fades away, so only the prayer is left. Tap the page when you want to stop."
+                ),
+                ReleaseHighlight(
+                    symbol: "text.alignleft",
+                    title: "The whole prayer on one page",
+                    text: "A prayer is now one page you scroll through. Words you hide stay on the page, a little lighter, so you can always see what you have hidden. They go away only while you say the prayer out loud."
+                ),
+                ReleaseHighlight(
+                    symbol: "leaf",
+                    title: "Less to look at",
+                    text: "The day streak, Speech History, the eye button, and the hand button are gone. The memorize button now puts a prayer straight into your library."
+                )
+            ]
+        ),
+        ReleaseNote(
             version: "1.10",
             headline: "Practice without speaking, and a few things feel more natural.",
             highlights: [

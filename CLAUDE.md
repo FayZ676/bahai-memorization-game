@@ -6,9 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Verses — an iOS SwiftUI app for memorizing Bahá'í prayers and scripture by hiding words. Hiding is
 manual and permanent until you show a word again — tap words to hide/reveal, paint across them to
-sweep. No decay, no scoring, no streak-gating; the streak card and achievements are a record, never
-a gate. All chunks are freely reachable; a session opens on the furthest chunk that still has hidden
-words.
+sweep. No decay, no scoring, no streaks; achievements are a record, never a gate. Reciting aloud
+reveals hidden words as they are said, recognized on the device by a bundled Conformer model. A
+prayer is one scrollable page that opens at the top; practice starts at the paragraph at the top of
+the screen, or the one whose ¶ was tapped, and runs as far as you recite.
 
 ## Build
 
@@ -16,6 +17,10 @@ Xcode project `MemorizationGame.xcodeproj`, scheme `MemorizationGame`. Tested li
 device, not the simulator.
 
 `xcodebuild -project MemorizationGame.xcodeproj -scheme MemorizationGame -configuration Debug build`
+
+The recitation model (`MemorizationGame/Resources/Conformer.mlpackage`) and the bench recordings
+(`Tools/RecitationBench/takes/*.wav`) live in Git LFS. A fresh clone needs `git lfs install` and
+`git lfs pull` before it builds.
 
 ## Rules
 
@@ -28,6 +33,6 @@ the code they govern.
 | `swift-style.md` — no comments, theme tokens, haptics | any app `.swift` |
 | `architecture.md` — store, model, logic, feature layering | any app `.swift` |
 | `persistence.md` — hand-written `Codable`, back-compat | `Model/`, `Store/` |
-| `recitation.md` — forced alignment, the trouble log, Contact | recitation and its screens |
+| `recitation.md` — the Conformer, the bench, adding test cases | recitation, the bench, its tools |
 | `design-assets.md` — the generator is the source | `Design/`, `Assets.xcassets` |
 | `releasing.md` — `/release` is the single door | `scripts/`, store listing |

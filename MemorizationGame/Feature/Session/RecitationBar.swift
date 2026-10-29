@@ -2,20 +2,13 @@ import SwiftUI
 
 enum RecitationBarMenu {
     case hideCounts
-    case recitationModes
 }
 
 struct RecitationBar: View {
     let voice: VoiceRecitationController
-    let hasHiddenWords: Bool
     let canHideWords: Bool
-    let isConcealing: Bool
-    let isTappingSilently: Bool
     @Binding var micDeniedAlert: Bool
-    @Binding var mode: RecitationMode
     let onStart: () -> Void
-    let onRevealNext: () -> Void
-    let onPeek: () -> Void
     let onHideWords: (Int) -> Void
     @Binding var hideCount: Int
     @Binding var openMenu: RecitationBarMenu?
@@ -25,27 +18,15 @@ struct RecitationBar: View {
     @State private var standingMessage = ""
 
     private static let settle = Animation.easeInOut(duration: 0.22)
-    private static let halo: CGFloat = 10
     private static let hideCounts = [2, 4, 6, 8, 10]
-    private static let sideDiameter: CGFloat = 54
-    private static let micDiameter: CGFloat = 68
+    private static let buttonHeight: CGFloat = 46
+    private static let labelFont = Typography.body.weight(.medium)
     private static let optionDiameter: CGFloat = 44
 
     var body: some View {
-        HStack(alignment: .bottom, spacing: -Self.halo) {
+        HStack(spacing: Spacing.sm) {
             hideButton
-            micButton
-            peekButton
-        }
-        .overlay(alignment: .topLeading) {
-            BarPopUp(isOpen: openMenu == .hideCounts, width: Self.sideDiameter + 2 * Self.halo) {
-                countOptions
-            }
-        }
-        .overlay(alignment: .top) {
-            BarPopUp(isOpen: openMenu == .recitationModes, width: Self.micDiameter + 2 * Self.halo) {
-                modeOptions
-            }
+            reciteButton
         }
         .overlay(alignment: .top) {
             HintBubble(text: standingMessage)
@@ -55,57 +36,55 @@ struct RecitationBar: View {
                 .scaleEffect(hint.message == nil ? 0.94 : 1, anchor: .bottom)
                 .animation(Self.settle, value: hint.message)
         }
-        .padding(.bottom, Spacing.xxs)
+        .padding(.horizontal, Spacing.lg)
+        .padding(.top, Spacing.md)
+        .padding(.bottom, Spacing.sm)
         .animation(Self.settle, value: voice.state)
-        .animation(Self.settle, value: isConcealing)
-        .animation(Self.settle, value: isTappingSilently)
-        .animation(Self.settle, value: mode)
         .onChange(of: hint.message) { _, message in
             guard let message else { return }
             standingMessage = message
         }
-        .onChange(of: peekDisabled) { _, disabled in
-            guard !disabled else { return }
-            hint.dismiss()
-        }
-    }
-
-    private var peekDisabled: Bool {
-        !hasHiddenWords && !isConcealing
-    }
-
-    private var peekButton: some View {
-        sideButton(
-            symbol: isConcealing ? "eye.slash" : "eye",
-            on: isConcealing,
-            dimmed: peekDisabled,
-            action: {
-                closeMenu()
-                peekDisabled ? hint.show("Nothing to peek. Try hiding a word first.") : onPeek()
-            }
-        )
     }
 
     private var hideButton: some View {
-        sideFace(symbol: "text.word.spacing", on: openMenu == .hideCounts, dimmed: !canHideWords)
-            .onTapGesture {
-                Feedback.tap()
-                guard openMenu == nil else { return closeMenu() }
-                guard canHideWords else {
-                    return hint.show("Every word is already hidden.")
-                }
-                onHideWords(hideCount)
+        let open = openMenu == .hideCounts
+        return HStack(spacing: Spacing.sm) {
+            Image(systemName: "text.word.spacing")
+                .font(.system(size: 15, weight: .regular))
+            Text("Hide \(hideCount)")
+                .appFont(Self.labelFont)
+                .contentTransition(.numericText())
+        }
+        .foregroundStyle(open ? Theme.accent : (canHideWords ? Theme.muted : Theme.disabled))
+        .frame(maxWidth: .infinity)
+        .frame(height: Self.buttonHeight)
+        .background(open ? Theme.accent.opacity(0.1) : .clear, in: Capsule())
+        .contentShape(Capsule())
+        .onTapGesture {
+            Feedback.tap()
+            guard openMenu == nil else { return closeMenu() }
+            guard canHideWords else {
+                return hint.show("Every word is already hidden.")
             }
-            .onLongPressGesture(minimumDuration: 0.18) {
-                Feedback.hide()
-                hint.dismiss()
-                openMenu = .hideCounts
+            onHideWords(hideCount)
+        }
+        .onLongPressGesture(minimumDuration: 0.18) {
+            Feedback.hide()
+            hint.dismiss()
+            openMenu = .hideCounts
+        }
+        .accessibilityElement()
+        .accessibilityLabel("Hide words")
+        .accessibilityValue("\(hideCount) at a time")
+        .accessibilityHint("Double tap to hide \(hideCount) words in the marked paragraph. Touch and hold to choose how many.")
+        .accessibilityAddTraits(.isButton)
+        .overlay(alignment: .top) {
+            BarPopUp(isOpen: open, width: Self.optionDiameter + 2 * Spacing.xxs) {
+                countOptions
             }
-            .accessibilityElement()
-            .accessibilityLabel("Hide words")
-            .accessibilityValue("\(hideCount) at a time")
-            .accessibilityHint("Double tap to hide \(hideCount) words in view. Touch and hold to choose how many.")
-            .accessibilityAddTraits(.isButton)
+            .offset(y: -Spacing.sm)
+        }
+        .animation(Self.settle, value: hideCount)
     }
 
     private var countOptions: some View {
@@ -116,18 +95,6 @@ struct RecitationBar: View {
                 Text("\(count)")
                     .appFont(Typography.button)
             }
-        }
-    }
-
-    private var modeOptions: some View {
-        ForEach(RecitationMode.allCases.reversed(), id: \.self) { option in
-            menuOption(selected: option == mode) {
-                mode = option
-            } label: {
-                Image(systemName: Self.symbol(for: option))
-                    .font(.system(size: 18, weight: .regular))
-            }
-            .accessibilityLabel(option.label)
         }
     }
 
@@ -154,65 +121,26 @@ struct RecitationBar: View {
         openMenu = nil
     }
 
-    private func sideButton(
-        symbol: String,
-        on: Bool,
-        dimmed: Bool,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            sideFace(symbol: symbol, on: on, dimmed: dimmed)
+    private var reciteButton: some View {
+        HStack(spacing: Spacing.sm) {
+            reciteIcon
+            Text(reciteLabel)
+                .appFont(Self.labelFont)
         }
-        .buttonStyle(.haptic)
-    }
-
-    private func sideFace(symbol: String, on: Bool, dimmed: Bool) -> some View {
-        Image(systemName: symbol)
-            .font(.system(size: 20, weight: .regular))
-            .foregroundStyle(sideSymbolColor(on: on, dimmed: dimmed))
-            .contentTransition(.symbolEffect(.replace.offUp))
-            .frame(width: 54, height: 54)
-            .background(on ? Theme.accent.opacity(0.18) : Theme.surface, in: Circle())
-            .background(Theme.surface, in: Circle())
-            .overlay(Circle().stroke(sideStroke(on: on, dimmed: dimmed), lineWidth: 1))
-            .shadow(color: .black.opacity(0.05), radius: 7, y: 2)
-            .padding(Self.halo)
-            .contentShape(Circle())
-    }
-
-    private func sideSymbolColor(on: Bool, dimmed: Bool) -> Color {
-        if on { return Theme.accent }
-        return dimmed ? Theme.muted.opacity(0.5) : Theme.navIcon
-    }
-
-    private func sideStroke(on: Bool, dimmed: Bool) -> Color {
-        if on { return Theme.accent.opacity(0.7) }
-        return dimmed ? Theme.hairline.opacity(0.6) : Theme.hairline
-    }
-
-    private var micButton: some View {
-        micIcon
-            .frame(width: Self.micDiameter, height: Self.micDiameter)
-            .background(fill, in: Circle())
-            .background(Theme.surface, in: Circle())
-            .overlay(Circle().stroke(stroke, lineWidth: 1))
-            .shadow(color: .black.opacity(0.07), radius: 10, y: 3)
-            .padding(Self.halo)
-            .contentShape(Circle())
-            .onTapGesture {
-                Feedback.tap()
-                guard openMenu == nil else { return closeMenu() }
-                mode == .silent ? tapSilently() : tapToSpeak()
-            }
-            .onLongPressGesture(minimumDuration: 0.18) {
-                Feedback.hide()
-                hint.dismiss()
-                openMenu = .recitationModes
-            }
-            .accessibilityElement()
-            .accessibilityLabel(mode.label)
-            .accessibilityHint("Touch and hold to choose between reciting aloud and tapping silently.")
-            .accessibilityAddTraits(.isButton)
+        .foregroundStyle(isUnavailable ? Theme.disabled : Theme.accent)
+        .frame(maxWidth: .infinity)
+        .frame(height: Self.buttonHeight)
+        .background(isUnavailable ? Theme.bg : Theme.accent.opacity(0.1), in: Capsule())
+        .contentShape(Capsule())
+        .onTapGesture {
+            Feedback.tap()
+            guard openMenu == nil else { return closeMenu() }
+            tapToSpeak()
+        }
+        .accessibilityElement()
+        .accessibilityLabel("Recite aloud")
+        .accessibilityHint("Tap the page to stop.")
+        .accessibilityAddTraits(.isButton)
     }
 
     private func tapToSpeak() {
@@ -224,66 +152,39 @@ struct RecitationBar: View {
         }
     }
 
-    private func tapSilently() {
-        isTappingSilently ? onRevealNext() : onStart()
-    }
-
-    private static func symbol(for mode: RecitationMode) -> String {
-        switch mode {
-        case .aloud: "mic"
-        case .silent: "hand.tap"
-        }
-    }
-
     private var isActive: Bool {
-        mode == .silent ? isTappingSilently : voice.state == .listening
+        voice.state == .listening
     }
 
     @ViewBuilder
-    private var micIcon: some View {
-        if mode == .aloud, voice.state == .preparingModel {
+    private var reciteIcon: some View {
+        if voice.state == .preparingModel {
             ProgressView()
                 .controlSize(.small)
-                .tint(Theme.muted)
+                .tint(Theme.accent)
         } else {
             Image(systemName: symbolName)
-                .font(.system(size: 25, weight: isActive ? .semibold : .regular))
-                .foregroundStyle(symbolColor)
+                .font(.system(size: 15, weight: .regular))
                 .contentTransition(.symbolEffect(.replace.offUp))
                 .symbolEffect(
                     .variableColor.iterative.dimInactiveLayers,
                     options: .repeat(.continuous),
-                    isActive: mode == .aloud && voice.state == .listening
+                    isActive: isActive
                 )
         }
     }
 
-    private var symbolName: String {
-        switch mode {
-        case .silent: return isTappingSilently ? "hand.tap.fill" : "hand.tap"
-        case .aloud:
-            if voice.state == .listening { return "waveform" }
-            return isUnavailable ? "mic.slash" : "mic"
-        }
+    private var reciteLabel: String {
+        isActive ? "Listening" : "Recite"
     }
 
-    private var symbolColor: Color {
-        if isActive || openMenu == .recitationModes { return Theme.accent }
-        return isUnavailable ? Theme.muted.opacity(0.5) : Theme.navIcon
+    private var symbolName: String {
+        if isActive { return "waveform" }
+        return isUnavailable ? "mic.slash" : "mic"
     }
 
     private var isUnavailable: Bool {
-        mode == .aloud && voice.state == .micDenied
-    }
-
-    private var fill: Color {
-        if isActive || openMenu == .recitationModes { return Theme.accent.opacity(0.18) }
-        return Theme.surface
-    }
-
-    private var stroke: Color {
-        if isActive || openMenu == .recitationModes { return Theme.accent.opacity(0.7) }
-        return isUnavailable ? Theme.hairline.opacity(0.6) : Theme.hairline
+        voice.state == .micDenied
     }
 }
 

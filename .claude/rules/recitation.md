@@ -1,32 +1,39 @@
 ---
 paths:
-  - "MemorizationGame/Logic/Recitation*.swift"
-  - "MemorizationGame/Logic/PhoneticKey.swift"
-  - "MemorizationGame/Store/RecitationLog.swift"
-  - "MemorizationGame/Feature/SpeechHistory/**/*.swift"
-  - "MemorizationGame/Feature/Contact/**/*.swift"
+  - "MemorizationGame/Logic/Conformer*.swift"
+  - "MemorizationGame/Feature/Session/ConformerRecitation.swift"
+  - "MemorizationGame/Feature/Session/VoiceRecitationController.swift"
+  - "MemorizationGame/Feature/Bench/**/*.swift"
+  - "MemorizationGame/Logic/BenchCard.swift"
+  - "MemorizationGame/Resources/Conformer.mlpackage/**"
+  - "Tools/RecitationBench/**"
 ---
 
-# Recitation and the trouble log
+# Recitation
 
-Recitation is forced alignment: phonetic keys, whole-transcript alignment, a per-passage custom
-language model. Matching must not forgive meaning — near-homophones with different senses
-(myself/thyself) must fail. Fix misses at recognition, never by hardcoding equivalences.
+Recitation is forced alignment against the known text. `Resources/Conformer.mlpackage` (NVIDIA
+Conformer-CTC medium, 16-bit) turns each 6 s window of 16 kHz audio into word-piece
+probabilities; `ConformerAligner` aligns the passage to them; `ConformerTracker` credits a word
+only when its every piece fits and removing it clearly worsens the alignment. `ConformerSession`
+keeps the work bounded: it starts at the chosen paragraph's first word, aligns a 64-word span, and
+re-anchors just behind the last credit (keeping 8 words of overlap) so a long prayer recited for
+minutes costs the same per second as a short one. Audio stays on the device. Matching must not
+forgive meaning: *my/Thy*, *me/Thee*, *myself/Thyself* must fail.
 
-Speech is unavailable on the simulator (`SpeechTranscriber.isAvailable` is false on the iOS 26 sim),
-so recitation behavior is measured from a device trace, not reasoned about. See `Logic/RECITATION-AUDIT.md`.
+`Tools/RecitationBench/SPEC.md` is the contract. Truth comes from the script card or from the
+reciter marking slips by ear — never from a recognizer's transcript. A change to the model, the
+aligner or the commit rule is judged by replaying every take in `Tools/RecitationBench/takes`
+(the Swift harness in `Tools/RecitationBench/conformer/` runs the app's own logic on the Mac),
+and it ships only if no wrong word gets credited.
 
-`RecitationMatcher` records every burnt word (expected word, what was heard in its place, both
-phonetic keys, and how it ended) *and* every failed try — an utterance spoken while a word was owed
-that did not credit it — so a word said repeatedly but never registered still shows up. The log
-keeps trouble only: a word matched first time is never written down, and the try that finally lands
-is kept only for a word that had already failed.
+The model is generated, not edited: `candidates/coreml_convert.py` builds it from NeMo, and
+`candidates/export_vocabulary.py` writes `conformer-vocabulary.json` beside it.
 
-The history filters on misses, skipped, and retries — a miss was voiced and refused, a skip was
-never voiced at all, so those two are disjoint. It lives on its own screen,
-`Feature/SpeechHistory/SpeechHistoryView.swift`, reachable from Settings and the session options menu.
+New test cases come from the phone. In a debug build, Settings → Debug → Recitation Bench → a
+passage → the Free card: recite the way it went wrong, listen back, tap every word that was wrong
+or left out, save. `Tools/RecitationBench/pull-takes.sh` copies every new take off the phone.
 
-`Feature/Contact/ContactView.swift` is the one screen behind both "Report Issue" and "Send Feedback";
-`ContactPurpose` supplies the title, copy, form kind, and whether the recitation record shows.
-Both are reachable from Settings and from the session options menu, and the report purpose offers
-a toggle for sending the record along with the note.
+Misses show as a flash and shake on the owed word: something was said after the reciter reached
+it, then 2 s of quiet passed without it being credited. Silence alone never flashes. The second miss
+on the same word un-hides it for good, like a manual reveal (`VoiceRecitationController.missesBeforeShowing`) — there is no
+tap-to-reveal while reciting; a tap anywhere stops.

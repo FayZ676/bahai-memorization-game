@@ -13,6 +13,7 @@ enum Theme {
     static let faint     = adaptive(0x9DA39C, 0x6A6A6A)
     static let navIcon   = muted
     static let disabled  = faint
+    static let hiddenInk = faint
 
     static let hairline  = adaptive(0xDFE2DB, 0x2E2E2E)
 

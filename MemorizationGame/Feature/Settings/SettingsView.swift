@@ -55,15 +55,6 @@ struct SettingsView: View {
 
                     OptionSection(label: "Feedback", icon: "envelope") {
                         NavigationLink {
-                            SpeechHistoryView()
-                        } label: {
-                            DisclosureRow("Speech History")
-                        }
-                        .buttonStyle(.haptic)
-
-                        HairlineDivider()
-
-                        NavigationLink {
                             ContactView(purpose: .reportIssue)
                         } label: {
                             DisclosureRow("Report Issue")
@@ -79,6 +70,17 @@ struct SettingsView: View {
                         }
                         .buttonStyle(.haptic)
                     }
+
+                    #if DEBUG
+                    OptionSection(label: "Debug", icon: "waveform") {
+                        NavigationLink {
+                            BenchView()
+                        } label: {
+                            DisclosureRow("Recitation Bench")
+                        }
+                        .buttonStyle(.haptic)
+                    }
+                    #endif
 
                     footer
                 }

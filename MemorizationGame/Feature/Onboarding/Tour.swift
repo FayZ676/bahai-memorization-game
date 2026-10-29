@@ -5,13 +5,11 @@ enum TourStep: Int, CaseIterable {
     case openBrowse
     case pickPrayer
     case addPrayer
-    case importPrayer
     case openPassage
     case hideMany
     case hideWord
-    case peek
     case recite
-    case nextSection
+    case startAnywhere
     case achievements
     case finished
 
@@ -20,13 +18,11 @@ enum TourStep: Int, CaseIterable {
         case .openBrowse: "Browsing Prayers"
         case .pickPrayer: "Choosing a Passage"
         case .addPrayer: "Memorizing a Prayer"
-        case .importPrayer: "Importing Prayers"
         case .openPassage: "Open a Memorization"
         case .hideMany: "Hiding Words (Option 1)"
         case .hideWord: "Hiding Words (Option 2)"
-        case .peek: "Peeking"
         case .recite: "Reciting Words"
-        case .nextSection: "Moving Between Sections"
+        case .startAnywhere: "Starting Anywhere"
         case .achievements: "Earning Achievements"
         case .finished: "That's it"
         }
@@ -44,17 +40,14 @@ enum TourStep: Int, CaseIterable {
         case .openBrowse: Text("Tap the \(symbol("book")) button to browse Prayers and Writings.")
         case .pickPrayer: Text("Choose any one of **The Hidden Words**. They are short, and a good place to begin.")
         case .addPrayer:
-            Text("Tap the \(symbol("text.word.spacing")) button to memorize the prayer.")
-        case .importPrayer: Text("Tap the \(symbol("plus")) button to add the prayer to your Memorization Library.")
+            Text("Tap the \(symbol("text.word.spacing")) button to add the prayer to your Memorization Library.")
         case .openPassage: Text("Tap the prayer to start memorizing it.")
         case .hideMany:
-            Text("Tap the \(symbol("text.word.spacing")) button to hide a handful of words in view at once. Press and hold the button to choose how many words it should hide.")
-        case .hideWord: Text("You can also tap a word directly to hide it. Tap it again to bring it back. Press, hold, and glide over multiple words to hide or reveal them at once.")
-        case .peek:
-            Text("Tap the \(symbol("eye")) button to bring every hidden word back into view. Tap it again to hide them once more.")
-        case .recite: Text("Tap the \(symbol("mic")) button to practice saying the words aloud.")
-        case .nextSection:
-            Text("Paragraphs get split into sections. Swipe up or down to move between sections. You can also tap the progress bar on the left rail.")
+            Text("Tap the \(symbol("text.word.spacing")) button to hide a handful of words in the paragraph marked with \u{00B6}. Press and hold the button to choose how many words it should hide.")
+        case .hideWord: Text("You can also tap a word directly to hide it. Hidden words look faded, and disappear while you recite. Tap one again to bring it back. Press, hold, and glide over multiple words to hide or reveal them at once.")
+        case .recite: Text("Tap the \(symbol("mic")) button to practice saying the words aloud. Tap the page when you want to stop.")
+        case .startAnywhere:
+            Text("Practice starts at the paragraph at the top of the screen. Scroll to any paragraph, or tap the \u{00B6} beside it, to start there. The bar under the buttons is the whole prayer, brighter where more words are hidden. Tap or drag it to jump.")
         case .achievements:
             Text("Certain prayers earn an achievement once every word is hidden. Tap the \(symbol("chevron.left")) button to return to your Library, then tap the \(symbol("trophy")) button to see them all.")
         case .finished: Text("You're ready to start memorizing.")

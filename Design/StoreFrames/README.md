@@ -16,7 +16,7 @@ to iterate on layout in a browser.
 ## What it makes
 
 Five tiles that read in order as one pass through the app — pick a prayer, hide a word,
-hide more, say it aloud, know it. Tiles 2 and 3 are the same chunk of the same passage at
+hide more, say it aloud, know it. Tiles 2 and 3 are the same page of the same passage at
 two stages, so the set demonstrates the loop instead of describing it. Reordering the list
 breaks that; the story is the point, not the coverage. The recitation beat sits after that
 pair rather than between them, for the same reason.
@@ -34,7 +34,7 @@ device's — but nothing uses it, and a per-tile `phone_top` in particular shoul
 as a bug rather than a feature.
 
 The closing tile is dark. It is the one place a theme can be shown without spending a tile
-on it, and it lands on the library, where the ramps and the streak carry the same reading
+on it, and it lands on the library, where the completion percentages carry the same reading
 in either appearance. A tile can override its source or theme per device through
 `per_device`, keyed by the raw folder name — the iPad was never shot in dark, so its
 `4-know.png` falls back to the light library rather than dropping the beat.

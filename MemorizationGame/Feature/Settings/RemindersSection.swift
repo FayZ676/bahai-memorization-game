@@ -47,9 +47,6 @@ struct RemindersSection: View {
                     HairlineDivider()
                     addButton
                 }
-
-                HairlineDivider()
-                streakToggle
             }
         }
     }
@@ -82,23 +79,6 @@ struct RemindersSection: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.haptic)
-    }
-
-    private var streakToggle: some View {
-        Toggle(isOn: permissionGated(\.streakReminderEnabled)) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text("Streak alerts")
-                    .appFont(Typography.body)
-                    .foregroundStyle(Theme.ink)
-                InfoNote(Typography.label) {
-                    Text("A nudge in the evening when your streak is about to end.")
-                        .appFont(Typography.label)
-                        .foregroundStyle(Theme.muted)
-                }
-            }
-        }
-        .tint(Theme.accent)
-        .optionRow()
     }
 
     private func row(for reminder: Binding<Reminder>) -> some View {

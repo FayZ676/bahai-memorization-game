@@ -7,4 +7,5 @@ enum Radius {
     static let control: CGFloat = 10
     static let group: CGFloat   = 12
     static let card: CGFloat    = 16
+    static let panel: CGFloat   = 28
 }

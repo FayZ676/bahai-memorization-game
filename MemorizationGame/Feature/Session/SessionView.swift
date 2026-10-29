@@ -4,42 +4,38 @@ import SwiftUI
 struct SessionView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.fontScale) private var fontScale
+    @Environment(\.displayScale) private var displayScale
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.tour) private var tour
     @Environment(\.requestReview) private var requestReview
     @State private var vm: SessionViewModel
     @State private var voice = VoiceRecitationController()
     @State private var started = false
     @State private var showingMicDenied = false
-    @State private var scrubbing = false
-    @State private var rail = RailVisibility()
     @State private var openBarMenu: RecitationBarMenu?
-    @State private var barBounds: CGRect = .zero
     @State private var highlights = RecitationHighlights()
-    @State private var silent = SilentRecitation()
     @State private var painting = WordPainting()
     @State private var hint = SessionHint()
-    @State private var scriptureFrame: CGRect = .zero
-    @State private var readingViewport: CGRect = .zero
-    @State private var scrollRequest: ScrollRequest?
-    @State private var readingPosition = ScrollPosition()
-    @State private var wordFrames = WordFrames()
-    @State private var scrollOffset = ScrollOffset()
-    @State private var scrollReach = ScrollReach()
-    @State private var departing: Departure?
-    @State private var slide: CGFloat = 0
+    @State private var scroll = PageScroll()
+    @State private var pageCache = PageCache()
+    @State private var textOrigin = PageOrigin()
+    @State private var readingPosition = ScrollPosition(edge: .top)
+    @State private var armedParagraph: Int?
+    @State private var startWord = 0
+    @State private var controlsHeight: CGFloat = 0
+    @State private var headerHeight: CGFloat = 0
+    @State private var chromeCleared = false
+    @State private var headerCollapsed = false
     @State private var showingFullText = false
     @State private var showingEdit = false
     @State private var showingReportIssue = false
-    @State private var showingSpeechHistory = false
     @State private var showingFeedback = false
-    @State private var recitingChunkID: UUID?
     let passage: Passage
     private let store: AppStore
 
-    private static let visibleInsets = (top: CGFloat(4), bottom: CGFloat(100))
-    private static let followAnchor = UnitPoint(x: 0, y: 0.5)
-    private static let followSettleDelays: [Duration] = [.milliseconds(140), .milliseconds(450)]
-    private static let sectionSlide = Animation.smooth(duration: 0.62, extraBounce: 0)
+    private static let pageTopMargin: CGFloat = 18
+    private static let followAnchor: CGFloat = 0.4
+    private static let railSamples = 48
 
     init(passage: Passage, store: AppStore) {
         self.passage = passage
@@ -51,64 +47,47 @@ struct SessionView: View {
         ZStack {
             Theme.bg.ignoresSafeArea()
             VStack(spacing: 0) {
-                ScreenHeader(title: currentTitle, onBack: { dismiss() }, onTitleTap: { showingFullText = true }) {
-                    if vm.current != nil { optionsMenu }
-                }
-                if vm.current != nil {
+                if let current = vm.passage {
                     GeometryReader { geo in
-                        let metrics = ReadingMetrics(width: geo.size.width, fontScale: fontScale)
-                        readingArea(metrics)
-                        .overlay(alignment: .leading) {
-                            if rail.isShowing {
-                                progressRail(metrics)
-                                    .transition(.move(edge: .leading).combined(with: .opacity))
+                        let metrics = ReadingMetrics(width: geo.size.width, fontScale: fontScale, dynamicType: dynamicTypeSize)
+                        let layout = pageCache.layout(
+                            for: current,
+                            width: geo.size.width - metrics.textMargin * 2,
+                            metrics: metrics,
+                            displayScale: displayScale
+                        )
+                        page(current, layout: layout, metrics: metrics, size: geo.size)
+                            .clipped()
+                            .overlay(alignment: .bottom) {
+                                LinearGradient(colors: [Theme.bg.opacity(0), Theme.bg], startPoint: .top, endPoint: .bottom)
+                                    .frame(height: controlsHeight / 2 + Spacing.lg)
+                                    .allowsHitTesting(false)
+                                    .opacity(isFocused ? 0 : 1)
+                                    .animation(Motion.focus, value: isFocused)
                             }
-                        }
-                        .overlay {
-                            if openBarMenu != nil {
-                                Color.clear
-                                    .contentShape(Rectangle())
-                                    .onTapGesture { openBarMenu = nil }
+                            .overlay {
+                                if openBarMenu != nil {
+                                    Color.clear
+                                        .contentShape(Rectangle())
+                                        .onTapGesture { openBarMenu = nil }
+                                }
                             }
-                        }
-                        .overlay(alignment: .bottom) {
-                            RecitationBar(
-                                voice: voice,
-                                hasHiddenWords: !(vm.current?.hiddenWords.isEmpty ?? true),
-                                canHideWords: !vm.everyWordHidden,
-                                isConcealing: vm.concealing,
-                                isTappingSilently: silent.isActive,
-                                micDeniedAlert: $showingMicDenied,
-                                mode: Binding(
-                                    get: { vm.recitationMode },
-                                    set: { vm.recitationMode = $0 }
-                                ),
-                                onStart: startRecitation,
-                                onRevealNext: revealNextSilently,
-                                onPeek: {
-                                    vm.toggleConcealment()
-                                    tour?.complete(.peek, onlyIfCurrent: true)
-                                },
-                                onHideWords: { count in
-                                    guard vm.hideRandomWords(count, among: visibleWordIndices) else {
-                                        return hint.show("Every word in view is already hidden.")
-                                    }
-                                    tour?.complete(.hideMany, onlyIfCurrent: true)
-                                },
-                                hideCount: Binding(
-                                    get: { vm.randomHideCount },
-                                    set: { vm.randomHideCount = $0 }
-                                ),
-                                openMenu: $openBarMenu,
-                                hint: hint
-                            )
-                        }
+                            .overlay(alignment: .bottom) {
+                                controls(current, layout: layout)
+                                    .opacity(isFocused ? 0 : 1)
+                                    .allowsHitTesting(!isFocused)
+                                    .animation(Motion.focus, value: isFocused)
+                            }
                     }
                 } else {
                     Spacer()
                     emptyQueue
                     Spacer()
                 }
+            }
+            .overlay(alignment: .top) { header }
+            .overlay {
+                if isFocused { stopSurface }
             }
         }
         .toolbar(.hidden, for: .navigationBar)
@@ -120,9 +99,6 @@ struct SessionView: View {
         .navigationDestination(isPresented: $showingEdit) {
             ImportView(editing: passage, store: store)
         }
-        .navigationDestination(isPresented: $showingSpeechHistory) {
-            SpeechHistoryView()
-        }
         .navigationDestination(isPresented: $showingReportIssue) {
             ContactView(purpose: .reportIssue)
         }
@@ -131,18 +107,17 @@ struct SessionView: View {
         }
         .onChange(of: showingEdit) { _, isEditing in
             guard !isEditing else { return }
-            vm.start()
+            stopRecitation()
+            highlights.clear()
         }
         .task {
             guard !started else { return }
             started = true
-            rail.stir()
-            vm.start()
             voice.onWordsMatched = { registerRecited($0) }
-            voice.onMiss = { registerMiss($0, movedOn: $1) }
-            voice.onCompleted = { completeChunk() }
-            voice.onAttemptFinished = { recordAttempt($0) }
-            voice.prepare(for: vm.passageText)
+            voice.onMiss = { registerMiss($0) }
+            voice.onWordShown = { showMissedWord($0) }
+            voice.onCompleted = { completeRecitation() }
+            voice.prepare()
             #if DEBUG
             if ProcessInfo.processInfo.environment["SHOT_RECITING"] == "1" {
                 try? await Task.sleep(for: .seconds(3))
@@ -150,29 +125,20 @@ struct SessionView: View {
             }
             #endif
         }
-        .onChange(of: vm.step) {
-            tour?.complete(.nextSection, onlyIfCurrent: true)
+        .onChange(of: vm.passage?.hiddenWords) {
+            guard let current = vm.passage else { return }
+            voice.updateHiddenIndices(highlights.unattempted(in: current, from: startWord))
         }
-        .onChange(of: tour?.step) { _, step in
-            guard step == .nextSection, !vm.hasMultipleSections else { return }
-            tour?.complete(.nextSection)
+        .onChange(of: isFocused) { _, focused in
+            chromeCleared = false
+            withAnimation(Motion.focus) { headerCollapsed = focused }
+            guard focused else { return }
+            Task {
+                try? await Task.sleep(for: .seconds(Motion.focusDuration))
+                chromeCleared = isFocused
+            }
         }
-        .onChange(of: vm.presentationEpoch) {
-            voice.stop()
-            silent.stop()
-            highlights.clear()
-            voice.prepare(for: vm.passageText)
-        }
-        .onChange(of: vm.current?.hiddenWords) {
-            guard let card = vm.current else { return }
-            voice.updateHiddenIndices(highlights.unattempted(in: card))
-            silent.updateOwed(highlights.unattempted(in: card))
-        }
-        .onChange(of: vm.recitationMode) {
-            if voice.isListening { voice.stop() }
-            silent.stop()
-        }
-        .onDisappear { voice.release() }
+        .onDisappear { voice.stop() }
         .alert("Microphone Access Needed", isPresented: $showingMicDenied) {
             Button("Open Settings", action: Feedback.tapping {
                 if let url = URL(string: UIApplication.openSettingsURLString) {
@@ -191,23 +157,12 @@ struct SessionView: View {
                         title: "Achievement earned",
                         detail: earned.title
                     )
-                } else if store.dailyGoalReached {
-                    Toast(
-                        symbol: "sparkles",
-                        title: "Daily goal complete",
-                        detail: "Today's practice is in — streak secured."
-                    )
                 }
             }
             .padding(.top, 10)
             .transition(.move(edge: .top).combined(with: .opacity))
         }
-        .animation(.spring(response: 0.42, dampingFraction: 0.8), value: store.dailyGoalReached)
         .animation(.spring(response: 0.42, dampingFraction: 0.8), value: store.justEarned)
-        .onChange(of: store.dailyGoalReached) { _, reached in
-            guard reached else { return }
-            celebrate { store.dailyGoalReached = false }
-        }
         .onChange(of: store.justEarned) { _, earned in
             guard earned != nil else { return }
             celebrate { store.justEarned = nil }
@@ -227,6 +182,95 @@ struct SessionView: View {
         }
     }
 
+    private func page(_ current: Passage, layout: PageLayout, metrics: ReadingMetrics, size: CGSize) -> some View {
+        ScrollView {
+            PageContent(
+                passage: current,
+                layout: layout,
+                metrics: metrics,
+                scroll: scroll,
+                topInset: topInset,
+                bottomInset: controlsHeight + Spacing.xxl,
+                cascading: vm.cascading,
+                highlights: highlights,
+                isReciting: isReciting,
+                isFocused: isFocused,
+                cursor: recitationCursor,
+                fixedStart: isReciting ? layout.paragraphIndex(containing: startWord) : armedParagraph,
+                textOrigin: textOrigin,
+                onMarker: { tapMarker($0, layout: layout) },
+                onTapWord: { point in
+                    guard !painting.isActive, let idx = layout.wordIndex(at: point) else { return }
+                    toggleWord(idx)
+                },
+                onPaint: paintGesture(layout)
+            )
+        }
+        .scrollIndicators(.hidden)
+        .scrollDisabled(painting.isActive)
+        .scrollPosition($readingPosition)
+        .scrollTargetBehavior(ParagraphSnap(tops: layout.paragraphs.map(\.frame.minY), isActive: !isFocused))
+        .onScrollGeometryChange(for: CGFloat.self) { geometry in
+            geometry.contentOffset.y + geometry.contentInsets.top
+        } action: { _, top in
+            scroll.update(top: top)
+        }
+        .onScrollPhaseChange { _, phase in
+            if phase == .interacting { armedParagraph = nil }
+        }
+        .onAppear { scroll.viewportHeight = size.height }
+        .onChange(of: size.height) { _, height in scroll.viewportHeight = height }
+        .onChange(of: recitationCursor) { _, index in
+            guard isReciting else { return }
+            follow(index, layout: layout)
+        }
+    }
+
+    private func controls(_ current: Passage, layout: PageLayout) -> some View {
+        VStack(spacing: Spacing.xxs) {
+            RecitationBar(
+                voice: voice,
+                canHideWords: !vm.everyWordHidden,
+                micDeniedAlert: $showingMicDenied,
+                onStart: { startRecitation(layout: layout) },
+                onHideWords: { count in
+                    let words = Set(layout.paragraphs[focusedParagraph(layout)].words)
+                    guard vm.hideRandomWords(count, among: words) else {
+                        return hint.show("Every word in this paragraph is already hidden.")
+                    }
+                    tour?.complete(.hideMany, onlyIfCurrent: true)
+                },
+                hideCount: Binding(
+                    get: { vm.randomHideCount },
+                    set: { vm.randomHideCount = $0 }
+                ),
+                openMenu: $openBarMenu,
+                hint: hint
+            )
+            HeatRail(
+                density: layout.density(of: current.hiddenWords, samples: Self.railSamples),
+                pageHeight: topInset + layout.size.height,
+                scroll: scroll,
+                onSeek: { fraction, settled in seek(to: fraction, layout: layout, settled: settled) }
+            )
+            .padding(.horizontal, Spacing.lg)
+        }
+        .padding(.top, Spacing.xxs)
+        .padding(.bottom, Spacing.sm)
+        .background {
+            RoundedRectangle(cornerRadius: Radius.panel, style: .continuous)
+                .fill(Theme.raised)
+                .overlay(
+                    RoundedRectangle(cornerRadius: Radius.panel, style: .continuous)
+                        .strokeBorder(Theme.hairline, lineWidth: 1)
+                )
+                .shadow(color: .black.opacity(0.08), radius: 18, y: 6)
+        }
+        .padding(.horizontal, Spacing.lg)
+        .padding(.bottom, Spacing.xs)
+        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { controlsHeight = $0 }
+    }
+
     private func celebrate(thenDismiss: @escaping () -> Void) {
         Feedback.sessionComplete()
         Task {
@@ -236,26 +280,58 @@ struct SessionView: View {
     }
 
     private var currentTitle: String {
-        store.passages.first { $0.id == passage.id }?.title ?? passage.title
+        vm.passage?.title ?? passage.title
     }
 
     #if DEBUG
     private func stageRecitationForCapture() {
-        guard let card = vm.current else { return }
-        let hidden = card.hiddenWords.sorted()
+        guard let current = vm.passage else { return }
+        let hidden = current.hiddenWords.sorted()
         guard !hidden.isEmpty else { return }
         let spoken = Array(hidden.prefix((hidden.count + 1) / 2))
         highlights.recite(spoken)
-        let words = card.words
-        let cursor = hidden.dropFirst(spoken.count).first
-        let spokenThrough = cursor ?? words.count
-        let heard = words[max(0, spokenThrough - 7)..<spokenThrough]
-            .map(String.init)
-            .filter { $0.contains(where: \.isLetter) }
-            .joined(separator: " ")
-        voice.stageListeningForCapture(cursor: cursor, heard: heard)
+        voice.stageListeningForCapture(cursor: hidden.dropFirst(spoken.count).first)
     }
     #endif
+
+    private var topInset: CGFloat {
+        Self.pageTopMargin + (headerCollapsed ? 0 : headerHeight)
+    }
+
+    private var isReciting: Bool {
+        voice.isListening
+    }
+
+    private var isFocused: Bool {
+        voice.isListening || voice.state == .preparingModel
+    }
+
+    private var recitationCursor: Int? {
+        isReciting && chromeCleared ? voice.cursorIndex : nil
+    }
+
+    private var header: some View {
+        ScreenHeader(title: currentTitle, onBack: { dismiss() }, onTitleTap: { showingFullText = true }) {
+            if vm.passage != nil { optionsMenu }
+        }
+        .background(Theme.bg)
+        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { headerHeight = $0 }
+        .opacity(isFocused ? 0 : 1)
+        .allowsHitTesting(!isFocused)
+        .animation(Motion.focus, value: isFocused)
+    }
+
+    private var stopSurface: some View {
+        Color.clear
+            .contentShape(Rectangle())
+            .onTapGesture {
+                Feedback.tap()
+                stopRecitation()
+            }
+            .accessibilityElement()
+            .accessibilityLabel("Stop reciting")
+            .accessibilityAddTraits(.isButton)
+    }
 
     private func registerRecited(_ indices: [Int]) {
         RecitationTrace.emit("ui", "recited \(indices)")
@@ -263,48 +339,9 @@ struct SessionView: View {
         tour?.complete(.recite)
     }
 
-    private var isReciting: Bool {
-        voice.isListening || silent.isActive
-    }
-
-    private var recitationCursor: Int? {
-        voice.isListening ? voice.cursorIndex : silent.cursorIndex
-    }
-
-    private func revealedByRecitation(_ index: Int, live: Bool) -> Bool {
-        live && isReciting && highlights.recited.contains(index)
-    }
-
-    private var cursorTarget: CGRect? {
-        guard isReciting,
-              let index = recitationCursor,
-              let frame = wordFrames.frame(at: index),
-              scriptureFrame != .zero else { return nil }
-        return frame.offsetBy(dx: -scriptureFrame.minX, dy: -scriptureFrame.minY)
-    }
-
-    private func completeChunk() {
-        RecitationTrace.emit("ui", "chunk complete")
-        Feedback.sessionComplete()
-        withAnimation(.easeInOut(duration: 0.3)) { highlights.clear() }
-    }
-
-    private func recordAttempt(_ draft: RecitationDraft) {
-        guard let chunkID = recitingChunkID ?? vm.current?.id,
-              let card = store.reviewables.first(where: { $0.id == chunkID }) else { return }
-        RecitationLog.shared.record(
-            draft.attempt(
-                chunkID: chunkID,
-                passageTitle: currentTitle,
-                excerpt: card.words.prefix(6).joined(separator: " ")
-            )
-        )
-        recitingChunkID = nil
-    }
-
-    private func registerMiss(_ index: Int, movedOn: Bool) {
-        RecitationTrace.emit("ui", "miss \(index) movedOn=\(movedOn)")
-        withAnimation(.linear(duration: 0.3)) { highlights.miss(index, movedOn: movedOn) }
+    private func registerMiss(_ index: Int) {
+        RecitationTrace.emit("ui", "miss \(index)")
+        withAnimation(.linear(duration: 0.3)) { highlights.miss(index) }
         Feedback.recitationMiss()
         tour?.complete(.recite)
         Task {
@@ -313,285 +350,109 @@ struct SessionView: View {
         }
     }
 
-    private func startRecitation() {
-        guard let card = vm.current else { return }
-        vm.conceal()
-        var remaining = highlights.unattempted(in: card)
+    private func showMissedWord(_ index: Int) {
+        RecitationTrace.emit("ui", "shown \(index)")
+        guard vm.isMarked(index) else { return }
+        withAnimation(Motion.toggle) { vm.toggleWord(index) }
+    }
+
+    private func completeRecitation() {
+        RecitationTrace.emit("ui", "recitation complete")
+        Feedback.sessionComplete()
+        withAnimation(.easeInOut(duration: 0.3)) { highlights.clear() }
+    }
+
+    private func focusedParagraph(_ layout: PageLayout) -> Int {
+        let tolerance = (layout.wordFrames.first?.height ?? 0) * 0.6
+        return armedParagraph
+            ?? layout.paragraphIndex(atTop: scroll.top, tolerance: tolerance)
+            ?? 0
+    }
+
+    private func startRecitation(layout: PageLayout) {
+        beginRecitation(at: focusedParagraph(layout), layout: layout)
+    }
+
+    private func beginRecitation(at paragraph: Int, layout: PageLayout) {
+        guard let current = vm.passage, layout.paragraphs.indices.contains(paragraph) else { return }
+        let start = layout.paragraphs[paragraph].words.lowerBound
+        startWord = start
+        var remaining = highlights.unattempted(in: current, from: start)
         if remaining.isEmpty {
             highlights.clear()
-            remaining = card.recitableIndices
+            remaining = current.recitableIndices(from: start)
         }
-        if let first = remaining.first {
-            scrollRequest = ScrollRequest(index: first)
-        }
-        guard vm.recitationMode == .aloud else {
-            silent.start(owing: remaining)
-            return revealNextSilently()
-        }
+        guard !remaining.isEmpty else { return }
+        scrollToParagraph(paragraph, layout: layout)
         Feedback.prepareRecitation()
-        recitingChunkID = card.id
         Task {
-            await voice.start(
-                words: card.words.map(String.init),
-                contextText: card.expectedText,
-                passageText: vm.passageText,
-                hiddenIndices: remaining
-            )
+            await voice.start(words: current.words.map(String.init), hiddenIndices: remaining, from: start)
         }
     }
 
-    private func revealNextSilently() {
-        guard let index = silent.reveal() else { return }
-        withAnimation(Motion.toggle) { registerRecited([index]) }
-        guard silent.isFinished else { return }
-        silent.stop()
-        completeChunk()
+    private func stopRecitation() {
+        if isFocused { voice.stop() }
     }
 
-    private func progressRail(_ metrics: ReadingMetrics) -> some View {
-        let weights = vm.sectionWeights
-        return ProgressBar(
-            heats: vm.sectionHeats,
-            weights: weights,
-            animated: false,
-            highlight: vm.step,
-            barHeight: scrubbing ? 8 : 4,
-            axis: .vertical
-        )
-        .frame(maxWidth: .infinity)
-        .contentShape(Rectangle())
-        .gesture(
-            DragGesture(minimumDistance: 0, coordinateSpace: .global)
-                .onChanged { value in
-                    if !scrubbing {
-                        withAnimation(.easeOut(duration: 0.16)) { scrubbing = true }
-                    }
-                    rail.hold()
-                    withAnimation(.easeInOut(duration: 0.18)) {
-                        vm.scrub(to: Self.segmentIndex(
-                            at: value.location.y - barBounds.minY,
-                            extent: barBounds.height,
-                            weights: weights
-                        ))
-                    }
-                }
-                .onEnded { _ in
-                    withAnimation(.easeOut(duration: 0.2)) { scrubbing = false }
-                    rail.stir()
-                }
-        )
-        .onPreferenceChange(ProgressBarBounds.self) { barBounds = $0 }
-        .frame(width: metrics.railWidth)
-        .padding(.leading, metrics.railInset)
-        .padding(.top, Spacing.headerGap)
-        .padding(.bottom, Spacing.sm)
-        .animation(.easeOut(duration: 0.14), value: vm.step)
+    private func tapMarker(_ paragraph: Int, layout: PageLayout) {
+        tour?.complete(.startAnywhere, onlyIfCurrent: true)
+        armedParagraph = paragraph
+        scrollToParagraph(paragraph, layout: layout)
     }
 
-    private static func segmentIndex(at distance: CGFloat, extent: CGFloat, weights: [Int]) -> Int {
-        let fractions = ProgressBar.displayFractions(weights: weights, count: weights.count)
-        var edge: CGFloat = 0
-        for (i, fraction) in fractions.enumerated() {
-            edge += extent * CGFloat(fraction)
-            if distance < edge { return i }
-        }
-        return max(weights.count - 1, 0)
-    }
-
-    private func readingArea(_ metrics: ReadingMetrics) -> some View {
-        GeometryReader { geo in
-            ZStack(alignment: .top) {
-                if let departing {
-                    departingSection(departing, height: geo.size.height, metrics: metrics)
-                }
-                if let card = vm.current {
-                    sectionScroll(card, viewportHeight: geo.size.height, metrics: metrics)
-                        .id(card.id)
-                        .offset(y: slide)
-                }
-            }
-            .frame(width: geo.size.width, height: geo.size.height)
-            .clipped()
-            .onGeometryChange(for: CGRect.self) { proxy in
-                proxy.frame(in: .global)
-            } action: { frame in
-                readingViewport = frame
-            }
-            .onChange(of: recitationCursor) { _, index in
-                guard isReciting else { return }
-                follow(index)
-            }
-            .onChange(of: scrollRequest) { _, request in
-                guard let request else { return }
-                Task { await settleCursorInView(from: request.index) }
-            }
-            .onChange(of: isReciting) { _, reciting in
-                guard reciting, let index = recitationCursor else { return }
-                follow(index, force: true)
-            }
-        }
-        .frame(maxHeight: .infinity)
-    }
-
-    private func sectionScroll(_ card: Reviewable, viewportHeight: CGFloat, metrics: ReadingMetrics) -> some View {
-        ScrollView {
-            sectionBody(card, viewportHeight: viewportHeight, live: true, metrics: metrics)
-        }
-        .scrollIndicators(.hidden)
-        .scrollDisabled(painting.isActive)
-        .scrollPosition($readingPosition)
-        .onScrollGeometryChange(for: ScrollReach.self) { geometry in
-            ScrollReach(
-                top: geometry.contentOffset.y + geometry.contentInsets.top,
-                bottom: geometry.contentSize.height - geometry.contentOffset.y - geometry.containerSize.height
-            )
-        } action: { previous, reach in
-            scrollOffset.y = reach.top
-            scrollReach = reach
-            if abs(reach.top - previous.top) > 0.5 { rail.stir() }
-        }
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 24)
-                .onEnded { value in
-                    guard !painting.isActive, departing == nil else { return }
-                    guard abs(value.translation.height) > abs(value.translation.width) else { return }
-                    if value.translation.height < 0, scrollReach.atBottom {
-                        moveSection(forward: true)
-                    } else if value.translation.height > 0, scrollReach.atTop {
-                        moveSection(forward: false)
-                    }
-                }
-        )
-    }
-
-    private func departingSection(_ departure: Departure, height: CGFloat, metrics: ReadingMetrics) -> some View {
-        sectionBody(departure.card, viewportHeight: height, live: false, metrics: metrics)
-            .offset(y: -departure.scrollTop)
-            .frame(height: height, alignment: .topLeading)
-            .clipped()
-            .allowsHitTesting(false)
-            .offset(y: slide - (departure.advancing ? height : -height))
-    }
-
-    private func sectionBody(_ card: Reviewable, viewportHeight: CGFloat, live: Bool, metrics: ReadingMetrics) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            scripture(for: card, live: live, metrics: metrics)
-            InfoNote(Typography.micro, color: Theme.faint) {
-                Text("Tap and glide over words to show or hide them")
-                    .appFont(Typography.micro)
-                    .foregroundStyle(Theme.faint)
-            }
-            .padding(.top, 20)
-            Spacer(minLength: 0)
-        }
-        .frame(maxWidth: .infinity, minHeight: viewportHeight - 64, alignment: .topLeading)
-        .padding(.horizontal, metrics.textMargin)
-        .padding(.top, 18)
-        .padding(.bottom, 110)
-    }
-
-    private func moveSection(forward: Bool) {
-        guard forward ? vm.canGoForward : vm.canGoBack, let card = vm.current else { return }
-        let height = readingViewport.height
-        departing = Departure(card: card, scrollTop: scrollOffset.y, advancing: forward)
-        vm.skip(forward: forward)
-        readingPosition.scrollTo(edge: .top)
-        slide = forward ? height : -height
-        DispatchQueue.main.async {
-            withAnimation(Self.sectionSlide) {
-                slide = 0
-            } completion: {
-                departing = nil
-            }
+    private func scrollToParagraph(_ paragraph: Int, layout: PageLayout) {
+        let target = min(layout.paragraphs[paragraph].frame.minY, maxScrollTop(layout))
+        withAnimation(.easeInOut(duration: 0.4)) {
+            readingPosition.scrollTo(y: max(target, 0))
         }
     }
 
-    private var visibleWordIndices: Set<Int> {
-        guard readingViewport != .zero, let card = vm.current else { return [] }
-        let ceiling = readingViewport.minY + Self.visibleInsets.top
-        let floor = readingViewport.maxY - Self.visibleInsets.bottom
-        return Set(card.words.indices.filter { idx in
-            guard let frame = wordFrames.frame(at: idx) else { return false }
-            return frame.minY >= ceiling && frame.maxY <= floor
-        })
-    }
-
-    private func follow(_ index: Int?, force: Bool = false) {
-        guard let index,
-              let frame = wordFrames.frame(at: index),
-              readingViewport != .zero else { return }
-        let anchorY = readingViewport.minY + readingViewport.height * Self.followAnchor.y - frame.height / 2
-        let target = max(scrollOffset.y + frame.minY - anchorY, 0)
-        guard force || abs(target - scrollOffset.y) > 0.5 else { return }
-        withAnimation(.easeInOut(duration: 0.35)) {
+    private func seek(to fraction: CGFloat, layout: PageLayout, settled: Bool) {
+        tour?.complete(.startAnywhere, onlyIfCurrent: true)
+        armedParagraph = nil
+        let pageHeight = topInset + layout.size.height
+        var target = min(max(fraction * pageHeight - scroll.viewportHeight / 2, 0), maxScrollTop(layout))
+        guard settled else {
+            readingPosition.scrollTo(y: target)
+            return
+        }
+        let reach = scroll.viewportHeight * 0.3
+        if let nearest = layout.paragraphs.map(\.frame.minY)
+            .filter({ $0 <= maxScrollTop(layout) + 1 })
+            .min(by: { abs($0 - target) < abs($1 - target) }),
+           abs(nearest - target) <= reach {
+            target = nearest
+        }
+        withAnimation(.easeInOut(duration: 0.3)) {
             readingPosition.scrollTo(y: target)
         }
     }
 
-    private func settleCursorInView(from index: Int) async {
-        follow(index, force: true)
-        for delay in Self.followSettleDelays {
-            try? await Task.sleep(for: delay)
-            guard scrollRequest?.index == index else { return }
-            follow(isReciting ? (recitationCursor ?? index) : index, force: true)
+    private func maxScrollTop(_ layout: PageLayout) -> CGFloat {
+        let content = topInset + layout.size.height + PageContent.tipHeight + controlsHeight + Spacing.xxl
+        return max(content - scroll.viewportHeight, 0)
+    }
+
+    private func follow(_ index: Int?, layout: PageLayout) {
+        guard let index, layout.wordFrames.indices.contains(index) else { return }
+        let frame = layout.wordFrames[index]
+        let target = max(topInset + frame.minY - scroll.viewportHeight * Self.followAnchor, 0)
+        guard abs(target - scroll.top) > frame.height / 2 else { return }
+        withAnimation(.easeInOut(duration: 0.35)) {
+            readingPosition.scrollTo(y: min(target, maxScrollTop(layout)))
         }
     }
 
-    private func scripture(for card: Reviewable, live: Bool, metrics: ReadingMetrics) -> some View {
-        let words = card.words
-        return VStack(alignment: .leading, spacing: 18) {
-            ForEach(Array(card.paragraphs.enumerated()), id: \.offset) { _, range in
-                FlowLayout(spacing: metrics.wordSpacing, lineSpacing: metrics.lineSpacing, justified: true, maxStretchPerGap: metrics.maxStretchPerGap) {
-                    ForEach(range, id: \.self) { idx in
-                        WordView(
-                            token: String(words[idx]),
-                            concealed: vm.concealing && card.hiddenWords.contains(idx) && !revealedByRecitation(idx, live: live),
-                            recited: live && highlights.recited.contains(idx),
-                            missed: live && highlights.missed.contains(idx),
-                            missFlashing: live && highlights.isFlashing(idx),
-                            staggerDelay: live && vm.cascading ? Motion.cascadeDelay(idx, of: words.count) : 0
-                        )
-                            .appFont(Typography.recite)
-                            .modifier(ShakeEffect(shakes: live ? highlights.shakeAmount(at: idx) : 0))
-                            .onGeometryChange(for: CGRect.self) { proxy in
-                                proxy.frame(in: .global)
-                            } action: { frame in
-                                guard live else { return }
-                                wordFrames.record(frame, at: idx)
-                            }
-                    }
-                }
-            }
-        }
-        .onGeometryChange(for: CGRect.self) { proxy in
-            proxy.frame(in: .global)
-        } action: { frame in
-            guard live else { return }
-            scriptureFrame = frame
-        }
-        .overlay(alignment: .topLeading) {
-            if live {
-                RecitationCursor(target: cursorTarget)
-            }
-        }
-        .contentShape(Rectangle())
-        .allowsHitTesting(live)
-        .simultaneousGesture(
-            SpatialTapGesture(coordinateSpace: .global)
-                .onEnded { value in
-                    guard !painting.isActive, let idx = wordIndex(at: value.location) else { return }
-                    toggleWord(idx)
-                }
-        )
-        .gesture(PaintRecognizer(
+    private func paintGesture(_ layout: PageLayout) -> PaintRecognizer {
+        PaintRecognizer(
             onBegan: { location in
                 painting.begin()
                 Feedback.flip()
-                paint(at: location)
+                paint(at: location, layout: layout)
             },
             onMoved: { location in
                 guard painting.isActive else { return }
-                paint(at: location)
+                paint(at: location, layout: layout)
             },
             onEnded: {
                 painting.end()
@@ -600,11 +461,12 @@ struct SessionView: View {
                     painting.settle()
                 }
             }
-        ))
+        )
     }
 
-    private func paint(at location: CGPoint) {
-        guard let idx = wordIndex(at: location) else { return }
+    private func paint(at location: CGPoint, layout: PageLayout) {
+        let point = CGPoint(x: location.x - textOrigin.global.x, y: location.y - textOrigin.global.y)
+        guard let idx = layout.wordIndex(at: point) else { return }
         guard painting.shouldToggle(vm.isMarked(idx)) else { return }
         toggleWord(idx)
     }
@@ -612,10 +474,6 @@ struct SessionView: View {
     private func toggleWord(_ idx: Int) {
         withAnimation(Motion.toggle) { vm.toggleWord(idx) }
         tour?.complete(.hideWord, onlyIfCurrent: true)
-    }
-
-    private func wordIndex(at location: CGPoint) -> Int? {
-        wordFrames.index(at: location, wordCount: vm.current?.words.count ?? 0)
     }
 
     private var optionsMenu: some View {
@@ -649,11 +507,6 @@ struct SessionView: View {
             }
             Section {
                 Button(
-                    "Speech History",
-                    systemImage: "clock.arrow.trianglehead.counterclockwise.rotate.90",
-                    action: Feedback.tapping { showingSpeechHistory = true }
-                )
-                Button(
                     "Report Issue",
                     systemImage: "exclamationmark.bubble",
                     action: Feedback.tapping { showingReportIssue = true }
@@ -680,28 +533,124 @@ struct SessionView: View {
     }
 }
 
-private struct ReadingMetrics {
-    let textMargin: CGFloat
-    let railInset: CGFloat
-    let railWidth: CGFloat
-    let maxStretchPerGap: CGFloat
-    let wordSpacing: CGFloat
-    let lineSpacing: CGFloat
+private struct PageContent: View {
+    let passage: Passage
+    let layout: PageLayout
+    let metrics: ReadingMetrics
+    let scroll: PageScroll
+    let topInset: CGFloat
+    let bottomInset: CGFloat
+    let cascading: Bool
+    let highlights: RecitationHighlights
+    let isReciting: Bool
+    let isFocused: Bool
+    let cursor: Int?
+    let fixedStart: Int?
+    let textOrigin: PageOrigin
+    let onMarker: (Int) -> Void
+    let onTapWord: (CGPoint) -> Void
+    let onPaint: PaintRecognizer
 
-    init(width: CGFloat, fontScale: CGFloat) {
-        let narrow = width < 390
-        textMargin = narrow ? 30 : 42
-        railInset = narrow ? 3 : 8
-        railWidth = narrow ? 22 : 26
-        maxStretchPerGap = (narrow ? 1.5 : 2.5) * fontScale
-        wordSpacing = 7 * fontScale
-        lineSpacing = 8 * fontScale
+    static let tipHeight: CGFloat = 40
+
+    var body: some View {
+        let drawnBand = (scroll.drawnRange.lowerBound - topInset)...(scroll.drawnRange.upperBound - topInset)
+        let drawn = layout.paragraphIndices(near: drawnBand)
+        ZStack(alignment: .topLeading) {
+            Color.clear
+                .frame(height: topInset + layout.size.height + Self.tipHeight + bottomInset)
+                .frame(maxWidth: .infinity)
+            ForEach(drawn, id: \.self) { index in
+                paragraph(index)
+                    .offset(x: metrics.textMargin, y: topInset + layout.paragraphs[index].frame.minY)
+            }
+            MarkerColumn(
+                layout: layout,
+                drawn: drawn,
+                scroll: scroll,
+                fixedStart: fixedStart,
+                topInset: topInset,
+                margin: metrics.textMargin,
+                onTap: onMarker
+            )
+            .opacity(isFocused ? 0 : 1)
+            .allowsHitTesting(!isFocused)
+            .animation(Motion.focus, value: isFocused)
+            RecitationCursor(target: cursorTarget)
+                .offset(x: metrics.textMargin, y: topInset)
+            InfoNote(Typography.micro, color: Theme.faint) {
+                Text("Tap and glide over words to show or hide them")
+                    .appFont(Typography.micro)
+                    .foregroundStyle(Theme.faint)
+            }
+            .offset(x: metrics.textMargin, y: topInset + layout.size.height + 20)
+            .opacity(isFocused ? 0 : 1)
+            .animation(Motion.focus, value: isFocused)
+        }
+        .onGeometryChange(for: CGPoint.self) { proxy in
+            proxy.frame(in: .global).origin
+        } action: { origin in
+            textOrigin.global = CGPoint(x: origin.x + metrics.textMargin, y: origin.y + topInset)
+        }
+        .contentShape(Rectangle())
+        .simultaneousGesture(
+            SpatialTapGesture()
+                .onEnded { value in
+                    onTapWord(CGPoint(x: value.location.x - metrics.textMargin, y: value.location.y - topInset))
+                }
+        )
+        .gesture(onPaint)
+    }
+
+    private var cursorTarget: CGRect? {
+        guard isReciting, let cursor, layout.wordFrames.indices.contains(cursor) else { return nil }
+        return layout.wordFrames[cursor]
+    }
+
+    private func paragraph(_ index: Int) -> some View {
+        let paragraph = layout.paragraphs[index]
+        let words = passage.words
+        return PlacedParagraph(
+            frames: paragraph.words.map { layout.wordFrames[$0].offsetBy(dx: 0, dy: -paragraph.frame.minY) },
+            size: paragraph.frame.size
+        ) {
+            ForEach(paragraph.words, id: \.self) { idx in
+                WordView(
+                    token: String(words[idx]),
+                    concealed: isFocused && passage.hiddenWords.contains(idx) && !highlights.recited.contains(idx),
+                    dimmed: !isFocused && passage.hiddenWords.contains(idx),
+                    recited: highlights.recited.contains(idx),
+                    missFlashing: highlights.isFlashing(idx),
+                    staggerDelay: cascading ? Motion.cascadeDelay(idx, of: words.count) : 0
+                )
+                .font(Font(layout.font))
+                .modifier(ShakeEffect(shakes: highlights.shakeAmount(at: idx)))
+            }
+        }
     }
 }
 
-private struct ScrollRequest: Equatable {
-    let index: Int
-    let issued = UUID()
+private struct MarkerColumn: View {
+    let layout: PageLayout
+    let drawn: [Int]
+    let scroll: PageScroll
+    let fixedStart: Int?
+    let topInset: CGFloat
+    let margin: CGFloat
+    let onTap: (Int) -> Void
+
+    var body: some View {
+        let tolerance = (layout.wordFrames.first?.height ?? 0) * 0.6
+        let start = fixedStart ?? layout.paragraphIndex(atTop: scroll.top, tolerance: tolerance)
+        let lineHeight = layout.wordFrames.first?.height ?? 0
+        ForEach(drawn, id: \.self) { index in
+            ParagraphMarker(isStart: index == start) { onTap(index) }
+                .offset(
+                    x: (margin - 30) / 2,
+                    y: topInset + layout.paragraphs[index].frame.minY + (lineHeight - 30) / 2
+                )
+        }
+    }
 }
 
 private struct ShakeEffect: GeometryEffect {
@@ -744,10 +693,4 @@ private struct Toast: View {
                 .overlay(Capsule(style: .continuous).stroke(Theme.gold.opacity(0.5), lineWidth: 1))
         )
     }
-}
-
-struct Departure {
-    let card: Reviewable
-    let scrollTop: CGFloat
-    let advancing: Bool
 }

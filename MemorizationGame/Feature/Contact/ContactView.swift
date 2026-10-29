@@ -11,13 +11,6 @@ enum ContactPurpose {
         }
     }
 
-    var messageLabel: String {
-        switch self {
-        case .reportIssue: return "Message (Optional)"
-        case .feedback: return "Message"
-        }
-    }
-
     var prompt: String {
         switch self {
         case .reportIssue: return "What went wrong?"
@@ -38,32 +31,24 @@ enum ContactPurpose {
         case .feedback: return FeedbackForm.Kind.feedback
         }
     }
-
-    var offersSpeechHistory: Bool { self == .reportIssue }
 }
 
 struct ContactView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var log = RecitationLog.shared
     @State private var message = ""
     @State private var email = ""
-    @State private var sendingSpeechHistory = true
     @State private var sending = false
     @State private var sent = false
     @State private var failed = false
     @FocusState private var editorFocused: Bool
     let purpose: ContactPurpose
 
-    private var attempts: [RecitationAttempt] {
-        purpose.offersSpeechHistory && sendingSpeechHistory ? log.newestFirst : []
-    }
-
     private var trimmedMessage: String {
         message.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private var canSend: Bool {
-        !sending && (!trimmedMessage.isEmpty || !attempts.isEmpty)
+        !sending && !trimmedMessage.isEmpty
     }
 
     var body: some View {
@@ -87,12 +72,8 @@ struct ContactView: View {
     private var form: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                OptionSection(label: purpose.messageLabel, icon: "text.alignleft") {
+                OptionSection(label: "Message", icon: "text.alignleft") {
                     editor
-                }
-
-                if purpose.offersSpeechHistory {
-                    speechHistoryToggle
                 }
 
                 OptionSection(label: "Email (Optional)", icon: "envelope") {
@@ -106,27 +87,6 @@ struct ContactView: View {
         }
         .scrollDismissesKeyboard(.interactively)
     }
-
-    private var speechHistoryToggle: some View {
-        OptionSection(
-            label: "Speech History",
-            icon: "waveform",
-            footer: hasSpeechHistory
-                ? "Sends what the app heard during your recent recitations."
-                : "Nothing recorded yet — recite a passage and your history will appear here."
-        ) {
-            Toggle(isOn: $sendingSpeechHistory) {
-                Text("Include speech history")
-                    .appFont(Typography.body)
-                    .foregroundStyle(Theme.ink)
-            }
-            .tint(Theme.accent)
-            .disabled(!hasSpeechHistory)
-            .optionRow()
-        }
-    }
-
-    private var hasSpeechHistory: Bool { !log.attempts.isEmpty }
 
     private var thanks: some View {
         VStack(spacing: 12) {
@@ -171,13 +131,11 @@ struct ContactView: View {
         sending = true
         let note = trimmedMessage
         let address = email.trimmingCharacters(in: .whitespaces)
-        let trace = RecitationLog.trace(of: attempts)
         Task {
             let delivered = await FeedbackForm.submit(
                 kind: purpose.kind,
-                message: note.isEmpty ? "Sent from the \(purpose.title) screen." : note,
-                email: address,
-                trace: trace
+                message: note,
+                email: address
             )
             sending = false
             guard delivered else {

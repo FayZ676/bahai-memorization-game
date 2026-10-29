@@ -4,9 +4,6 @@ import Observation
 @Observable
 final class AppStore {
     private(set) var passages: [Passage]
-    private(set) var reviewables: [Reviewable]
-    private(set) var practiceLog: PracticeLog
-    var dailyGoalReached = false
     var justEarned: Achievement?
     var passageJustMemorized = false
     var settings: AppSettings {
@@ -16,38 +13,41 @@ final class AppStore {
                 || oldValue.reminders != settings.reminders {
                 ReminderScheduler.sync(settings)
             }
-            if oldValue.streakReminderEnabled != settings.streakReminderEnabled {
-                ReminderScheduler.syncStreakReminder(settings, log: practiceLog)
-            }
         }
     }
 
     private let storeURL: URL
 
-    init(filename: String = "store.json") {
+    private static let retiredFiles = ["store.json", "recitation-log.json"]
+
+    init(filename: String = "verses.json") {
         let url = AppStore.documentsDirectory.appendingPathComponent(filename)
         self.storeURL = url
+        let returning = Self.retireLegacyData()
 
         if let data = try? Data(contentsOf: url),
            let snapshot = try? JSONDecoder().decode(Snapshot.self, from: data) {
             self.passages = snapshot.passages
-            self.reviewables = snapshot.reviewables
-            self.practiceLog = snapshot.practiceLog
             self.settings = snapshot.settings
         } else {
             self.passages = []
-            self.reviewables = []
-            self.practiceLog = PracticeLog()
-            self.settings = .default
+            var settings = AppSettings.default
+            settings.hasSeenWelcomeTour = returning
+            self.settings = settings
         }
     }
 
-    func cards(for passage: Passage) -> [Reviewable] {
-        reviewables.filter { $0.passageRef == passage.id }
+    private static func retireLegacyData() -> Bool {
+        retiredFiles.reduce(false) { found, name in
+            let url = documentsDirectory.appendingPathComponent(name)
+            guard FileManager.default.fileExists(atPath: url.path(percentEncoded: false)) else { return found }
+            try? FileManager.default.removeItem(at: url)
+            return true
+        }
     }
 
-    func queue(for passage: Passage) -> [Reviewable] {
-        cards(for: passage).sorted { $0.span.start < $1.span.start }
+    func passage(withID id: UUID) -> Passage? {
+        passages.first { $0.id == id }
     }
 
     var passagesSorted: [Passage] {
@@ -62,41 +62,12 @@ final class AppStore {
         passagesSorted.filter(\.isArchived)
     }
 
-    func sectionHeats(for passage: Passage) -> [Double] {
-        queue(for: passage).map { card in
-            card.wordCount > 0 ? Double(card.hiddenWords.count) / Double(card.wordCount) : 0
-        }
-    }
-
-    func sectionWeights(for passage: Passage) -> [Int] {
-        queue(for: passage).map(\.wordCount)
-    }
-
     func hiddenFraction(for passage: Passage) -> Double {
-        let cards = queue(for: passage)
-        let total = cards.reduce(0) { $0 + $1.wordCount }
-        guard total > 0 else { return 0 }
-        let hidden = cards.reduce(0) { $0 + $1.hiddenWords.count }
-        return Double(hidden) / Double(total)
-    }
-
-    var streakCount: Int {
-        practiceLog.streak()
-    }
-
-    func mergeableGaps(for passage: Passage) -> [Bool] {
-        let q = queue(for: passage)
-        guard q.count > 1 else { return [] }
-        return (0..<(q.count - 1)).map { isComplete(q[$0]) || isComplete(q[$0 + 1]) }
-    }
-
-    func isComplete(_ card: Reviewable) -> Bool {
-        card.wordCount > 0 && card.hiddenWords.count == card.wordCount
+        passage.hiddenFraction
     }
 
     func isMemorized(_ passage: Passage) -> Bool {
-        let cards = queue(for: passage)
-        return !cards.isEmpty && cards.allSatisfy(isComplete)
+        passage.isMemorized
     }
 
     func passage(forPrayerID prayerID: Int) -> Passage? {
@@ -135,22 +106,9 @@ final class AppStore {
             .max { hiddenFraction(for: $0) < hiddenFraction(for: $1) }
     }
 
-    func merge(_ card: Reviewable, with next: Reviewable) {
-        guard let index = reviewables.firstIndex(where: { $0.id == card.id }),
-              reviewables.contains(where: { $0.id == next.id }) else { return }
-        var merged = reviewables[index]
-        let offset = merged.wordCount
-        merged.span.end = next.span.end
-        merged.expectedText += "\n" + next.expectedText
-        merged.hiddenWords.formUnion(next.hiddenWords.map { $0 + offset })
-        reviewables[index] = merged
-        reviewables.removeAll { $0.id == next.id }
-        persist()
-    }
-
     func createPassage(
         title: String,
-        units: [String],
+        text: String,
         author: String? = nil,
         section: String? = nil,
         sourceID: Int? = nil
@@ -160,60 +118,23 @@ final class AppStore {
             dateAdded: Date(),
             author: author,
             section: section,
-            sourceID: sourceID
+            sourceID: sourceID,
+            text: text
         )
         passages.append(passage)
-        let cards = units.enumerated().map { (i, text) in
-            Reviewable(
-                passageRef: passage.id,
-                span: Span(start: i + 1, end: i + 1),
-                expectedText: text,
-                hiddenWords: []
-            )
-        }
-        reviewables.append(contentsOf: cards)
         persist()
     }
 
-    func updatePassage(_ passage: Passage, title: String, units: [String]) {
-        guard let passageIndex = passages.firstIndex(where: { $0.id == passage.id }) else { return }
-        passages[passageIndex].title = title.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        let oldCards = queue(for: passage)
-        var oldWords: [String] = []
-        var oldHidden: Set<Int> = []
-        for card in oldCards {
-            let offset = oldWords.count
-            oldWords.append(contentsOf: card.words.map(String.init))
-            oldHidden.formUnion(card.hiddenWords.map { $0 + offset })
-        }
-
-        let unitWords = units.map { Reviewable.tokens(in: $0).map(String.init) }
-        let newHidden = HiddenWordAlignment.remap(
-            oldWords: oldWords,
-            hidden: oldHidden,
-            newWords: unitWords.flatMap { $0 }
+    func updatePassage(_ passage: Passage, title: String, text: String) {
+        guard let index = passages.firstIndex(where: { $0.id == passage.id }) else { return }
+        let old = passages[index]
+        passages[index].title = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        passages[index].text = text
+        passages[index].hiddenWords = HiddenWordAlignment.remap(
+            oldWords: old.words.map(String.init),
+            hidden: old.hiddenWords,
+            newWords: Passage.tokens(in: text).map(String.init)
         )
-
-        var offset = 0
-        let cards = units.enumerated().map { (i, text) in
-            let count = unitWords[i].count
-            let hiddenWords = Set(
-                newHidden
-                    .filter { $0 >= offset && $0 < offset + count }
-                    .map { $0 - offset }
-            )
-            offset += count
-            return Reviewable(
-                passageRef: passage.id,
-                span: Span(start: i + 1, end: i + 1),
-                expectedText: text,
-                hiddenWords: hiddenWords
-            )
-        }
-
-        reviewables.removeAll { $0.passageRef == passage.id }
-        reviewables.append(contentsOf: cards)
         persist()
     }
 
@@ -225,36 +146,34 @@ final class AppStore {
 
     func deletePassage(_ passage: Passage) {
         passages.removeAll { $0.id == passage.id }
-        reviewables.removeAll { $0.passageRef == passage.id }
         persist()
     }
 
-    func setAllWords(_ card: Reviewable, hidden: Bool) {
-        mutate(card) { $0.setAllWords(hidden: hidden) }
+    func setAllWords(_ passage: Passage, hidden: Bool) {
+        mutate(passage) { $0.setAllWords(hidden: hidden) }
     }
 
     @discardableResult
-    func hideRandomWords(_ card: Reviewable, count: Int, among visible: Set<Int>) -> Set<Int> {
-        let candidates = visible.intersection(card.words.indices).subtracting(card.hiddenWords)
+    func hideRandomWords(_ passage: Passage, count: Int, among visible: Set<Int>) -> Set<Int> {
+        guard let current = self.passage(withID: passage.id) else { return [] }
+        let candidates = visible.intersection(current.words.indices).subtracting(current.hiddenWords)
         guard !candidates.isEmpty else { return [] }
         let chosen = Set(candidates.shuffled().prefix(count))
-        mutate(card) { $0.hiddenWords.formUnion(chosen) }
+        mutate(passage) { $0.hiddenWords.formUnion(chosen) }
         return chosen
     }
 
-    func toggleWord(_ card: Reviewable, index: Int) {
-        mutate(card) { $0.toggleWord(index) }
+    func toggleWord(_ passage: Passage, index: Int) {
+        mutate(passage) { $0.toggleWord(index) }
     }
 
-    private func mutate(_ card: Reviewable, _ change: (inout Reviewable) -> Void) {
-        guard let index = reviewables.firstIndex(where: { $0.id == card.id }) else { return }
-        let old = reviewables[index]
-        var updated = old
+    private func mutate(_ passage: Passage, _ change: (inout Passage) -> Void) {
+        guard let index = passages.firstIndex(where: { $0.id == passage.id }) else { return }
+        var updated = passages[index]
         change(&updated)
         let memorizedBefore = memorizedPrayerIDs
         let memorizedPassagesBefore = memorizedPassageIDs
-        recordPractice(from: old, to: updated)
-        reviewables[index] = updated
+        passages[index] = updated
         announceAchievements(memorizedBefore: memorizedBefore)
         notePassagesMemorized(before: memorizedPassagesBefore)
         persist()
@@ -281,35 +200,13 @@ final class AppStore {
         }
     }
 
-    private func recordPractice(from old: Reviewable, to updated: Reviewable) {
-        let newlyHidden = updated.hiddenWords.subtracting(old.hiddenWords).count
-        guard newlyHidden > 0 else { return }
-        let reachedGoalBefore = practiceLog.reachedGoal()
-        practiceLog.record(words: newlyHidden)
-        if !reachedGoalBefore && practiceLog.reachedGoal() {
-            dailyGoalReached = true
-        }
-        syncStreakReminder()
-    }
-
-    func syncStreakReminder() {
-        ReminderScheduler.syncStreakReminder(settings, log: practiceLog)
-    }
-
     private struct Snapshot: Codable {
         var passages: [Passage]
-        var reviewables: [Reviewable]
-        var practiceLog: PracticeLog
         var settings: AppSettings
     }
 
     private func persist() {
-        let snapshot = Snapshot(
-            passages: passages,
-            reviewables: reviewables,
-            practiceLog: practiceLog,
-            settings: settings
-        )
+        let snapshot = Snapshot(passages: passages, settings: settings)
         guard let data = try? JSONEncoder().encode(snapshot) else { return }
         try? data.write(to: storeURL, options: .atomic)
     }

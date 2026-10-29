@@ -3,46 +3,15 @@ import UserNotifications
 
 enum ReminderScheduler {
     private static let identifierPrefix = "daily-memorization-reminder"
-    private static let streakIdentifier = "streak-at-risk-reminder"
+    private static let retiredStreakIdentifier = "streak-at-risk-reminder"
 
     static func requestPermission() async -> Bool {
         let center = UNUserNotificationCenter.current()
         return (try? await center.requestAuthorization(options: [.alert, .sound])) ?? false
     }
 
-    static func syncStreakReminder(_ settings: AppSettings, log: PracticeLog) {
-        Task {
-            let center = UNUserNotificationCenter.current()
-            center.removePendingNotificationRequests(withIdentifiers: [streakIdentifier])
-
-            guard settings.streakReminderEnabled,
-                  let alert = StreakReminder.next(for: log),
-                  await hasPermission(promptIfUnasked: true)
-            else { return }
-
-            let content = UNMutableNotificationContent()
-            content.title = StreakReminder.title(streakLength: alert.streakLength)
-            content.body = StreakReminder.body
-            content.sound = .default
-
-            let fireTime = Calendar.current.dateComponents(
-                [.year, .month, .day, .hour, .minute],
-                from: alert.fireDate
-            )
-            let request = UNNotificationRequest(
-                identifier: streakIdentifier,
-                content: content,
-                trigger: UNCalendarNotificationTrigger(dateMatching: fireTime, repeats: false)
-            )
-            try? await center.add(request)
-        }
-    }
-
-    private static func hasPermission(promptIfUnasked: Bool = false) async -> Bool {
+    private static func hasPermission() async -> Bool {
         let status = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
-        if status == .notDetermined && promptIfUnasked {
-            return await requestPermission()
-        }
         return status == .authorized || status == .provisional
     }
 
@@ -51,7 +20,7 @@ enum ReminderScheduler {
             let center = UNUserNotificationCenter.current()
             let pending = await center.pendingNotificationRequests()
             let ours = pending.map(\.identifier).filter { $0.hasPrefix(identifierPrefix) }
-            center.removePendingNotificationRequests(withIdentifiers: ours)
+            center.removePendingNotificationRequests(withIdentifiers: ours + [retiredStreakIdentifier])
 
             guard settings.reminderEnabled, await hasPermission() else { return }
 

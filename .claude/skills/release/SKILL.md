@@ -139,7 +139,7 @@ release changed what that tile actually shows:
 
 | Changed | Restages |
 |---|---|
-| `Feature/Library` | `5-know.png` (library, streak, progress ramps) |
+| `Feature/Library` | `5-know.png` (library, completion percentages) |
 | `Feature/Session` layout | `2-read.png`, `3-hide.png`, `4-hide-more.png` — reshoot as a set |
 | Writings surface (`Feature/Import`) | `1-choose.png` |
 | `Theme/`, `Typography` globally | all of them |

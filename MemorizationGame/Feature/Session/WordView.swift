@@ -3,13 +3,13 @@ import SwiftUI
 struct WordView: View {
     let token: String
     let concealed: Bool
+    var dimmed: Bool = false
     var recited: Bool = false
-    var missed: Bool = false
     var missFlashing: Bool = false
     var staggerDelay: Double = 0
     @State private var pulsing = false
 
-    private var parts: (lead: String, core: String, trail: String) {
+    static func parts(of token: String) -> (lead: String, core: String, trail: String) {
         let chars = Array(token)
         func isCore(_ c: Character) -> Bool { c.isLetter || c == "'" || c == "\u{2019}" }
         var i = 0
@@ -24,12 +24,12 @@ struct WordView: View {
     }
 
     var body: some View {
-        let p = parts
+        let p = Self.parts(of: token)
         HStack(spacing: 0) {
             if !p.lead.isEmpty { Text(p.lead).foregroundStyle(Theme.ink) }
             if !p.core.isEmpty {
                 Text(p.core)
-                    .foregroundStyle(Theme.ink)
+                    .foregroundStyle(dimmed ? Theme.hiddenInk : Theme.ink)
                     .opacity(concealed ? 0 : 1)
                     .blur(radius: concealed ? 2 : 0)
                     .overlay(alignment: .bottom) {
@@ -50,6 +50,7 @@ struct WordView: View {
         }
         .scaleEffect(pulsing ? 1.07 : 1)
         .animation(Motion.fade.delay(staggerDelay), value: concealed)
+        .animation(Motion.fade.delay(staggerDelay), value: dimmed)
         .onChange(of: recited) { wasRecited, isRecited in
             guard isRecited, !wasRecited else { return }
             withAnimation(.easeOut(duration: 0.12)) { pulsing = true }
@@ -77,7 +78,7 @@ struct WordView: View {
     }
 
     private var lineColor: Color {
-        if missFlashing || missed { return Theme.warn }
+        if missFlashing { return Theme.warn }
         if recited { return Theme.accent }
         return Theme.faint
     }

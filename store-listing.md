@@ -13,39 +13,30 @@ bahai,hidden,words,ruhi,quotes,writings,obligatory,bahaullah,abdul,baha,scriptur
 225 prayers, all 153 Hidden Words, and 249 Ruhi quotations — built in. Hide a word, recite what's left, and let the passage teach itself to you.
 
 ## Description (4000)
-Verses turns prayers you love into prayers you know by heart.
+Verses helps you learn Bahá'í prayers by heart.
 
-Tap a word to hide it. What's left is a prompt — read the passage aloud and your memory fills the gap. Hide a few more each time you return, until the page is empty and the prayer is yours.
+Open a prayer and read it. Tap a word to hide it. Read the prayer again, and fill in the missing word from memory. Each time you come back, hide a few more words. Soon the page is empty, and the prayer is yours.
 
-THE LIBRARY IS ALREADY THERE
-• 225 prayers — obligatory, general, occasional, and special tablets
-• The Hidden Words of Bahá'u'lláh, all 153
-• 249 Ruhi quotations — every one the courses ask you to memorize, Books 1 through 8
-• Writings of Bahá'u'lláh, 'Abdu'l-Bahá, and the Báb
-Search for a half-remembered phrase, or browse by section. Nothing to download.
+Everything is already in the app: 225 prayers, all 153 Hidden Words, and 249 Ruhi quotations, plus other writings of Bahá'u'lláh, 'Abdu'l-Bahá, and the Báb. Search for a line you half remember, or add any text you want to learn.
 
-MEMORIZE AT YOUR OWN PACE
-• Tap any word to hide it — tap again to bring it back
-• Hide or reveal a whole passage at once from the session menu
-• Long prayers divide into short passages you can move between freely
-• Nothing is locked, timed, or gated — start anywhere, stop anywhere
+Say the prayer out loud, and Verses follows along word by word. Everything else fades away while you recite, so it is just you and the prayer.
 
-RECITE ALOUD
-• Speak the passage and Verses follows you word by word
-• Speech recognition happens on your device
-• Somewhere you can't speak? Tap to show each hidden word in turn
+Go at your own pace. Nothing is locked and nothing is timed. Hidden words stay faintly on the page, so you can always see the whole prayer.
 
-BRING YOUR OWN
-• Paste any text you want to learn — a quotation, a poem, a passage in any language
-• Break it into passages wherever the meaning breaks
+No account. No sign-in. No ads. Your prayers, your progress, and your voice stay on your iPhone.
 
-QUIET BY DESIGN
-• No account, no sign-in
-• Your passages, your progress, and your recordings stay on your iPhone — nothing is sent unless you send a report
-• No ads, no leaderboards, and reminders only if you ask for them
-• A simple record of how many words you've hidden each day — encouragement, not obligation
+Hide what you know. Read what you don't. Come back tomorrow.
 
-Verses is built around one belief: memorization isn't a test to pass, it's a way of carrying words with you. Hide what you know. Read what you don't. Come back tomorrow.
+## What's New — 2.0 (4000)
+Verses has been rebuilt from the ground up. Your library starts fresh, so add your prayers again from the book button.
+
+A new listener runs entirely on your iPhone and follows you word by word. It can tell Thy from my, and if you miss a word twice, it shows it to you.
+
+Tap Recite and everything else fades away, leaving just you and the prayer. Tap the page to stop.
+
+Each prayer is now one page you scroll through. Hidden words stay faintly on the page, so you can always see what you have hidden. The Hide button works on the paragraph you are on.
+
+The memorize button now adds a prayer straight to your library. The day streak, Speech History, peek, and tap-to-reveal are gone.
 
 ## What's New — 1.10 (4000)
 When you can't read aloud, you can still practice. Touch and hold the microphone and choose the hand, then tap it to show each hidden word in turn, as if you had said it.
@@ -152,7 +143,7 @@ has no recitation tile.
 
 ## Notes / decisions still open
 - **Pricing** — description says "no ads, no sign-in" but deliberately does NOT claim "free" or "no subscription", since pricing isn't decided. Add if free.
-- **On-device speech** — SpeechAnalyzer (iOS 26) processes on device; verify before shipping since it's a privacy claim.
+- **On-device recitation** — a speech model bundled in the app (Core ML) hears the recitation on the iPhone itself; no audio leaves the device and nothing is sent to Apple or anyone else. This backs "your voice stay[s] on your iPhone" and the privacy label below.
 - **Privacy nutrition label** — no longer "Data Not Collected": the Settings feedback screen posts to a
   Google Form. Declare, all with purpose "App Functionality", linked to the user, not used for tracking:
   Contact Info → Email Address (optional); User Content → Customer Support (the message);
