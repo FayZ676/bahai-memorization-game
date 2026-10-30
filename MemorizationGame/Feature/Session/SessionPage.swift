@@ -95,13 +95,14 @@ struct ParagraphMarker: View {
         Button(action: onTap) {
             Image(systemName: "paragraphsign")
                 .appIcon(13, weight: .light)
-                .foregroundStyle(Theme.faint.opacity(isStart ? 1 : 0.45))
+                .foregroundStyle(isStart ? Theme.accent : Theme.faint.opacity(0.45))
                 .frame(width: 30, height: 30)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.haptic)
         .animation(.easeOut(duration: 0.2), value: isStart)
         .accessibilityLabel("Start here")
+        .accessibilityAddTraits(isStart ? .isSelected : [])
     }
 }
 

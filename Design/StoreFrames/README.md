@@ -24,8 +24,9 @@ pair rather than between them, for the same reason.
 `phone_top` is what makes the recitation tile possible. It used to sit at `0.251`, which
 showed 2133px of a screenshot that scales to 2379px — fine for four tiles whose subject is
 in the upper half, fatal for one whose subject is the mic at the very bottom. At `0.165` the
-whole screen fits, so tiles 2, 3 and 4 now show the same screen with the mic going idle,
-idle, then active.
+whole screen fits. Tiles 2 and 3 show the same page with its hidden words faded and the
+controls in view; tile 4 is that page while reciting, when the controls have faded away and
+the hidden words become blanks with the cursor on the next one.
 
 It is a property of the device, not of one tile: a single tile framed differently reads as a
 different, larger phone, which is the one thing a set like this cannot afford. A tile *can*

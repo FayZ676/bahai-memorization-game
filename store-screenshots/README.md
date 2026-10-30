@@ -30,10 +30,9 @@ Every raw here feeds a tile; there are no spares left. The iPad has no dark capt
 override. There is no iPad recitation tile — the raw was never shot there, so it is skipped
 the same way the later session stage already is.
 
-A session now opens with every word showing — hiding is what the eye button does, not what
-entering a session does. So the two hide tiles and the recitation tile are each shot by
-tapping the eye (`drive.tap("Show")`) once the session has settled, and only then taking
-the picture. Without that tap the page photographs as plain prose with nothing hidden.
+Hidden words draw faded on the page, so the two hide tiles need no tap once the session has
+settled: the seed's hidden words are already visibly lighter. They disappear only while
+reciting, which is what the recitation tile shows.
 
 Two captures are stage-dependent and must be reshot as a pair if the hero passage changes:
 `2-hide-words.png` from the default seed and `9-hide-more.png` from `HERO_LATE=1`, which
@@ -54,7 +53,8 @@ to recite into the simulator's microphone, so no word is ever credited and there
 photograph.
 
 `SHOT_RECITING=1` puts the session into that state without speaking: it marks the first half
-of the section's hidden words as recited and parks the cursor on the next one. The UI is the
+of the section's hidden words as recited, puts the screen into focus (header and controls
+faded, hidden words blanked) and parks the cursor on the next one. The UI is the
 same one a real device draws; only the trigger is staged, the way `seed.py` stages persisted
 state. It is `#if DEBUG` in
 `SessionView` and `VoiceRecitationController`, so it cannot reach a release build.
@@ -65,10 +65,8 @@ It must be passed through to the app, not to `simctl` itself:
 SIMCTL_CHILD_SHOT_RECITING=1 xcrun simctl launch "$SIM_UDID" com.faizififita.MemorizationGame
 ```
 
-The staging runs **three seconds after** the session appears, and that delay is load-bearing:
-`vm.start()` bumps `presentationEpoch`, whose `onChange` calls `voice.stop()` and
-`highlights.clear()`. Anything staged before that fires is wiped, which looks exactly like
-the flag not working. Wait ~9s after tapping in before shooting.
+The staging runs **three seconds after** the session appears so the push transition has
+finished first. Wait ~9s after tapping in before shooting.
 
 Shooting it on a physical iPhone instead is still valid, and needs no flag — but the screen
 has to be 1320 × 2868 (a 16/17 Pro Max), since App Store Connect rejects other sizes rather
@@ -127,9 +125,7 @@ Then drive it:
 import drive, time
 drive.shot("1-library.png")
 drive.tap("I have turned in repentance", pause=2)
-time.sleep(7)                              # let the session settle on its section
-drive.tap("Show", pause=2)                 # the eye: hide what the seed marked
-time.sleep(2)
+time.sleep(4)                              # let the session settle
 drive.shot("2-hide-words.png")
 ```
 
@@ -137,8 +133,10 @@ Things that will bite you:
 
 - **Dismiss the notification prompt first.** A fresh install asks on launch;
   `drive.tap("Don’t Allow")` clears it.
-- **Wait ~6s after entering a session.** It deliberately shows every word for 1.4s, then
-  ripples them away. Screenshot too early and nothing looks hidden.
+- **Wait ~4s after entering a session** so the push transition has finished.
+- **On the iPad, `idb` may only see an iPadOS service (`DockFolderViewService`)** rather than
+  the app, so label lookups fail. Tap by point instead — the Writings book button is
+  `drive.tap_xy(995, 61)` on the 13-inch iPad.
 - **`idb connect <udid>` first**, and only tap elements that are on screen — `drive.find`
   filters to those, because tapping a list row scrolled out of view sends the tap to
   whatever is at that coordinate, which can background the app.

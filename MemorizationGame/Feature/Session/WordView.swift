@@ -31,7 +31,6 @@ struct WordView: View {
                 Text(p.core)
                     .foregroundStyle(dimmed ? Theme.hiddenInk : Theme.ink)
                     .opacity(concealed ? 0 : 1)
-                    .blur(radius: concealed ? 2 : 0)
                     .overlay(alignment: .bottom) {
                         reciteLine
                             .opacity(concealed ? 1 : 0)
@@ -61,20 +60,20 @@ struct WordView: View {
         }
     }
 
-    private static let lineTaper = LinearGradient(
-        stops: [
-            .init(color: .black.opacity(0.5), location: 0),
-            .init(color: .black, location: 0.14),
-            .init(color: .black, location: 0.86),
-            .init(color: .black.opacity(0.5), location: 1)
-        ],
-        startPoint: .leading,
-        endPoint: .trailing
-    )
-
     private var reciteLine: some View {
-        HairlineDivider(color: lineColor)
-            .mask(Self.lineTaper)
+        let color = lineColor
+        return Rectangle()
+            .fill(LinearGradient(
+                stops: [
+                    .init(color: color.opacity(0.5), location: 0),
+                    .init(color: color, location: 0.14),
+                    .init(color: color, location: 0.86),
+                    .init(color: color.opacity(0.5), location: 1)
+                ],
+                startPoint: .leading,
+                endPoint: .trailing
+            ))
+            .frame(height: 1)
     }
 
     private var lineColor: Color {

@@ -25,7 +25,7 @@ struct SessionView: View {
     @State private var controlsHeight: CGFloat = 0
     @State private var headerHeight: CGFloat = 0
     @State private var chromeCleared = false
-    @State private var headerCollapsed = false
+    @State private var focused = false
     @State private var showingFullText = false
     @State private var showingEdit = false
     @State private var showingReportIssue = false
@@ -129,9 +129,12 @@ struct SessionView: View {
             guard let current = vm.passage else { return }
             voice.updateHiddenIndices(highlights.unattempted(in: current, from: startWord))
         }
+        .onChange(of: voice.state) { _, state in
+            guard focused, state != .preparingModel, state != .listening else { return }
+            withAnimation(Motion.focus) { focused = false }
+        }
         .onChange(of: isFocused) { _, focused in
             chromeCleared = false
-            withAnimation(Motion.focus) { headerCollapsed = focused }
             guard focused else { return }
             Task {
                 try? await Task.sleep(for: .seconds(Motion.focusDuration))
@@ -193,10 +196,9 @@ struct SessionView: View {
                 bottomInset: controlsHeight + Spacing.xxl,
                 cascading: vm.cascading,
                 highlights: highlights,
-                isReciting: isReciting,
                 isFocused: isFocused,
                 cursor: recitationCursor,
-                fixedStart: isReciting ? layout.paragraphIndex(containing: startWord) : armedParagraph,
+                fixedStart: isFocused ? layout.paragraphIndex(containing: startWord) : armedParagraph,
                 textOrigin: textOrigin,
                 onMarker: { tapMarker($0, layout: layout) },
                 onTapWord: { point in
@@ -205,6 +207,7 @@ struct SessionView: View {
                 },
                 onPaint: paintGesture(layout)
             )
+            .offset(y: -collapse)
         }
         .scrollIndicators(.hidden)
         .scrollDisabled(painting.isActive)
@@ -290,12 +293,17 @@ struct SessionView: View {
         guard !hidden.isEmpty else { return }
         let spoken = Array(hidden.prefix((hidden.count + 1) / 2))
         highlights.recite(spoken)
+        focused = true
         voice.stageListeningForCapture(cursor: hidden.dropFirst(spoken.count).first)
     }
     #endif
 
     private var topInset: CGFloat {
-        Self.pageTopMargin + (headerCollapsed ? 0 : headerHeight)
+        Self.pageTopMargin + headerHeight
+    }
+
+    private var collapse: CGFloat {
+        focused ? headerHeight : 0
     }
 
     private var isReciting: Bool {
@@ -303,7 +311,7 @@ struct SessionView: View {
     }
 
     private var isFocused: Bool {
-        voice.isListening || voice.state == .preparingModel
+        focused
     }
 
     private var recitationCursor: Int? {
@@ -383,6 +391,7 @@ struct SessionView: View {
             remaining = current.recitableIndices(from: start)
         }
         guard !remaining.isEmpty else { return }
+        withAnimation(Motion.focus) { focused = true }
         scrollToParagraph(paragraph, layout: layout)
         Feedback.prepareRecitation()
         Task {
@@ -391,7 +400,9 @@ struct SessionView: View {
     }
 
     private func stopRecitation() {
-        if isFocused { voice.stop() }
+        guard focused else { return }
+        withAnimation(Motion.focus) { focused = false }
+        voice.stop()
     }
 
     private func tapMarker(_ paragraph: Int, layout: PageLayout) {
@@ -436,10 +447,10 @@ struct SessionView: View {
     private func follow(_ index: Int?, layout: PageLayout) {
         guard let index, layout.wordFrames.indices.contains(index) else { return }
         let frame = layout.wordFrames[index]
-        let onScreen = topInset + frame.minY - scroll.top
+        let onScreen = topInset - collapse + frame.minY - scroll.top
         let comfortable = onScreen >= 0 && onScreen + frame.height <= scroll.viewportHeight * Self.followThreshold
         guard !comfortable else { return }
-        let target = max(topInset + frame.minY - frame.height, 0)
+        let target = max(topInset - collapse + frame.minY - frame.height, 0)
         withAnimation(.easeInOut(duration: 0.35)) {
             readingPosition.scrollTo(y: min(target, maxScrollTop(layout)))
         }
@@ -544,7 +555,6 @@ private struct PageContent: View {
     let bottomInset: CGFloat
     let cascading: Bool
     let highlights: RecitationHighlights
-    let isReciting: Bool
     let isFocused: Bool
     let cursor: Int?
     let fixedStart: Int?
@@ -564,6 +574,7 @@ private struct PageContent: View {
                 .frame(maxWidth: .infinity)
             ForEach(drawn, id: \.self) { index in
                 paragraph(index)
+                    .equatable()
                     .offset(x: metrics.textMargin, y: topInset + layout.paragraphs[index].frame.minY)
             }
             MarkerColumn(
@@ -605,28 +616,70 @@ private struct PageContent: View {
     }
 
     private var cursorTarget: CGRect? {
-        guard isReciting, let cursor, layout.wordFrames.indices.contains(cursor) else { return nil }
+        guard let cursor, layout.wordFrames.indices.contains(cursor) else { return nil }
         return layout.wordFrames[cursor]
     }
 
-    private func paragraph(_ index: Int) -> some View {
+    private func paragraph(_ index: Int) -> PageParagraph {
+        let words = layout.paragraphs[index].words
+        let flashing = words.first { highlights.isFlashing($0) }
+        return PageParagraph(
+            index: index,
+            layout: layout,
+            tokens: passage.words,
+            text: passage.text,
+            hidden: passage.hiddenWords.filter { words.contains($0) },
+            recited: highlights.recited.filter { words.contains($0) },
+            flashing: flashing,
+            shakes: flashing.map { highlights.shakeAmount(at: $0) } ?? 0,
+            isFocused: isFocused,
+            cascading: cascading
+        )
+    }
+}
+
+private struct PageParagraph: View, Equatable {
+    let index: Int
+    let layout: PageLayout
+    let tokens: [Substring]
+    let text: String
+    let hidden: Set<Int>
+    let recited: Set<Int>
+    let flashing: Int?
+    let shakes: CGFloat
+    let isFocused: Bool
+    let cascading: Bool
+
+    static func == (lhs: PageParagraph, rhs: PageParagraph) -> Bool {
+        lhs.index == rhs.index
+            && lhs.text == rhs.text
+            && lhs.layout.size == rhs.layout.size
+            && lhs.layout.font == rhs.layout.font
+            && lhs.hidden == rhs.hidden
+            && lhs.recited == rhs.recited
+            && lhs.flashing == rhs.flashing
+            && lhs.shakes == rhs.shakes
+            && lhs.isFocused == rhs.isFocused
+            && lhs.cascading == rhs.cascading
+    }
+
+    var body: some View {
         let paragraph = layout.paragraphs[index]
-        let words = passage.words
-        return PlacedParagraph(
+        PlacedParagraph(
             frames: paragraph.words.map { layout.wordFrames[$0].offsetBy(dx: 0, dy: -paragraph.frame.minY) },
             size: paragraph.frame.size
         ) {
             ForEach(paragraph.words, id: \.self) { idx in
                 WordView(
-                    token: String(words[idx]),
-                    concealed: isFocused && passage.hiddenWords.contains(idx) && !highlights.recited.contains(idx),
-                    dimmed: !isFocused && passage.hiddenWords.contains(idx),
-                    recited: highlights.recited.contains(idx),
-                    missFlashing: highlights.isFlashing(idx),
-                    staggerDelay: cascading ? Motion.cascadeDelay(idx, of: words.count) : 0
+                    token: String(tokens[idx]),
+                    concealed: isFocused && hidden.contains(idx) && !recited.contains(idx),
+                    dimmed: !isFocused && hidden.contains(idx),
+                    recited: recited.contains(idx),
+                    missFlashing: flashing == idx,
+                    staggerDelay: cascading ? Motion.cascadeDelay(idx, of: tokens.count) : 0
                 )
                 .font(Font(layout.font))
-                .modifier(ShakeEffect(shakes: highlights.shakeAmount(at: idx)))
+                .modifier(ShakeEffect(shakes: flashing == idx ? shakes : 0))
             }
         }
     }

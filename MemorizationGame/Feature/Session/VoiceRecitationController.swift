@@ -21,7 +21,7 @@ final class VoiceRecitationController {
     var onWordShown: ((Int) -> Void)?
     var onCompleted: (() -> Void)?
 
-    private let audioEngine = AVAudioEngine()
+    private let capture = AudioCapture()
     private var listener: ConformerRecitation?
     private var owed: Set<Int> = []
     private var misses: [Int: Int] = [:]
@@ -64,8 +64,8 @@ final class VoiceRecitationController {
             owed = Set(hiddenIndices)
             misses = [:]
             cursorIndex = hiddenIndices.min()
-            try Self.activateAudioSession()
-            try startAudioEngine(feeding: listener)
+            try await capture.start(feeding: listener)
+            guard state == .preparingModel else { return }
             state = .listening
         } catch {
             RecitationTrace.emit("start", "FAILED \(error)")
@@ -116,51 +116,11 @@ final class VoiceRecitationController {
         advance()
     }
 
-    private func startAudioEngine(feeding listener: ConformerRecitation) throws {
-        let input = audioEngine.inputNode
-        let tapFormat = input.outputFormat(forBus: 0)
-        guard let converter = AVAudioConverter(from: tapFormat, to: ConformerRecitation.format) else {
-            throw CancellationError()
-        }
-        converter.primeMethod = .none
-        input.removeTap(onBus: 0)
-        input.installTap(onBus: 0, bufferSize: 1024, format: tapFormat) { buffer, _ in
-            guard let converted = Self.converted(buffer, with: converter, to: ConformerRecitation.format) else { return }
-            listener.append(converted)
-        }
-        audioEngine.prepare()
-        try audioEngine.start()
-    }
-
     private func teardown() {
         listener?.finish()
         listener = nil
-        audioEngine.inputNode.removeTap(onBus: 0)
-        audioEngine.stop()
-        Self.deactivateAudioSession()
+        capture.stop()
         cursorIndex = nil
-    }
-
-    private nonisolated static func converted(
-        _ buffer: AVAudioPCMBuffer,
-        with converter: AVAudioConverter,
-        to format: AVAudioFormat
-    ) -> AVAudioPCMBuffer? {
-        let ratio = format.sampleRate / buffer.format.sampleRate
-        let capacity = AVAudioFrameCount(Double(buffer.frameLength) * ratio) + 16
-        guard let output = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: capacity) else { return nil }
-        nonisolated(unsafe) var pending: AVAudioPCMBuffer? = buffer
-        var conversionError: NSError?
-        converter.convert(to: output, error: &conversionError) { _, status in
-            guard let next = pending else {
-                status.pointee = .noDataNow
-                return nil
-            }
-            pending = nil
-            status.pointee = .haveData
-            return next
-        }
-        return conversionError == nil ? output : nil
     }
 
     private static func micPermissionGranted() async -> Bool {
@@ -169,16 +129,5 @@ final class VoiceRecitationController {
         case .denied: return false
         default: return await AVAudioApplication.requestRecordPermission()
         }
-    }
-
-    private static func activateAudioSession() throws {
-        let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.record, mode: .measurement, options: .duckOthers)
-        try session.setAllowHapticsAndSystemSoundsDuringRecording(true)
-        try session.setActive(true)
-    }
-
-    private static func deactivateAudioSession() {
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 }
