@@ -34,7 +34,7 @@ struct SessionView: View {
     private let store: AppStore
 
     private static let pageTopMargin: CGFloat = 18
-    private static let followAnchor: CGFloat = 0.4
+    private static let followThreshold: CGFloat = 0.7
     private static let railSamples = 48
 
     init(passage: Passage, store: AppStore) {
@@ -436,8 +436,10 @@ struct SessionView: View {
     private func follow(_ index: Int?, layout: PageLayout) {
         guard let index, layout.wordFrames.indices.contains(index) else { return }
         let frame = layout.wordFrames[index]
-        let target = max(topInset + frame.minY - scroll.viewportHeight * Self.followAnchor, 0)
-        guard abs(target - scroll.top) > frame.height / 2 else { return }
+        let onScreen = topInset + frame.minY - scroll.top
+        let comfortable = onScreen >= 0 && onScreen + frame.height <= scroll.viewportHeight * Self.followThreshold
+        guard !comfortable else { return }
+        let target = max(topInset + frame.minY - frame.height, 0)
         withAnimation(.easeInOut(duration: 0.35)) {
             readingPosition.scrollTo(y: min(target, maxScrollTop(layout)))
         }
