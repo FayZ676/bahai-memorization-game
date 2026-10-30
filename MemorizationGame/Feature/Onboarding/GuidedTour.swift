@@ -31,6 +31,7 @@ private struct GuidedTourModifier: ViewModifier {
                     TourOverlay(
                         step: tour.step,
                         isPromptVisible: tour.isPromptVisible,
+                        isPaused: tour.isPaused,
                         canGoBack: tour.canGoBack,
                         canGoForward: tour.canGoForward,
                         onBack: tour.goBack,

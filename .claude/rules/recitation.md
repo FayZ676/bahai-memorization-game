@@ -18,7 +18,11 @@ only when its every piece fits and removing it clearly worsens the alignment. `C
 keeps the work bounded: it starts at the chosen paragraph's first word, aligns a 64-word span, and
 re-anchors just behind the last credit (keeping 8 words of overlap) so a long prayer recited for
 minutes costs the same per second as a short one. Audio stays on the device. Matching must not
-forgive meaning: *my/Thy*, *me/Thee*, *myself/Thyself* must fail.
+forgive meaning: *my/Thy*, *me/Thee*, *myself/Thyself* must fail. The tokenizer folds accents
+(*Aḥmad* → *ahmad*, *‘Alí* → *ali*): the model's vocabulary is plain English letters, so an
+accented letter would become an unknown piece no recitation can ever match. Folding is spelling,
+not forgiveness — it changes only words that carry accents, and no library word may tokenize to
+an unknown piece.
 
 `Tools/RecitationBench/SPEC.md` is the contract. Truth comes from the script card or from the
 reciter marking slips by ear — never from a recognizer's transcript. A change to the model, the

@@ -4,6 +4,7 @@ struct TourOverlay: View {
     @Environment(\.fontScale) private var fontScale
     let step: TourStep
     let isPromptVisible: Bool
+    let isPaused: Bool
     let canGoBack: Bool
     let canGoForward: Bool
     let onBack: () -> Void
@@ -26,6 +27,9 @@ struct TourOverlay: View {
         }
         .animation(Motion.standard, value: step)
         .animation(Motion.standard, value: isPromptVisible)
+        .opacity(isPaused ? 0 : 1)
+        .allowsHitTesting(!isPaused)
+        .animation(Motion.focus, value: isPaused)
     }
 
     private var scrim: some View {

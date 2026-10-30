@@ -134,6 +134,7 @@ struct SessionView: View {
             withAnimation(Motion.focus) { focused = false }
         }
         .onChange(of: isFocused) { _, focused in
+            tour?.isPaused = focused
             chromeCleared = false
             guard focused else { return }
             Task {
@@ -141,7 +142,10 @@ struct SessionView: View {
                 chromeCleared = isFocused
             }
         }
-        .onDisappear { voice.stop() }
+        .onDisappear {
+            voice.stop()
+            tour?.isPaused = false
+        }
         .alert("Microphone Access Needed", isPresented: $showingMicDenied) {
             Button("Open Settings", action: Feedback.tapping {
                 if let url = URL(string: UIApplication.openSettingsURLString) {

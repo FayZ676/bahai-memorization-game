@@ -30,7 +30,7 @@ struct ConformerTokenizer {
         let cleaned = String(word.lowercased().filter { $0.isLetter || $0 == "'" })
         guard !cleaned.isEmpty else { return [] }
         let normalized = cleaned.precomposedStringWithCompatibilityMapping
-            .folding(options: .caseInsensitive, locale: nil)
+            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil)
         let scalars = Array(("▁" + normalized).unicodeScalars)
         let count = scalars.count
         var best = [Float](repeating: -.infinity, count: count + 1)
