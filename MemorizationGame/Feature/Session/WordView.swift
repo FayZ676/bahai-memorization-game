@@ -34,7 +34,7 @@ struct WordView: View {
                     .overlay(alignment: .bottom) {
                         reciteLine
                             .opacity(concealed ? 1 : 0)
-                            .animation(concealed ? Motion.lineFadeIn.delay(staggerDelay) : .easeInOut(duration: 0.18), value: concealed)
+                            .animation(concealed ? Motion.lineFadeIn.delay(staggerDelay) : (recited ? Motion.reveal : .easeInOut(duration: 0.18)), value: concealed)
                     }
             }
             if !p.trail.isEmpty { Text(p.trail).foregroundStyle(Theme.ink) }
@@ -48,7 +48,7 @@ struct WordView: View {
             }
         }
         .scaleEffect(pulsing ? 1.07 : 1)
-        .animation(Motion.fade.delay(staggerDelay), value: concealed)
+        .animation(recited && !concealed ? Motion.reveal : Motion.fade.delay(staggerDelay), value: concealed)
         .animation(Motion.fade.delay(staggerDelay), value: dimmed)
         .onChange(of: recited) { wasRecited, isRecited in
             guard isRecited, !wasRecited else { return }

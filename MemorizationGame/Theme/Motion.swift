@@ -9,6 +9,7 @@ enum Motion {
     static let fade     = Animation.easeInOut(duration: fadeDuration)
     static let lineFadeIn = Animation.easeInOut(duration: fadeDuration).delay(0.5)
     static let focusDuration = 0.25
+    static let reveal   = Animation.easeOut(duration: 0.12)
     static let focus    = Animation.easeInOut(duration: focusDuration)
 
     static let cascadeSpan = 0.6

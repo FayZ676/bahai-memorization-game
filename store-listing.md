@@ -27,6 +27,13 @@ No account. No sign-in. No ads. Your prayers, your progress, and your voice stay
 
 Hide what you know. Read what you don't. Come back tomorrow.
 
+## What's New — 2.0.1 (4000)
+Saying a prayer out loud now keeps up with you. Each word shows on the page in about half the time it took before.
+
+Names like ‘Alí, Aḥmad, and Bahá'u'lláh are now heard when you recite them.
+
+A word no longer appears before you have said it, and every time you tap Recite you start fresh. The welcome tour also stays out of the way while you recite.
+
 ## What's New — 2.0 (4000)
 Verses has been rebuilt from the ground up. Your library starts fresh, so add your prayers again from the book button.
 

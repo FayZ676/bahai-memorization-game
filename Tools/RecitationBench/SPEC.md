@@ -345,3 +345,44 @@ The first version held the anchor behind any earlier uncredited word; wrong or s
 credit, so it stalled until the 45 s limit and lost 167 FAM words with 9 wrong. Holding back only
 the last 8 words fixed it. The iPhone differs from the Mac on one word (C6's first word), a
 numeric edge; the slowest iPhone hop is 380 ms (a re-anchor catch-up).
+
+### Latency sweep and the speech gate (2026-10-30)
+
+Credit lag was 1.24 s median / 1.68 s p90, and it is almost all timing, not compute: on average
+half a 1 s hop waiting for the next window, the 0.5 s lookahead, and the 0.2 s guard. Swept on
+the Mac with the app's own session logic (`conformer/main.swift live`, timings from env in a
+scratch copy), all 25 takes, threshold −7.67, word end taken from the credited placement:
+
+| Hop / lookahead / guard / evidence | Correct credited | Wrong credited | Lag median / p90 |
+| --- | --- | --- | --- |
+| 1 s / 0.5 s / 0.2 s / 5 (shipped until now) | 1720 / 1724 | 0 / 103 | 1.24 s / 1.68 s |
+| 1 s / 0.25 s / 0.1 s / 5 | 1720 | 1 | 0.96 s / 1.36 s |
+| 0.5 s / 0.5 s / 0.1 s / 5 | 1719 | 2 | 0.88 s / 1.14 s |
+| 0.25 s / 0.25 s / 0.1 s / 5 | 1717 | 2 | 0.53 s / 0.80 s |
+| 0.5 s / 0.5 s / 0.1 s / 7 | 1720 | 0 | 0.94 s / 1.24 s |
+| 0.25 s / 0.25 s / 0.1 s / 9 | 1719 | 0 | 0.61 s / 1.00 s |
+| 0.25 s / 0.25 s / 0.1 s / 7 | 1718 | 0 | 0.57 s / 0.89 s |
+
+Deciding more often lets the evidence rule commit early guesses on repeated phrases; raising
+evidence to 7 stops that. The 0.25 s row loses two correct words against the shipped rule
+(C3 *none*, C35 *supplication*).
+
+On the phone, starting a recitation in a quiet room credited the starting paragraph's first word
+with nothing said. The first owed word is the only one that can be placed after any amount of
+silence, and a one-piece word (*He*, *Lo*) needs only one noisy frame — the microphone starting —
+to clear −7.67; forbidding it costs the alignment its free start, which clears the evidence bar
+on its own. Reproduced on the Mac with a synthetic take (6 s of room noise at 0.002 plus a
+click, Tablet of Aḥmad from *He*): word 0 credited.
+
+The fix is a speech gate: a word is credited only if some frame within two frames (80 ms) of its
+placement is speech — a word piece, not blank, is the frame's most likely class. With it, the
+four synthetic silent takes credit nothing, including at stop, and the bench reads:
+
+| Hop / lookahead / guard / evidence, with the speech gate | Correct credited | Wrong credited | Lag median / p90 |
+| --- | --- | --- | --- |
+| 1 s / 0.5 s / 0.2 s / 5 | 1719 / 1724 | 0 / 103 | 1.24 s / 1.68 s |
+| 0.5 s / 0.5 s / 0.1 s / 7 | 1719 | 0 | 0.94 s / 1.24 s |
+| 0.25 s / 0.25 s / 0.1 s / 7 | 1718 | 0 | 0.57 s / 0.89 s |
+
+Without the two-frame margin the gate cost six correct words: a word's peak frame often sits
+just outside its placement.

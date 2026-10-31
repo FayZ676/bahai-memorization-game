@@ -14,15 +14,16 @@ struct ConformerTracker {
 
     static let sampleRate = 16_000
     static let windowSamples = 96_000
-    static let hopSamples = 16_000
-    static let lookaheadSamples = 8_000
+    static let hopSamples = 4_000
+    static let lookaheadSamples = 4_000
     static let samplesPerFrame = 640
     static let frameSeconds = 0.04
     static let keptFrames = 2 * sampleRate / samplesPerFrame
-    static let guardSeconds = 0.2
+    static let guardSeconds = 0.1
     static let threshold = -7.67
-    static let evidence = 5.0
+    static let evidence = 7.0
     static let speechFramesForFlash = 3
+    static let speechMargin = 2
 
     let aligner: ConformerAligner
     let quietSeconds: Double
@@ -79,6 +80,7 @@ struct ConformerTracker {
             guard let placement = alignment.placements[index] ?? nil,
                   placement.end <= limit,
                   placement.worst >= Self.threshold,
+                  heardSpeech(in: placement),
                   placement.start >= freshAudioFrom,
                   !overlapsCredited(placement) else { continue }
             if !done {
@@ -93,6 +95,13 @@ struct ConformerTracker {
     }
 
     private var order: [Int] { aligner.recitable }
+
+    private func heardSpeech(in placement: ConformerAligner.Placement) -> Bool {
+        let first = max(0, Int((placement.start / Self.frameSeconds).rounded(.down)) - Self.speechMargin)
+        let last = min(frames.count - 1, Int((placement.end / Self.frameSeconds).rounded(.up)) + Self.speechMargin)
+        guard first <= last else { return false }
+        return (first...last).contains { frames.speech[$0] }
+    }
 
     private func overlapsCredited(_ placement: ConformerAligner.Placement) -> Bool {
         credits.values.contains { min(placement.end, $0.placement.end) - max(placement.start, $0.placement.start) > Self.frameSeconds / 2 }

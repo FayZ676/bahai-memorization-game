@@ -14,7 +14,9 @@ paths:
 Recitation is forced alignment against the known text. `Resources/Conformer.mlpackage` (NVIDIA
 Conformer-CTC medium, 16-bit) turns each 6 s window of 16 kHz audio into word-piece
 probabilities; `ConformerAligner` aligns the passage to them; `ConformerTracker` credits a word
-only when its every piece fits and removing it clearly worsens the alignment. `ConformerSession`
+only when its every piece fits, removing it clearly worsens the alignment, and a frame within
+80 ms of it is speech (a word piece, not blank, is most likely) — without that speech gate the
+first owed word gets credited from room noise when recitation starts. `ConformerSession`
 keeps the work bounded: it starts at the chosen paragraph's first word, aligns a 64-word span, and
 re-anchors just behind the last credit (keeping 8 words of overlap) so a long prayer recited for
 minutes costs the same per second as a short one. Audio stays on the device. Matching must not

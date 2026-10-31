@@ -389,12 +389,9 @@ struct SessionView: View {
         guard let current = vm.passage, layout.paragraphs.indices.contains(paragraph) else { return }
         let start = layout.paragraphs[paragraph].words.lowerBound
         startWord = start
-        var remaining = highlights.unattempted(in: current, from: start)
-        if remaining.isEmpty {
-            highlights.clear()
-            remaining = current.recitableIndices(from: start)
-        }
+        let remaining = current.recitableIndices(from: start)
         guard !remaining.isEmpty else { return }
+        highlights.clear()
         withAnimation(Motion.focus) { focused = true }
         scrollToParagraph(paragraph, layout: layout)
         Feedback.prepareRecitation()

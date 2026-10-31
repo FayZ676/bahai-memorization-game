@@ -19,6 +19,27 @@ struct ReleaseNote: Identifiable {
 enum ReleaseNotes {
     static let all: [ReleaseNote] = [
         ReleaseNote(
+            version: "2.0.1",
+            headline: "Saying a prayer out loud now keeps up with you.",
+            highlights: [
+                ReleaseHighlight(
+                    symbol: "waveform",
+                    title: "Keeps up with you",
+                    text: "When you say a word, it now shows on the page much sooner."
+                ),
+                ReleaseHighlight(
+                    symbol: "textformat",
+                    title: "Names are heard",
+                    text: "Names like \u{2018}Al\u{ED}, A\u{1E25}mad, and Bah\u{E1}\u{2019}u\u{2019}ll\u{E1}h now show when you say them."
+                ),
+                ReleaseHighlight(
+                    symbol: "mic",
+                    title: "Only what you say",
+                    text: "A word no longer shows before you have said it. Each time you tap Recite, you start fresh."
+                )
+            ]
+        ),
+        ReleaseNote(
             version: "2.0",
             headline: "Verses has been rebuilt from the ground up, to be better in every way.",
             highlights: [
