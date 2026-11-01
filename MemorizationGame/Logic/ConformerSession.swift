@@ -11,6 +11,13 @@ struct ConformerSession {
     struct Update {
         var credits: [Int] = []
         var flashed: Int?
+        var hops = 0
+
+        mutating func merge(_ other: Update) {
+            credits += other.credits
+            if let flashed = other.flashed { self.flashed = flashed }
+            hops += other.hops
+        }
     }
 
     static let wordSpan = 64
@@ -27,6 +34,11 @@ struct ConformerSession {
     private(set) var anchorSample = 0
     private var processedEnd = 0
     private var tracker: ConformerTracker
+    private var audio: [Float] = []
+    private var audioStart = 0
+    private var nextHop = ConformerTracker.hopSamples
+
+    private var heard: Int { audioStart + audio.count }
 
     init(
         words: [String],
@@ -51,14 +63,30 @@ struct ConformerSession {
         tracker.hidden = localHidden
     }
 
-    func windows(endingAt end: Int, totalSamples: Int, done: Bool) -> [Window] {
+    mutating func append(_ samples: [Float], predict: (UnsafeBufferPointer<Float>) -> [Float]?) -> Update {
+        audio += samples
+        var update = Update()
+        while heard >= nextHop {
+            let end = nextHop
+            nextHop += ConformerTracker.hopSamples
+            update.merge(listen(through: end, done: false, predict: predict))
+        }
+        return update
+    }
+
+    mutating func finish(predict: (UnsafeBufferPointer<Float>) -> [Float]?) -> Update {
+        guard heard > 0 else { return Update() }
+        return listen(through: heard + ConformerTracker.lookaheadSamples, done: true, predict: predict)
+    }
+
+    private func windows(endingAt end: Int, done: Bool) -> [Window] {
         let localEnd = end - anchorSample
         var ends = Array(stride(from: processedEnd + ConformerTracker.hopSamples, to: localEnd, by: ConformerTracker.hopSamples))
         ends.append(localEnd)
         return ends.enumerated().map { number, local in
             let last = number == ends.count - 1
             let ready = last && done
-                ? ConformerTracker.totalFrames(samples: totalSamples - anchorSample)
+                ? ConformerTracker.totalFrames(samples: heard - anchorSample)
                 : max(0, (local - ConformerTracker.lookaheadSamples) / ConformerTracker.samplesPerFrame)
             return Window(
                 start: anchorSample + ConformerTracker.windowStart(endingAt: local),
@@ -69,18 +97,18 @@ struct ConformerSession {
         }
     }
 
-    mutating func listen(
+    private mutating func listen(
         through end: Int,
-        audio: UnsafeBufferPointer<Float>,
         done: Bool,
         predict: (UnsafeBufferPointer<Float>) -> [Float]?
     ) -> Update {
-        var update = Update()
+        var update = Update(hops: 1)
         var chunk = [Float](repeating: 0, count: ConformerTracker.windowSamples)
-        for window in windows(endingAt: end, totalSamples: audio.count, done: done) {
-            let available = max(0, min(window.end, audio.count) - window.start)
+        for window in windows(endingAt: end, done: done) {
+            let available = max(0, min(window.end, heard) - window.start)
+            let first = window.start - audioStart
             for offset in chunk.indices {
-                chunk[offset] = offset < available ? audio[window.start + offset] : 0
+                chunk[offset] = offset < available ? audio[first + offset] : 0
             }
             guard let rows = chunk.withUnsafeBufferPointer(predict) else { continue }
             rows.withUnsafeBufferPointer { absorb($0, for: window) }
@@ -88,14 +116,21 @@ struct ConformerSession {
             update.credits += step.credits
             if let flashed = step.flashed { update.flashed = flashed }
         }
+        forgetAudio(before: anchorSample)
         return update
     }
 
-    mutating func absorb(_ rows: UnsafeBufferPointer<Float>, for window: Window) {
+    private mutating func forgetAudio(before sample: Int) {
+        guard sample > audioStart else { return }
+        audio.removeFirst(min(sample - audioStart, audio.count))
+        audioStart = sample
+    }
+
+    private mutating func absorb(_ rows: UnsafeBufferPointer<Float>, for window: Window) {
         tracker.absorb(window: rows, start: window.start - anchorSample, end: window.end - anchorSample, ready: window.ready)
     }
 
-    mutating func step(_ window: Window, now: Double) -> Update {
+    private mutating func step(_ window: Window, now: Double) -> Update {
         let local = tracker.step(ready: window.ready, now: now, done: window.done)
         processedEnd = window.end - anchorSample
         let update = Update(

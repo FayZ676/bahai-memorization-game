@@ -65,8 +65,6 @@ final class ConformerRecitation: @unchecked Sendable {
     private let queue = DispatchQueue(label: "conformer-recitation", qos: .userInitiated)
     private let input: MLMultiArray
     private var session: ConformerSession
-    private var samples: [Float] = []
-    private var nextHop = ConformerTracker.hopSamples
     private var finished = false
     private var hopDurations: [Duration] = []
 
@@ -96,12 +94,7 @@ final class ConformerRecitation: @unchecked Sendable {
         let chunk = Array(UnsafeBufferPointer(start: channel, count: Int(buffer.frameLength)))
         queue.async { [self] in
             guard !finished else { return }
-            samples.append(contentsOf: chunk)
-            while samples.count >= nextHop {
-                let end = nextHop
-                nextHop += ConformerTracker.hopSamples
-                hop(end: end, done: false)
-            }
+            listen(done: false) { session.append(chunk, predict: predict) }
         }
     }
 
@@ -113,8 +106,7 @@ final class ConformerRecitation: @unchecked Sendable {
         queue.async { [self] in
             guard !finished else { return }
             finished = true
-            guard !samples.isEmpty else { return }
-            hop(end: samples.count + ConformerTracker.lookaheadSamples, done: true)
+            listen(done: true) { session.finish(predict: predict) }
         }
     }
 
@@ -124,15 +116,15 @@ final class ConformerRecitation: @unchecked Sendable {
         }
     }
 
-    private func hop(end: Int, done: Bool) {
+    private func listen(done: Bool, _ work: () -> ConformerSession.Update) {
         let clock = ContinuousClock.now
-        let update = samples.withUnsafeBufferPointer { audio in
-            session.listen(through: end, audio: audio, done: done, predict: predict)
-        }
-        hopDurations.append(ContinuousClock.now - clock)
+        let update = work()
+        guard update.hops > 0 else { return }
+        let took = ContinuousClock.now - clock
+        hopDurations.append(took)
         RecitationTrace.emit(
             "conformer",
-            "hop end=\(end) done=\(done) took=\(ContinuousClock.now - clock) credited=\(update.credits) flashed=\(update.flashed.map(String.init) ?? "-")"
+            "hop done=\(done) took=\(took) credited=\(update.credits) flashed=\(update.flashed.map(String.init) ?? "-")"
         )
         let indices = update.credits
         if !indices.isEmpty { Task { @MainActor in onCredits(indices) } }

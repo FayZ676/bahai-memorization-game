@@ -26,7 +26,7 @@ def main():
     parser.add_argument("takes")
     parser.add_argument("timings")
     parser.add_argument("out")
-    parser.add_argument("--every", type=int, default=3)
+    parser.add_argument("--every", type=int, default=12)
     args = parser.parse_args()
     os.makedirs(args.out, exist_ok=True)
     timings = json.load(open(args.timings))

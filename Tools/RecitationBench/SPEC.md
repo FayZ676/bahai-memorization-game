@@ -332,7 +332,7 @@ audio from the end of the word before it, and the missed seconds are replayed wi
 the new tracker never starts on a gap. More than 45 s without progress keeps only the latest
 audio. Until the first re-anchor every window is identical to the bench above.
 
-`conformer/main.swift live` runs the app's own `ConformerSession.listen` with Core ML on the Mac;
+`conformer/main.swift live` feeds each take to the app's own `ConformerSession` in 1024-sample buffers, with Core ML on the Mac;
 takes with a `startIndex` start there, as the app does.
 
 | Run (all 25 takes) | Correct credited | Wrong credited |
@@ -386,3 +386,35 @@ four synthetic silent takes credit nothing, including at stop, and the bench rea
 
 Without the two-frame margin the gate cost six correct words: a word's peak frame often sits
 just outside its placement.
+
+### A pause confirms the last word (2026-11-01)
+
+On the phone, the last word of a paragraph (*know* in the Tablet of Aḥmad's "did ye but know.")
+never lit up while reciting. The evidence rule needs something after a word: forbidding it costs
+the 20-point skip only once a later word is aligned, so a word followed by silence scores 3–5
+against the bar of 7. Synthetic takes of that paragraph (`say`, three voices) reproduced it.
+
+The fix: a word is also credited, without the evidence bar, when the word right before it is
+credited, it starts after every credit, and 0.6 s after it is heard with no speech frame.
+Requiring the previous word matters: without it, silence after a cut credited later unsaid
+words (4 wrong on the cut-short takes).
+
+`synthetic_stops.py` now cuts every 12th word by default (54 takes, was 193 at `--every 3`).
+
+| Run | Bench (25) correct / wrong | Cut-short (54) correct / wrong |
+| --- | --- | --- |
+| Before | 1718 / 1724, 0 | 2758 / 2832, 12 |
+| Pause, any word | 1718 / 1724, 0 | 2762 / 2832, 13 |
+| Pause, previous word credited (shipped) | 1718 / 1724, 0 | 2767 / 2832, 11 |
+
+Tried and dropped: charging only the current sentence's unreached words at stop (instead of the
+whole span) let the stop pass credit "know", but added wrong credits on the full cut-short set
+(34 against 32).
+
+### The session owns its audio (2026-11-01)
+
+`ConformerSession` now takes the microphone's buffers itself (`append`, then `finish` at stop):
+it keeps the hop cadence and the audio, and forgets audio from before its anchor, which it can
+never read again. `ConformerRecitation` is left with the queue and Core ML, and `main.swift live`
+feeds takes through the same two calls, so the Mac and the app no longer each copy the hop loop.
+Every take credits exactly the words it did before: 1718 / 1724 correct, 0 / 103 wrong.

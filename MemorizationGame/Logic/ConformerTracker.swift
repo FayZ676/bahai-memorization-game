@@ -24,6 +24,7 @@ struct ConformerTracker {
     static let evidence = 7.0
     static let speechFramesForFlash = 3
     static let speechMargin = 2
+    static let pauseSeconds = 0.6
 
     let aligner: ConformerAligner
     let quietSeconds: Double
@@ -74,7 +75,8 @@ struct ConformerTracker {
         let limit = Double(ready) * Self.frameSeconds - (done ? 0 : Self.guardSeconds)
         let alignment = aligner.align(frames, through: ready, final: done)
         latest = alignment
-        let freshAudioFrom = done ? (credits.values.map(\.placement.end).max() ?? 0) - Self.frameSeconds / 2 : -Double.infinity
+        let lastCreditEnd = credits.values.map(\.placement.end).max() ?? 0
+        let freshAudioFrom = done ? lastCreditEnd - Self.frameSeconds / 2 : -Double.infinity
         var fresh: [Credit] = []
         for (position, index) in aligner.recitable.enumerated() where credits[index] == nil {
             guard let placement = alignment.placements[index] ?? nil,
@@ -83,7 +85,7 @@ struct ConformerTracker {
                   heardSpeech(in: placement),
                   placement.start >= freshAudioFrom,
                   !overlapsCredited(placement) else { continue }
-            if !done {
+            if !done, !confirmedByPause(position, placement, after: lastCreditEnd, ready: ready) {
                 let without = aligner.align(frames, through: ready, final: false, forbidding: position)
                 guard alignment.score - without.score >= Self.evidence else { continue }
             }
@@ -101,6 +103,20 @@ struct ConformerTracker {
         let last = min(frames.count - 1, Int((placement.end / Self.frameSeconds).rounded(.up)) + Self.speechMargin)
         guard first <= last else { return false }
         return (first...last).contains { frames.speech[$0] }
+    }
+
+    private func confirmedByPause(_ position: Int, _ placement: ConformerAligner.Placement, after lastCreditEnd: Double, ready: Int) -> Bool {
+        position > 0
+            && credits[order[position - 1]] != nil
+            && placement.start >= lastCreditEnd
+            && quietAfter(placement, ready: ready)
+    }
+
+    private func quietAfter(_ placement: ConformerAligner.Placement, ready: Int) -> Bool {
+        let first = Int((placement.end / Self.frameSeconds).rounded(.up)) + Self.speechMargin
+        let heardThrough = Double(min(ready, frames.count)) * Self.frameSeconds
+        guard heardThrough - placement.end >= Self.pauseSeconds, first < min(ready, frames.count) else { return false }
+        return !(first..<min(ready, frames.count)).contains { frames.speech[$0] }
     }
 
     private func overlapsCredited(_ placement: ConformerAligner.Placement) -> Bool {

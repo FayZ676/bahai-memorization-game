@@ -16,7 +16,9 @@ Conformer-CTC medium, 16-bit) turns each 6 s window of 16 kHz audio into word-pi
 probabilities; `ConformerAligner` aligns the passage to them; `ConformerTracker` credits a word
 only when its every piece fits, removing it clearly worsens the alignment, and a frame within
 80 ms of it is speech (a word piece, not blank, is most likely) — without that speech gate the
-first owed word gets credited from room noise when recitation starts. `ConformerSession`
+first owed word gets credited from room noise when recitation starts. The last word before a pause has nothing
+after it to confirm it, so 0.6 s of quiet stands in for the evidence when the word right before it
+is already credited — without that, a paragraph's last word never lit up while reciting. `ConformerSession`
 keeps the work bounded: it starts at the chosen paragraph's first word, aligns a 64-word span, and
 re-anchors just behind the last credit (keeping 8 words of overlap) so a long prayer recited for
 minutes costs the same per second as a short one. Audio stays on the device. Matching must not

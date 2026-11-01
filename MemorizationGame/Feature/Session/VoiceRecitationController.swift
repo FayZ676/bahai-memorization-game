@@ -24,6 +24,8 @@ final class VoiceRecitationController {
     private let capture = AudioCapture()
     private var listener: ConformerRecitation?
     private var owed: Set<Int> = []
+    private var reached = 0
+    private var wordCount = 0
     private var misses: [Int: Int] = [:]
 
     private static let missesBeforeShowing = 2
@@ -63,7 +65,9 @@ final class VoiceRecitationController {
             self.listener = listener
             owed = Set(hiddenIndices)
             misses = [:]
-            cursorIndex = hiddenIndices.min()
+            reached = startWord
+            wordCount = words.count
+            cursorIndex = startWord
             try await capture.start(feeding: listener)
             guard state == .preparingModel else { return }
             state = .listening
@@ -78,7 +82,6 @@ final class VoiceRecitationController {
         guard state == .listening, let listener else { return }
         listener.updateHidden(hiddenIndices)
         owed = Set(hiddenIndices)
-        cursorIndex = hiddenIndices.min()
         if owed.isEmpty { stop() }
     }
 
@@ -89,16 +92,18 @@ final class VoiceRecitationController {
     }
 
     private func credit(_ indices: [Int]) {
+        if let furthest = indices.max() { reached = max(reached, furthest + 1) }
         let fresh = indices.filter { owed.contains($0) }
-        guard !fresh.isEmpty else { return }
-        owed.subtract(fresh)
-        onWordsMatched?(fresh)
+        if !fresh.isEmpty {
+            owed.subtract(fresh)
+            onWordsMatched?(fresh)
+        }
         advance()
     }
 
     private func advance() {
         guard state == .listening else { return }
-        cursorIndex = owed.min()
+        cursorIndex = min(reached, wordCount - 1)
         if owed.isEmpty {
             stop()
             onCompleted?()

@@ -122,18 +122,24 @@ func live(takes: String, model modelPath: String, vocabulary: String, out: Strin
         var flashes: [[String: Any]] = []
         let clock = ContinuousClock.now
         var heard = 0
-        while true {
-            heard += ConformerTracker.hopSamples
-            let end = min(heard, audio.count + ConformerTracker.lookaheadSamples)
-            let done = heard >= audio.count + ConformerTracker.lookaheadSamples
+        while heard <= audio.count {
+            let done = heard == audio.count
             let before = session.anchorWord
-            let update = audio.withUnsafeBufferPointer { session.listen(through: end, audio: $0, done: done, predict: predict) }
-            if ProcessInfo.processInfo.environment["TRACE_ANCHOR"] != nil, session.anchorWord != before {
-                print("  anchor \(before) -> \(session.anchorWord) at \(Double(end) / 16000)s audio from \(Double(session.anchorSample) / 16000)s")
+            let update: ConformerSession.Update
+            if done {
+                update = session.finish(predict: predict)
+            } else {
+                let chunk = Array(audio[heard..<min(heard + 1024, audio.count)])
+                heard += chunk.count
+                update = session.append(chunk, predict: predict)
             }
-            for index in update.credits where credited[index] == nil { credited[index] = Double(end) / Double(ConformerTracker.sampleRate) }
+            let at = Double(heard + (done ? ConformerTracker.lookaheadSamples : 0)) / Double(ConformerTracker.sampleRate)
+            if ProcessInfo.processInfo.environment["TRACE_ANCHOR"] != nil, session.anchorWord != before {
+                print("  anchor \(before) -> \(session.anchorWord) at \(at)s audio from \(Double(session.anchorSample) / 16000)s")
+            }
+            for index in update.credits where credited[index] == nil { credited[index] = at }
             if let flashed = update.flashed {
-                flashes.append(["index": flashed, "movedOn": false, "at": Double(end) / Double(ConformerTracker.sampleRate)])
+                flashes.append(["index": flashed, "movedOn": false, "at": at])
             }
             if done { break }
         }
