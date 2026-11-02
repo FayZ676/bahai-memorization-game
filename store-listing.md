@@ -27,6 +27,9 @@ No account. No sign-in. No ads. Your prayers, your progress, and your voice stay
 
 Hide what you know. Read what you don't. Come back tomorrow.
 
+## What's New — 2.0.2 (4000)
+When you stop at the end of a paragraph, its last word now shows right away. Before, it could wait until you said the next line.
+
 ## What's New — 2.0.1 (4000)
 Saying a prayer out loud now keeps up with you. Each word shows on the page in about half the time it took before.
 

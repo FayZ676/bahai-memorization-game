@@ -19,6 +19,17 @@ struct ReleaseNote: Identifiable {
 enum ReleaseNotes {
     static let all: [ReleaseNote] = [
         ReleaseNote(
+            version: "2.0.2",
+            headline: "The last word you say now shows when you stop.",
+            highlights: [
+                ReleaseHighlight(
+                    symbol: "mic",
+                    title: "The last word shows",
+                    text: "When you stop at the end of a paragraph, its last word now shows right away. You do not have to say the next line first."
+                )
+            ]
+        ),
+        ReleaseNote(
             version: "2.0.1",
             headline: "Saying a prayer out loud now keeps up with you.",
             highlights: [
