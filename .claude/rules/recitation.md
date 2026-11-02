@@ -35,7 +35,9 @@ aligner or the commit rule is judged by replaying every take in `Tools/Recitatio
 and it ships only if no wrong word gets credited.
 
 The model is generated, not edited: `candidates/coreml_convert.py` builds it from NeMo, and
-`candidates/export_vocabulary.py` writes `conformer-vocabulary.json` beside it.
+`candidates/export_vocabulary.py` writes `conformer-vocabulary.json` beside it. Android ships the
+same model as ONNX from `candidates/onnx_convert.py`; a model change regenerates both and re-runs
+`android/scripts/bench.sh`.
 
 New test cases come from the phone. In a debug build, Settings → Debug → Recitation Bench → a
 passage → the Free card: recite the way it went wrong, listen back, tap every word that was wrong

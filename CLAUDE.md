@@ -11,6 +11,11 @@ reveals hidden words as they are said, recognized on the device by a bundled Con
 prayer is one scrollable page that opens at the top; practice starts at the paragraph at the top of
 the screen, or the one whose ¶ was tapped, and runs as far as you recite.
 
+## Android
+
+`android/` is a native Kotlin + Jetpack Compose port with the same recitation engine (the
+Conformer exported to ONNX). `android/README.md` covers the emulator, the bench and Play release.
+
 ## Build
 
 Xcode project `MemorizationGame.xcodeproj`, scheme `MemorizationGame`. Tested live on a physical
@@ -36,3 +41,4 @@ the code they govern.
 | `recitation.md` — the Conformer, the bench, adding test cases | recitation, the bench, its tools |
 | `design-assets.md` — the generator is the source | `Design/`, `Assets.xcassets` |
 | `releasing.md` — `/release` is the single door | `scripts/`, store listing |
+| `android.md` — logic stays in step with iOS, the bench is the contract | `android/**` |
