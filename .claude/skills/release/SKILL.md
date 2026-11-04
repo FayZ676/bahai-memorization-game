@@ -67,7 +67,7 @@ section is the first filter:
 
 | Area | Usually |
 |---|---|
-| `app: Library`, `Session`, `Import`, `Settings`, `Achievements`, `Onboarding` | user-facing — describe it |
+| `app: Library`, `Session`, `Import`, `Settings`, `Onboarding` | user-facing — describe it |
 | `app: Theme`, `Typography` | user-facing only if the look visibly changed |
 | `content: library + resources` | user-facing if passages were added or removed — say how many |
 | `app: Store`, `Model`, `Logic`, `Support` | usually invisible; mention only if behaviour changed |
@@ -105,7 +105,7 @@ Prepend a `ReleaseNote` to `ReleaseNotes.all`; newest first is what `latest` mea
 - `headline` is one sentence on the shape of the release, the same beat the App Store
   paragraphs lead with.
 - Three to five `highlights`, one per change worth naming. Each has an SF Symbol the app
-  already uses for that thing (`mic`, `eye`, `waveform`, `trophy`, `book`), a two-to-four
+  already uses for that thing (`mic`, `eye`, `waveform`, `book`), a two-to-four
   word `title`, and a `text` of a sentence or two.
 - The card scrolls past five, but a release that needs more is a release whose notes are
   not filtered enough.
@@ -149,7 +149,7 @@ release changed what that tile actually shows:
 | the hero passage in `tools/seed.py` | `2-read`, `3-hide`, `4-hide-more` as a set |
 
 Behaviour changes that don't alter what's on screen do not need a reshoot — check the diff
-before flagging. `8-achievements.png` is a spare that is not uploaded. Flagging is the
+before flagging. Flagging is the
 job: never regenerate screenshots unless asked, since reshooting is a driven simulator
 session documented in that README.
 

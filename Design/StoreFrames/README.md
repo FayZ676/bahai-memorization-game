@@ -69,8 +69,7 @@ screen does.
 **Every claim in the copy has to hold against the build, not against the last listing.**
 The counts are hardcoded here, so re-derive them from `library.json` whenever it is rebuilt —
 225 prayers, 153 Hidden Words, 249 Ruhi passages at the time of writing — and check that
-feature claims match the app (reminders exist, so "no notifications" is false; the
-achievement tile names a count that `AchievementCatalog.all` has to still agree with).
+feature claims match the app (reminders exist, so "no notifications" is false).
 
 **The phone bleeds off the bottom on purpose.** Fitting the whole device on the canvas
 would shrink the UI to the point where nothing in it can be read, so the bezel runs to the

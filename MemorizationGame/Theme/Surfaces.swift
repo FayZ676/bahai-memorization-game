@@ -43,13 +43,16 @@ extension ButtonStyle where Self == HapticButtonStyle {
 
 struct IconButtonStyle: ButtonStyle {
     var size: CGFloat = 38
+    var glyphSize: CGFloat = 17
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
+            .font(.system(size: glyphSize))
             .frame(width: size, height: size)
             .background(Theme.surface, in: Circle())
             .overlay(Circle().stroke(Theme.hairline, lineWidth: 1))
             .opacity(configuration.isPressed ? 0.6 : 1)
+            .accessibilityShowsLargeContentViewer()
             .onChange(of: configuration.isPressed) { _, pressed in
                 if pressed { Feedback.tap() }
             }

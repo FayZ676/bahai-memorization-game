@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct TourOverlay: View {
-    @Environment(\.fontScale) private var fontScale
     let step: TourStep
     let isPromptVisible: Bool
     let isPaused: Bool
@@ -44,7 +43,7 @@ struct TourOverlay: View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             titleRow
 
-            step.body(scale: fontScale)
+            step.body
                 .appFont(Typography.callout)
                 .foregroundStyle(Theme.muted)
                 .lineSpacing(3)
@@ -133,9 +132,9 @@ struct TourOverlay: View {
     private func arrow(_ symbol: String, enabled: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: symbol)
-                .font(.system(size: 16, weight: .semibold))
+                .appIcon(16, weight: .semibold)
                 .foregroundStyle(enabled ? Theme.muted : Theme.faint)
-                .frame(width: 34, height: 48)
+                .frame(minWidth: 34, minHeight: 48)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.haptic)
@@ -147,6 +146,7 @@ struct TourOverlay: View {
             Text("Skip Walkthrough")
                 .appFont(Typography.label)
                 .tracking(0.5)
+                .fixedSize(horizontal: false, vertical: true)
                 .foregroundStyle(Theme.muted)
                 .padding(.vertical, Spacing.xs)
                 .padding(.trailing, Spacing.md)
@@ -170,6 +170,8 @@ struct TourOverlay: View {
                         .shadow(color: .black.opacity(0.22), radius: 10, y: 4)
                 }
                 .buttonStyle(.haptic)
+                .accessibilityLabel("Show walkthrough")
+                .accessibilityShowsLargeContentViewer()
             }
         }
         .padding(.trailing, Spacing.lg)

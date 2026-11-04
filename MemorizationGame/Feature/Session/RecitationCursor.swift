@@ -4,6 +4,7 @@ struct RecitationCursor: View {
     let target: CGRect?
 
     @Environment(\.fontScale) private var fontScale
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     @State private var leading: CGFloat = 0
     @State private var trailing: CGFloat = 0
@@ -40,9 +41,10 @@ struct RecitationCursor: View {
             withAnimation(.easeOut(duration: 0.22)) { visible = false }
             return
         }
-        let sidePad = Self.sidePad * fontScale
-        let above = Self.trimAboveCap * fontScale
-        let below = Self.trimBelowBaseline * fontScale
+        let unit = fontScale * DynamicTypeScaling.factor(for: dynamicTypeSize)
+        let sidePad = Self.sidePad * unit
+        let above = Self.trimAboveCap * unit
+        let below = Self.trimBelowBaseline * unit
         let box = CGRect(
             x: target.minX - sidePad,
             y: target.minY + above,

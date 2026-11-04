@@ -1,9 +1,5 @@
 import SwiftUI
 
-enum LibraryRoute: Hashable {
-    case achievements
-}
-
 extension EnvironmentValues {
     @Entry var popToLibrary: () -> Void = {}
     @Entry var openInLibrary: (Passage) -> Void = { _ in }
@@ -22,7 +18,7 @@ struct LibraryView: View {
     var body: some View {
         NavigationStack(path: $path) {
             Screen {
-                ScreenHeader(title: "Library", slotWidth: 84, leading: {
+                ScreenHeader(title: "Library", leading: {
                     NavigationLink {
                         SettingsView()
                     } label: {
@@ -30,20 +26,14 @@ struct LibraryView: View {
                             .foregroundStyle(Theme.accent)
                     }
                     .buttonStyle(.icon)
+                    .accessibilityLabel("Settings")
                 }, trailing: {
-                    HStack(spacing: Spacing.sm) {
-                        NavigationLink(value: LibraryRoute.achievements) {
-                            Image(systemName: "trophy")
-                                .foregroundStyle(hasAchievements ? Theme.gold : Theme.accent)
-                        }
-                        .buttonStyle(.icon)
-
-                        BrowseLink(.browse) {
-                            Image(systemName: "book")
-                                .foregroundStyle(Theme.accent)
-                        }
-                        .buttonStyle(.icon)
+                    BrowseLink(.browse) {
+                        Image(systemName: "book")
+                            .foregroundStyle(Theme.accent)
                     }
+                    .buttonStyle(.icon)
+                    .accessibilityLabel("Writings")
                 })
             } content: {
                 Group {
@@ -52,12 +42,6 @@ struct LibraryView: View {
                     } else {
                         list
                     }
-                }
-            }
-            .navigationDestination(for: LibraryRoute.self) { route in
-                switch route {
-                case .achievements:
-                    AchievementsView()
                 }
             }
             .navigationDestination(for: Passage.self) { passage in
@@ -107,8 +91,6 @@ struct LibraryView: View {
         guard words.count > deleteTitleWordLimit else { return title }
         return words.prefix(deleteTitleWordLimit).joined(separator: " ") + "…"
     }
-
-    private var hasAchievements: Bool { store.earnedAchievementCount > 0 }
 
     private var list: some View {
         List {

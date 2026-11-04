@@ -7,18 +7,25 @@ struct ReadingMetrics: Equatable {
     let wordSpacing: CGFloat
     let lineSpacing: CGFloat
     let paragraphSpacing: CGFloat
+    let tipHeight: CGFloat
     let fontScale: CGFloat
     let dynamicType: DynamicTypeSize
 
     init(width: CGFloat, fontScale: CGFloat, dynamicType: DynamicTypeSize = .large) {
         let narrow = width < 390
+        let unit = fontScale * DynamicTypeScaling.factor(for: dynamicType)
         textMargin = narrow ? 30 : 42
         maxStretchPerGap = (narrow ? 1.5 : 2.5) * fontScale
         wordSpacing = 7 * fontScale
-        lineSpacing = 4 * fontScale
-        paragraphSpacing = 26 * fontScale
+        lineSpacing = 4 * unit
+        paragraphSpacing = 26 * unit
+        tipHeight = Self.tipHeight(fontScale: fontScale, dynamicType: dynamicType)
         self.fontScale = fontScale
         self.dynamicType = dynamicType
+    }
+
+    static func tipHeight(fontScale: CGFloat, dynamicType: DynamicTypeSize) -> CGFloat {
+        40 * fontScale * DynamicTypeScaling.factor(for: dynamicType)
     }
 }
 
@@ -150,9 +157,7 @@ struct PageLayout {
 
     static func font(scale: CGFloat, dynamicType: DynamicTypeSize) -> UIFont {
         let token = Typography.recite
-        let traits = UITraitCollection(preferredContentSizeCategory: UIContentSizeCategory(dynamicType))
-        let size = UIFontMetrics(forTextStyle: .body)
-            .scaledValue(for: token.size * scale * token.face.opticalScale, compatibleWith: traits)
+        let size = token.scaledSize(scale: scale, dynamicType: dynamicType)
         return UIFont(name: AppFont.serifName(for: token.weight, italic: token.isItalic), size: size)
             ?? UIFont.systemFont(ofSize: size)
     }

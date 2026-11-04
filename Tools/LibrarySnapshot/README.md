@@ -70,8 +70,6 @@ servant…") sit outside the table of contents entirely. They are kept, under a 
 across rebuilds and ids do not shift when entries are added or reordered. Ruhi entries put
 the section in the seed as well, because the same passage is memorized in more than one book
 and the two would otherwise hash alike. This matters
-because ids are referenced from outside this file: `Model/Achievement.swift` hardcodes them,
-and saved passages persist them as `sourceID`. The script fails loudly on a collision.
+because saved passages persist them as `sourceID`. The script fails loudly on a collision.
 
-Changing an entry's text changes its id. If a rebuild alters the text of an achievement
-prayer, update `Achievement.swift` to match.
+Changing an entry's text changes its id.

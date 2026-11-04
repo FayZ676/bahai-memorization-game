@@ -50,7 +50,7 @@ struct RecitationBar: View {
         let open = openMenu == .hideCounts
         return HStack(spacing: Spacing.sm) {
             Image(systemName: "text.word.spacing")
-                .font(.system(size: 15, weight: .regular))
+                .appIcon(15)
             Text("Hide \(hideCount)")
                 .appFont(Self.labelFont)
                 .contentTransition(.numericText())
@@ -164,7 +164,7 @@ struct RecitationBar: View {
                 .tint(Theme.accent)
         } else {
             Image(systemName: symbolName)
-                .font(.system(size: 15, weight: .regular))
+                .appIcon(15)
                 .contentTransition(.symbolEffect(.replace.offUp))
                 .symbolEffect(
                     .variableColor.iterative.dimInactiveLayers,

@@ -8,7 +8,6 @@ import android.net.Uri
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationState
@@ -21,11 +20,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.calculateTargetValue
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.rememberSplineBasedDecay
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
@@ -39,7 +34,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.Spacer
@@ -57,7 +51,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.EmojiEvents
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.MoreHoriz
@@ -250,13 +243,6 @@ fun SessionScreen(
             voice.stop()
             tour?.isPaused = false
         }
-    }
-
-    LaunchedEffect(store.justEarned) {
-        if (store.justEarned == null) return@LaunchedEffect
-        Feedback.sessionComplete()
-        delay(3000)
-        store.justEarned = null
     }
 
     LaunchedEffect(store.passageJustMemorized) {
@@ -605,15 +591,6 @@ fun SessionScreen(
                     }
             )
         }
-
-        AnimatedVisibility(
-            visible = store.justEarned != null,
-            enter = slideInVertically { -it } + fadeIn(),
-            exit = slideOutVertically { -it } + fadeOut(),
-            modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 10.dp),
-        ) {
-            store.justEarned?.let { AchievementToast(it.title) }
-        }
     }
 
     if (micAlert) {
@@ -911,23 +888,4 @@ private fun MenuItem(title: String, icon: androidx.compose.ui.graphics.vector.Im
             onClick()
         },
     )
-}
-
-@Composable
-private fun AchievementToast(detail: String) {
-    Row(
-        Modifier
-            .clip(RoundedCornerShape(50))
-            .background(Theme.rowBg)
-            .border(1.dp, Theme.gold.copy(alpha = 0.5f), RoundedCornerShape(50))
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        Icon(Icons.Outlined.EmojiEvents, null, tint = Theme.gold, modifier = Modifier.size(18.dp))
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text("Achievement earned", style = Typography.label.style(LocalFontScale.current), color = Theme.ink)
-            Text(detail, style = Typography.micro.style(LocalFontScale.current), color = Theme.muted)
-        }
-    }
 }

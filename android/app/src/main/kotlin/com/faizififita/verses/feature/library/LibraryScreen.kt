@@ -24,7 +24,6 @@ import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Archive
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.EmojiEvents
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Unarchive
 import androidx.compose.material3.AlertDialog
@@ -70,25 +69,17 @@ private const val DELETE_TITLE_WORD_LIMIT = 6
 fun LibraryScreen(
     store: AppStore,
     onSettings: () -> Unit,
-    onAchievements: () -> Unit,
     onBrowse: () -> Unit,
     onOpen: (Passage) -> Unit,
 ) {
     var pendingDelete by rememberSaveable { mutableStateOf<String?>(null) }
     var showsArchived by rememberSaveable { mutableStateOf(false) }
-    val hasAchievements = store.earnedAchievementCount > 0
 
     Screen(header = {
         ScreenHeader(
             title = "Library",
-            slotWidth = 84.dp,
             leading = { IconButton(Icons.Outlined.Settings, "Settings", tint = Theme.accent, onClick = onSettings) },
-            trailing = {
-                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                    IconButton(Icons.Outlined.EmojiEvents, "Achievements", tint = if (hasAchievements) Theme.gold else Theme.accent, onClick = onAchievements)
-                    IconButton(Icons.AutoMirrored.Outlined.MenuBook, "Writings", tint = Theme.accent, onClick = onBrowse)
-                }
-            },
+            trailing = { IconButton(Icons.AutoMirrored.Outlined.MenuBook, "Writings", tint = Theme.accent, onClick = onBrowse) },
         )
     }) {
         if (store.passages.isEmpty()) {

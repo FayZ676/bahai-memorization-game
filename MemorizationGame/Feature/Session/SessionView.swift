@@ -156,24 +156,6 @@ struct SessionView: View {
         } message: {
             Text("Allow microphone access in Settings to practice by reciting.")
         }
-        .overlay(alignment: .top) {
-            Group {
-                if let earned = store.justEarned {
-                    Toast(
-                        symbol: "\(earned.symbol).fill",
-                        title: "Achievement earned",
-                        detail: earned.title
-                    )
-                }
-            }
-            .padding(.top, 10)
-            .transition(.move(edge: .top).combined(with: .opacity))
-        }
-        .animation(.spring(response: 0.42, dampingFraction: 0.8), value: store.justEarned)
-        .onChange(of: store.justEarned) { _, earned in
-            guard earned != nil else { return }
-            celebrate { store.justEarned = nil }
-        }
         .onChange(of: store.passageJustMemorized) { _, memorized in
             guard memorized else { return }
             store.passageJustMemorized = false
@@ -264,6 +246,7 @@ struct SessionView: View {
         }
         .padding(.top, Spacing.xxs)
         .padding(.bottom, Spacing.sm)
+        .dynamicTypeSize(...DynamicTypeScaling.toolbarLimit)
         .background {
             RoundedRectangle(cornerRadius: Radius.panel, style: .continuous)
                 .fill(Theme.raised)
@@ -276,14 +259,6 @@ struct SessionView: View {
         .padding(.horizontal, Spacing.lg)
         .padding(.bottom, Spacing.xs)
         .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { controlsHeight = $0 }
-    }
-
-    private func celebrate(thenDismiss: @escaping () -> Void) {
-        Feedback.sessionComplete()
-        Task {
-            try? await Task.sleep(for: .seconds(3))
-            thenDismiss()
-        }
     }
 
     private var currentTitle: String {
@@ -441,7 +416,7 @@ struct SessionView: View {
     }
 
     private func maxScrollTop(_ layout: PageLayout) -> CGFloat {
-        let content = topInset + layout.size.height + PageContent.tipHeight + controlsHeight + Spacing.xxl
+        let content = topInset + layout.size.height + ReadingMetrics.tipHeight(fontScale: fontScale, dynamicType: dynamicTypeSize) + controlsHeight + Spacing.xxl
         return max(content - scroll.viewportHeight, 0)
     }
 
@@ -564,14 +539,12 @@ private struct PageContent: View {
     let onTapWord: (CGPoint) -> Void
     let onPaint: PaintRecognizer
 
-    static let tipHeight: CGFloat = 40
-
     var body: some View {
         let drawnBand = (scroll.drawnRange.lowerBound - topInset)...(scroll.drawnRange.upperBound - topInset)
         let drawn = layout.paragraphIndices(near: drawnBand)
         ZStack(alignment: .topLeading) {
             Color.clear
-                .frame(height: topInset + layout.size.height + Self.tipHeight + bottomInset)
+                .frame(height: topInset + layout.size.height + metrics.tipHeight + bottomInset)
                 .frame(maxWidth: .infinity)
             ForEach(drawn, id: \.self) { index in
                 paragraph(index)
@@ -719,34 +692,5 @@ private struct ShakeEffect: GeometryEffect {
 
     func effectValue(size: CGSize) -> ProjectionTransform {
         ProjectionTransform(CGAffineTransform(translationX: 4 * sin(shakes * .pi * 3), y: 0))
-    }
-}
-
-private struct Toast: View {
-    let symbol: String
-    let title: String
-    let detail: String
-
-    var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: symbol)
-                .appIcon(16, weight: .semibold)
-                .foregroundStyle(Theme.gold)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .appFont(Typography.label)
-                    .foregroundStyle(Theme.ink)
-                Text(detail)
-                    .appFont(Typography.micro)
-                    .foregroundStyle(Theme.muted)
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(
-            Capsule(style: .continuous)
-                .fill(Theme.rowBg)
-                .overlay(Capsule(style: .continuous).stroke(Theme.gold.opacity(0.5), lineWidth: 1))
-        )
     }
 }

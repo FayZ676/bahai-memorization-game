@@ -10,7 +10,6 @@ enum TourStep: Int, CaseIterable {
     case hideWord
     case recite
     case startAnywhere
-    case achievements
     case finished
 
     var title: String {
@@ -23,19 +22,17 @@ enum TourStep: Int, CaseIterable {
         case .hideWord: "Hiding Words (Option 2)"
         case .recite: "Reciting Words"
         case .startAnywhere: "Starting Anywhere"
-        case .achievements: "Earning Achievements"
         case .finished: "That's it"
         }
     }
 
-    private static func symbol(_ name: String, size: CGFloat, scale: CGFloat) -> Text {
+    private static func symbol(_ name: String) -> Text {
         Text(Image(systemName: name))
-            .font(.system(size: size * scale, weight: .ultraLight))
             .foregroundStyle(Theme.accent)
     }
 
-    func body(scale: CGFloat) -> Text {
-        let symbol = { Self.symbol($0, size: Typography.callout.size, scale: scale) }
+    var body: Text {
+        let symbol = Self.symbol
         return switch self {
         case .openBrowse: Text("Tap the \(symbol("book")) button to browse Prayers and Writings.")
         case .pickPrayer: Text("Choose any one of **The Hidden Words**. They are short, and a good place to begin.")
@@ -48,8 +45,6 @@ enum TourStep: Int, CaseIterable {
         case .recite: Text("Tap the \(symbol("mic")) Recite button and say the prayer out loud. Everything else fades away while you recite. Tap the page when you want to stop.")
         case .startAnywhere:
             Text("Practice starts at the paragraph at the top of the screen. Scroll to any paragraph, or tap the \u{00B6} beside it, to start there. The bar under the buttons is the whole prayer, brighter where more words are hidden. Tap or drag it to jump.")
-        case .achievements:
-            Text("Certain prayers earn an achievement once every word is hidden. Tap the \(symbol("chevron.left")) button to return to your Library, then tap the \(symbol("trophy")) button to see them all.")
         case .finished: Text("You're ready to start memorizing.")
         }
     }

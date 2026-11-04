@@ -8,10 +8,6 @@ struct MemorizationGameApp: App {
 
     init() {
         AppFont.register()
-        #if DEBUG
-        let problems = AchievementCatalog.problems
-        assert(problems.isEmpty, "Broken achievements:\n" + problems.joined(separator: "\n"))
-        #endif
     }
 
     var body: some Scene {
@@ -30,6 +26,7 @@ struct MemorizationGameApp: App {
                         .zIndex(1)
                 }
             }
+            .dynamicTypeSize(...DynamicTypeScaling.contentLimit)
             .animation(Motion.handoff, value: splashFinished)
             .task(id: splashFinished) {
                 guard splashFinished else { return }

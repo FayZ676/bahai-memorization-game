@@ -2,6 +2,7 @@ import SwiftUI
 
 struct WritingReader: View {
     @Environment(\.fontScale) private var fontScale
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let heading: String
     var author: String? = nil
     var attribution: String? = nil
@@ -92,7 +93,7 @@ struct WritingReader: View {
         let characters = attributed.characters
         guard let index = characters.prefix(initialSearchLimit).firstIndex(where: \.isLetter) else { return }
         let next = characters.index(after: index)
-        attributed[index..<next].font = Typography.verseInitial.font(scale: fontScale)
+        attributed[index..<next].font = Typography.verseInitial.font(scale: fontScale, dynamicType: dynamicTypeSize)
     }
 
     private var highlightedBlock: Int? {

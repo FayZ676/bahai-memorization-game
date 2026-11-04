@@ -32,7 +32,6 @@ object Theme {
     private val hairlinePair = adaptive(0xDFE2DB, 0x2E2E2E)
     private val accentPair = adaptive(0x2F6E5B, 0xC89A5A)
     private val accentMutedPair = adaptive(0xB9BEBA, 0x4A3D28)
-    private val goldPair = adaptive(0xB9863F, 0xF0CE8A)
     private val warnPair = adaptive(0xB4443A, 0xD98A80)
 
     @Composable @ReadOnlyComposable
@@ -52,7 +51,6 @@ object Theme {
     val hairline @Composable @ReadOnlyComposable get() = pick(hairlinePair)
     val accent @Composable @ReadOnlyComposable get() = pick(accentPair)
     val accentMuted @Composable @ReadOnlyComposable get() = pick(accentMutedPair)
-    val gold @Composable @ReadOnlyComposable get() = pick(goldPair)
     val warn @Composable @ReadOnlyComposable get() = pick(warnPair)
     val shadow = Color.Black
 }

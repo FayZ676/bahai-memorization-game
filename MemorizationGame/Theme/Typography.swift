@@ -1,5 +1,6 @@
 import SwiftUI
 import CoreText
+import UIKit
 
 enum AppFont {
     static let files = [
@@ -65,15 +66,33 @@ struct AppTextToken {
         AppTextToken(size, weight: weight, face: face, italic: true)
     }
 
-    func font(scale: CGFloat) -> Font {
-        let scaled = size * scale * face.opticalScale
+    func scaledSize(scale: CGFloat, dynamicType: DynamicTypeSize) -> CGFloat {
+        DynamicTypeScaling.scaled(size * scale * face.opticalScale, for: dynamicType)
+    }
+
+    func font(scale: CGFloat, dynamicType: DynamicTypeSize) -> Font {
+        let scaled = scaledSize(scale: scale, dynamicType: dynamicType)
         switch face {
         case .sans:
             let system = Font.system(size: scaled, weight: weight)
             return isItalic ? system.italic() : system
         case .serif:
-            return .custom(AppFont.serifName(for: weight, italic: isItalic), size: scaled)
+            return .custom(AppFont.serifName(for: weight, italic: isItalic), fixedSize: scaled)
         }
+    }
+}
+
+enum DynamicTypeScaling {
+    static let toolbarLimit = DynamicTypeSize.xxxLarge
+    static let contentLimit = DynamicTypeSize.accessibility3
+
+    static func scaled(_ size: CGFloat, for dynamicType: DynamicTypeSize) -> CGFloat {
+        let traits = UITraitCollection(preferredContentSizeCategory: UIContentSizeCategory(dynamicType))
+        return UIFontMetrics(forTextStyle: .body).scaledValue(for: size, compatibleWith: traits)
+    }
+
+    static func factor(for dynamicType: DynamicTypeSize) -> CGFloat {
+        scaled(1, for: dynamicType)
     }
 }
 
@@ -113,20 +132,22 @@ extension EnvironmentValues {
 
 private struct AppFontModifier: ViewModifier {
     @Environment(\.fontScale) private var scale
+    @Environment(\.dynamicTypeSize) private var dynamicType
     let token: AppTextToken
 
     func body(content: Content) -> some View {
-        content.font(token.font(scale: scale))
+        content.font(token.font(scale: scale, dynamicType: dynamicType))
     }
 }
 
 private struct AppIconModifier: ViewModifier {
     @Environment(\.fontScale) private var scale
+    @Environment(\.dynamicTypeSize) private var dynamicType
     let size: CGFloat
     let weight: Font.Weight
 
     func body(content: Content) -> some View {
-        content.font(.system(size: size * scale, weight: weight))
+        content.font(.system(size: DynamicTypeScaling.scaled(size * scale, for: dynamicType), weight: weight))
     }
 }
 

@@ -5,8 +5,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.faizififita.verses.BuildConfig
-import com.faizififita.verses.logic.Achievement
-import com.faizififita.verses.logic.AchievementCatalog
 import com.faizififita.verses.logic.AppSettings
 import com.faizififita.verses.logic.HiddenWordAlignment
 import com.faizififita.verses.logic.Passage
@@ -25,7 +23,6 @@ class AppStore(private val context: Context) {
         private set
     var settings by mutableStateOf(AppSettings())
         private set
-    var justEarned by mutableStateOf<Achievement?>(null)
     var passageJustMemorized by mutableStateOf(false)
 
     init {
@@ -56,28 +53,7 @@ class AppStore(private val context: Context) {
 
     val archivedPassages: List<Passage> get() = passagesSorted.filter { it.isArchived }
 
-    val memorizedPrayerIDs: Set<Long> get() = passages.filter { it.isMemorized }.mapNotNull { it.sourceID }.toSet()
-
     val memorizedPassageIDs: Set<String> get() = passages.filter { it.isMemorized }.map { it.id }.toSet()
-
-    val earnedAchievementCount: Int
-        get() {
-            val memorized = memorizedPrayerIDs
-            return AchievementCatalog.all.count { it.isEarned(memorized) }
-        }
-
-    fun progress(achievement: Achievement): Double? {
-        val qualifying = achievement.requirement.prayerIDs
-        val fractions = passages.filter { it.sourceID in qualifying }.map { it.hiddenFraction }.sortedDescending()
-        if (fractions.isEmpty()) return null
-        val credited = fractions.take(achievement.requirement.count).sum()
-        return minOf(credited / achievement.requirement.count, 1.0)
-    }
-
-    fun leadingPassage(achievement: Achievement): Passage? {
-        val qualifying = achievement.requirement.prayerIDs
-        return passages.filter { it.sourceID in qualifying && !it.isMemorized }.maxByOrNull { it.hiddenFraction }
-    }
 
     fun passageForPrayer(prayerID: Long): Passage? = passages.firstOrNull { it.sourceID == prayerID }
 
@@ -126,22 +102,14 @@ class AppStore(private val context: Context) {
 
     private fun mutate(passage: Passage, change: (Passage) -> Passage) {
         val current = passage(passage.id) ?: return
-        val memorizedBefore = memorizedPrayerIDs
         val memorizedPassagesBefore = memorizedPassageIDs
         replace(change(current))
-        announceAchievements(memorizedBefore)
         if ((memorizedPassageIDs - memorizedPassagesBefore).isNotEmpty()) passageJustMemorized = true
         persist()
     }
 
     private fun replace(passage: Passage) {
         passages = passages.map { if (it.id == passage.id) passage else it }
-    }
-
-    private fun announceAchievements(before: Set<Long>) {
-        val now = memorizedPrayerIDs
-        if (now == before) return
-        justEarned = AchievementCatalog.all.firstOrNull { it.isEarned(now) && !it.isEarned(before) }
     }
 
     private fun persist() {

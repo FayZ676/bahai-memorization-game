@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Verses — an iOS SwiftUI app for memorizing Bahá'í prayers and scripture by hiding words. Hiding is
 manual and permanent until you show a word again — tap words to hide/reveal, paint across them to
-sweep. No decay, no scoring, no streaks; achievements are a record, never a gate. Reciting aloud
+sweep. No decay, no scoring, no streaks, no achievements. Reciting aloud
 reveals hidden words as they are said, recognized on the device by a bundled Conformer model. A
 prayer is one scrollable page that opens at the top; practice starts at the paragraph at the top of
 the screen, or the one whose ¶ was tapped, and runs as far as you recite.

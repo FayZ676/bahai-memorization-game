@@ -87,11 +87,6 @@ project rather than hardcoded, so bumping the version before a reshoot brings th
 from bahai.org from time to time and passages do disappear — if `seed.py` exits with
 `not found:`, pick a replacement of a similar shape rather than forcing the old one back.
 
-`ACHIEVEMENTS=1` appends four more passages that only an achievements shot needs — a
-second earned badge and three rings part-way round, so the screen is not a column of
-untouched dashes. No uploaded tile draws on it since the set narrowed to four, so leave it
-unset unless you are shooting that screen again; it adds rows to the library.
-
 `HERO_GROUP` sets how many source lines share one fill fraction in the session hero passage.
 Leave it at the default `3` for iPhone; the iPad is shot with `HERO_GROUP=7 HERO_FILLS=0.2`.
 `LONG=1` adds the Tablet of Aḥmad, a long prayer for checking scrolling and the rail. The

@@ -35,6 +35,7 @@ enum ContactPurpose {
 
 struct ContactView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var message = ""
     @State private var email = ""
     @State private var sending = false
@@ -120,7 +121,7 @@ struct ContactView: View {
                 .tint(Theme.accent)
                 .scrollContentBackground(.hidden)
                 .focused($editorFocused)
-                .frame(minHeight: 120)
+                .frame(minHeight: DynamicTypeScaling.scaled(120, for: dynamicTypeSize))
                 .padding(.vertical, 12)
                 .padding(.horizontal, 15)
         }

@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct InfoNote<Content: View>: View {
-    @Environment(\.fontScale) private var scale
 
     private let token: AppTextToken
     private let color: Color
@@ -23,7 +22,7 @@ struct InfoNote<Content: View>: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: Spacing.xs) {
             Image(systemName: symbol)
-                .font(.system(size: token.size * scale))
+                .appIcon(token.size)
                 .foregroundStyle(color)
                 .accessibilityHidden(true)
             content

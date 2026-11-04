@@ -19,7 +19,6 @@ enum Theme {
 
     static let accent      = adaptive(0x2F6E5B, 0xC89A5A)
     static let accentMuted = adaptive(0xB9BEBA, 0x4A3D28)
-    static let gold        = adaptive(0xB9863F, 0xF0CE8A)
     static let warn        = adaptive(0xB4443A, 0xD98A80)
 
     static let landed      = adaptive(0x2E7D32, 0x66BB6A)

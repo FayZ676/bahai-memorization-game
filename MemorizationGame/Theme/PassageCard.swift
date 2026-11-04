@@ -7,34 +7,36 @@ struct PassageCard<Accessory: View>: View {
     var detail: String? = nil
     @ViewBuilder var accessory: Accessory
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.lg) {
             VStack(alignment: .leading, spacing: Spacing.xs) {
                 Text(title)
                     .appFont(Typography.passageTitle)
                     .foregroundStyle(Theme.ink)
-                    .lineLimit(1)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
                     .truncationMode(.tail)
 
-                HStack(spacing: Spacing.xs) {
-                    if let author {
-                        Text(author)
-                            .appFont(Typography.byline)
-                    }
-                    if let section {
-                        if author != nil {
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: Spacing.xs) {
+                        authorText
+                        if author != nil, section != nil {
                             Text("·")
                         }
-                        Text(section)
-                            .lineLimit(1)
+                        sectionText
+                            .fixedSize()
+                        Spacer(minLength: Spacing.sm)
+                        detailText
                     }
 
-                    Spacer(minLength: Spacing.sm)
-
-                    if let detail {
-                        Text(detail)
-                            .appFont(Typography.footnote)
-                            .fixedSize()
+                    VStack(alignment: .leading, spacing: Spacing.xxs) {
+                        authorText
+                        HStack(spacing: Spacing.xs) {
+                            sectionText
+                            Spacer(minLength: Spacing.sm)
+                            detailText
+                        }
                     }
                 }
                 .appFont(Typography.footnote)
@@ -47,6 +49,30 @@ struct PassageCard<Accessory: View>: View {
         .padding(.vertical, Spacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
+    }
+
+    @ViewBuilder private var authorText: some View {
+        if let author {
+            Text(author)
+                .appFont(Typography.byline)
+                .lineLimit(1)
+                .fixedSize()
+        }
+    }
+
+    @ViewBuilder private var sectionText: some View {
+        if let section {
+            Text(section)
+                .lineLimit(1)
+        }
+    }
+
+    @ViewBuilder private var detailText: some View {
+        if let detail {
+            Text(detail)
+                .appFont(Typography.footnote)
+                .fixedSize()
+        }
     }
 }
 

@@ -4,7 +4,6 @@ import Observation
 @Observable
 final class AppStore {
     private(set) var passages: [Passage]
-    var justEarned: Achievement?
     var passageJustMemorized = false
     var settings: AppSettings {
         didSet {
@@ -70,40 +69,8 @@ final class AppStore {
         passage.isMemorized
     }
 
-    func passage(forPrayerID prayerID: Int) -> Passage? {
-        passages.first { $0.sourceID == prayerID }
-    }
-
-    var memorizedPrayerIDs: Set<Int> {
-        Set(passages.filter(isMemorized).compactMap(\.sourceID))
-    }
-
     var memorizedPassageIDs: Set<UUID> {
         Set(passages.filter(isMemorized).map(\.id))
-    }
-
-    var earnedAchievementCount: Int {
-        let memorized = memorizedPrayerIDs
-        return AchievementCatalog.all.count { $0.isEarned(in: memorized) }
-    }
-
-    func progress(for achievement: Achievement) -> Double? {
-        let qualifying = achievement.requirement.prayerIDs
-        let fractions = passages
-            .filter { $0.sourceID.map(qualifying.contains) ?? false }
-            .map(hiddenFraction(for:))
-            .sorted(by: >)
-        guard !fractions.isEmpty else { return nil }
-        let credited = fractions.prefix(achievement.requirement.count).reduce(0, +)
-        return min(credited / Double(achievement.requirement.count), 1)
-    }
-
-    func leadingPassage(for achievement: Achievement) -> Passage? {
-        let qualifying = achievement.requirement.prayerIDs
-        return passages
-            .filter { $0.sourceID.map(qualifying.contains) ?? false }
-            .filter { !isMemorized($0) }
-            .max { hiddenFraction(for: $0) < hiddenFraction(for: $1) }
     }
 
     func createPassage(
@@ -171,10 +138,8 @@ final class AppStore {
         guard let index = passages.firstIndex(where: { $0.id == passage.id }) else { return }
         var updated = passages[index]
         change(&updated)
-        let memorizedBefore = memorizedPrayerIDs
         let memorizedPassagesBefore = memorizedPassageIDs
         passages[index] = updated
-        announceAchievements(memorizedBefore: memorizedBefore)
         notePassagesMemorized(before: memorizedPassagesBefore)
         persist()
     }
@@ -190,14 +155,6 @@ final class AppStore {
 
     func markReleaseNotesSeen() {
         settings.lastSeenReleaseNotesVersion = AppInfo.version
-    }
-
-    private func announceAchievements(memorizedBefore: Set<Int>) {
-        let memorizedNow = memorizedPrayerIDs
-        guard memorizedNow != memorizedBefore else { return }
-        justEarned = AchievementCatalog.all.first {
-            $0.isEarned(in: memorizedNow) && !$0.isEarned(in: memorizedBefore)
-        }
     }
 
     private struct Snapshot: Codable {

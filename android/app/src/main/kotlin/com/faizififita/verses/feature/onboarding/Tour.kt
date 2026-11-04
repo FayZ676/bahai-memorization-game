@@ -21,11 +21,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBackIos
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.ChevronLeft
 import androidx.compose.material.icons.outlined.ChevronRight
-import androidx.compose.material.icons.outlined.EmojiEvents
 import androidx.compose.material.icons.outlined.Mail
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.QuestionMark
@@ -89,7 +87,6 @@ enum class TourStep(val title: String, private val pieces: List<Piece>) {
     HideWord("Hiding Words (Option 2)", listOf(w("You can also tap a word directly to hide it. Hidden words look faded, and disappear while you recite. Tap one again to bring it back. Press, hold, and glide over multiple words to hide or reveal them at once."))),
     Recite("Reciting Words", listOf(w("Tap the "), s(Icons.Outlined.Mic), w(" Recite button and say the prayer out loud. Everything else fades away while you recite. Tap the page when you want to stop."))),
     StartAnywhere("Starting Anywhere", listOf(w("Practice starts at the paragraph at the top of the screen. Scroll to any paragraph, or tap the ¶ beside it, to start there. The bar under the buttons is the whole prayer, brighter where more words are hidden. Tap or drag it to jump."))),
-    Achievements("Earning Achievements", listOf(w("Certain prayers earn an achievement once every word is hidden. Tap the "), s(Icons.AutoMirrored.Outlined.ArrowBackIos), w(" button to return to your Library, then tap the "), s(Icons.Outlined.EmojiEvents), w(" button to see them all."))),
     Finished("That's it", listOf(w("You're ready to start memorizing.")));
 
     val notes: List<TourNote>

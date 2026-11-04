@@ -5,7 +5,7 @@ A native port of the iOS app: Kotlin and Jetpack Compose, with the same recitati
 ```
 android/
   logic/   plain Kotlin, no Android: the word model, tokenizer, aligner, tracker, session,
-           library, achievements, search. Runs on the Mac's JVM, which is how the bench tests it.
+           library, search. Runs on the Mac's JVM, which is how the bench tests it.
   app/     Compose UI, microphone, ONNX Runtime, reminders, Play review prompt.
   store/   Play listing graphics and starter screenshots.
   scripts/ emulator.sh · bench.sh · bundle.sh

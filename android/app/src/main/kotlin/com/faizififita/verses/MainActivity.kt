@@ -32,7 +32,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import com.faizififita.verses.feature.achievements.AchievementsScreen
 import com.faizififita.verses.feature.browse.BrowseScreen
 import com.faizififita.verses.feature.browse.CategoryScreen
 import com.faizififita.verses.feature.browse.ImportScreen
@@ -67,7 +66,6 @@ sealed interface Route {
 
     data object Library : Route { override val key = "library" }
     data object Settings : Route { override val key = "settings" }
-    data object Achievements : Route { override val key = "achievements" }
     data class Session(val passageID: String) : Route { override val key = "session/$passageID" }
     data class FullText(val passageID: String) : Route { override val key = "text/$passageID" }
     data class Import(val editingID: String?) : Route { override val key = "import/$editingID" }
@@ -241,7 +239,6 @@ private fun Route(
         Route.Library -> LibraryScreen(
             store,
             onSettings = { navigator.push(Route.Settings) },
-            onAchievements = { navigator.push(Route.Achievements) },
             onBrowse = { navigator.push(Route.Browse(null)) },
             onOpen = { navigator.push(Route.Session(it.id)) },
         )
@@ -260,11 +257,6 @@ private fun Route(
             onReportIssue = { navigator.push(Route.Contact(ContactPurpose.ReportIssue)) },
             onFeedback = { navigator.push(Route.Contact(ContactPurpose.Feedback)) },
         )
-        Route.Achievements -> AchievementsScreen(store, onBack = navigator::pop) { achievement ->
-            val leading = store.leadingPassage(achievement)
-            if (leading != null) navigator.push(Route.Session(leading.id))
-            else navigator.push(achievement.requirement.route)
-        }
         is Route.Session -> SessionScreen(
             store,
             route.passageID,

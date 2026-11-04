@@ -59,6 +59,7 @@ struct ScreenHeader: View {
         .padding(.horizontal, 18)
         .padding(.top, 10)
         .padding(.bottom, 16)
+        .dynamicTypeSize(...DynamicTypeScaling.toolbarLimit)
     }
 
     private var titleText: some View {

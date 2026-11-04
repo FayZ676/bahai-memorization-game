@@ -2,12 +2,20 @@ import SwiftUI
 
 struct ReleaseNotesOverlay: View {
     @Environment(\.fontScale) private var fontScale
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var listHeight: CGFloat = 0
+    @State private var visibleListHeight: CGFloat = 0
 
     let note: ReleaseNote
     let onDismiss: () -> Void
 
-    private var listCap: CGFloat { 400 * fontScale }
+    private var listCap: CGFloat { scaled(400) }
+    private var symbolDiameter: CGFloat { scaled(34) }
+    private var listOverflows: Bool { listHeight > visibleListHeight + 1 }
+
+    private func scaled(_ size: CGFloat) -> CGFloat {
+        DynamicTypeScaling.scaled(size * fontScale, for: dynamicTypeSize)
+    }
 
     var body: some View {
         ZStack {
@@ -28,8 +36,10 @@ struct ReleaseNotesOverlay: View {
     private var card: some View {
         VStack(alignment: .leading, spacing: Spacing.lg) {
             header
+                .layoutPriority(1)
             highlights
             dismissButton
+                .layoutPriority(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Spacing.xl)
@@ -64,12 +74,13 @@ struct ReleaseNotesOverlay: View {
                     row(for: highlight)
                 }
             }
-            .padding(.bottom, listHeight > listCap ? Spacing.xl : 0)
+            .padding(.bottom, listOverflows ? Spacing.xl : 0)
             .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { listHeight = $0 }
         }
         .scrollBounceBehavior(.basedOnSize)
-        .frame(height: min(listHeight, listCap))
-        .fadeEdge(.bottom, height: listHeight > listCap ? 28 : 0, color: Theme.rowBg)
+        .frame(maxHeight: min(listHeight, listCap))
+        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { visibleListHeight = $0 }
+        .fadeEdge(.bottom, height: listOverflows ? 28 : 0, color: Theme.rowBg)
     }
 
     private func row(for highlight: ReleaseHighlight) -> some View {
@@ -77,7 +88,7 @@ struct ReleaseNotesOverlay: View {
             Image(systemName: highlight.symbol)
                 .appIcon(16)
                 .foregroundStyle(Theme.accent)
-                .frame(width: 34 * fontScale, height: 34 * fontScale)
+                .frame(width: symbolDiameter, height: symbolDiameter)
                 .background(Theme.bg, in: Circle())
                 .accessibilityHidden(true)
 

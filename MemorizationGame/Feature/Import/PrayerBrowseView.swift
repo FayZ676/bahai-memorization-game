@@ -85,6 +85,7 @@ struct PrayerBrowseView: View {
     private var searchField: some View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
+                .appFont(Typography.body)
                 .foregroundStyle(Theme.muted)
             TextField("Search prayers and writings", text: $query)
                 .appFont(Typography.body)
@@ -171,6 +172,7 @@ struct PrayerBrowseView: View {
         BrowseLink(.pasteOwn) {
             HStack(spacing: 10) {
                 Image(systemName: "square.and.pencil")
+                    .appFont(Typography.body)
                     .foregroundStyle(Theme.accent)
                 Text("Paste your own text")
                     .appFont(Typography.body)

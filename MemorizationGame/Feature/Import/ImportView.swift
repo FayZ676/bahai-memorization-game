@@ -4,6 +4,7 @@ struct ImportView: View {
     @Environment(AppStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     @Environment(\.popToLibrary) private var popToLibrary
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     @State private var title: String
     @State private var content: String
@@ -70,6 +71,7 @@ struct ImportView: View {
                         .foregroundStyle(isValid ? Theme.accent : Theme.disabled)
                 }
                 .buttonStyle(.icon)
+                .accessibilityLabel(editing == nil ? "Add to Library" : "Save")
                 .disabled(!isValid)
             }
         } content: {
@@ -81,6 +83,8 @@ struct ImportView: View {
                             .foregroundStyle(Theme.muted)
 
                         TextField("Title", text: $title)
+                            .appFont(Typography.body)
+                            .id(dynamicTypeSize)
                             .textInputAutocapitalization(.words)
                             .padding(12)
                             .cardSurface(cornerRadius: Radius.control)

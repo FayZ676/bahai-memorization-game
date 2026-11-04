@@ -56,11 +56,6 @@ class LogicTest {
     }
 
     @Test
-    fun achievementsAllMatchTheLibrary() {
-        assertTrue(AchievementCatalog.problems.isEmpty(), AchievementCatalog.problems.joinToString("\n"))
-    }
-
-    @Test
     fun searchFindsAHiddenWordByItsOpening() {
         val hits = FuzzySearch.rank("O Son of Spirit")
         assertTrue(hits.isNotEmpty())
