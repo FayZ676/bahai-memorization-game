@@ -19,6 +19,27 @@ struct ReleaseNote: Identifiable {
 enum ReleaseNotes {
     static let all: [ReleaseNote] = [
         ReleaseNote(
+            version: "2.1",
+            headline: "The words in the app now grow with the text size on your phone.",
+            highlights: [
+                ReleaseHighlight(
+                    symbol: "textformat",
+                    title: "Bigger words",
+                    text: "If you make the words bigger on your phone, every part of this app gets bigger too. Nothing is left too small to read."
+                ),
+                ReleaseHighlight(
+                    symbol: "leaf",
+                    title: "No more trophies",
+                    text: "The trophy at the top of your library is gone. Now it is just you and the prayer."
+                ),
+                ReleaseHighlight(
+                    symbol: "waveform",
+                    title: "Clearer when read aloud",
+                    text: "If your phone reads the screen out loud, it now says the name of each button at the top."
+                )
+            ]
+        ),
+        ReleaseNote(
             version: "2.0.2",
             headline: "The last word you say now shows when you stop.",
             highlights: [

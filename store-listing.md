@@ -27,6 +27,13 @@ No account. No sign-in. No ads. Your prayers, your progress, and your voice stay
 
 Hide what you know. Read what you don't. Come back tomorrow.
 
+## What's New — 2.1 (4000)
+Verses now follows the text size you set for your iPhone. Make the text bigger, and every part of the app grows with it — the prayer, the buttons, the labels, and the small print — so nothing is left too small to read.
+
+Achievements are gone. The app is now just you and the prayer.
+
+VoiceOver now names the buttons at the top of each screen, and the welcome tour and What's New fit when text is large.
+
 ## What's New — 2.0.2 (4000)
 When you stop at the end of a paragraph, its last word now shows right away. Before, it could wait until you said the next line.
 
