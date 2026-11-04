@@ -1,13 +1,16 @@
 ---
 name: release
-description: Run a full App Store release of Verses end to end — diff since the last release, draft the What's New notes, check the listing copy and screenshots, bump the version, and upload the build to App Store Connect. Use when submitting a new version, shipping a release, preparing App Store notes, or asking what changed since the last release.
+description: Run a full App Store release of Verses end to end — diff since the last release, draft the What's New notes, check the listing copy and screenshots, bump the version, upload the build, and submit it for App Review. Use when submitting a new version, shipping a release, preparing App Store notes, or asking what changed since the last release.
 ---
 
 # Release Verses
 
-One pass from "what changed" to "the build is uploading". Work through the phases in
-order. Phases 1–4 are analysis and cost nothing; phase 5 uploads and is the only
-irreversible step, so it never runs without the user saying yes.
+One pass from "what changed" to "waiting for review". Work through the phases in
+order. Phases 1–4 are analysis and cost nothing; phases 5 and 6 upload and submit, the only
+irreversible steps, so they never run without the user saying yes.
+
+Later changes in App Store Connect — notes, screenshots, listing copy, pulling a version out
+of review — go through the `app-store-connect` skill too, without re-running this one.
 
 If the user only wants part of this — just the notes, just the push — do that part and
 skip the rest.
@@ -27,8 +30,8 @@ grep -c INFOPLIST_KEY_ITSAppUsesNonExemptEncryption MemorizationGame.xcodeproj/p
   the current build number. Find it with
   `git log -S"CURRENT_PROJECT_VERSION = <build>;" -- MemorizationGame.xcodeproj/project.pbxproj`
   and confirm it with the user before leaning on it. Do not diff the whole history.
-- **No `scripts/release.env` or no `.p8` key** — phases 1–4 still work. Say up front that
-  phase 5 will not be possible until the key is set up per `scripts/README.md`.
+- **No `~/.appstoreconnect/config.env` or no `.p8` key** — phases 1–4 still work. Say up
+  front that phases 5 and 6 will not be possible until the key is set up per `scripts/README.md`.
 - **Encryption key missing** (the grep returns 0) — a build without
   `INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO` lands in App Store Connect as "Missing
   Compliance" and cannot be submitted until someone answers the export questionnaire by
@@ -176,16 +179,30 @@ It bumps the build number, archives, uploads, then commits and tags the release.
 a few minutes and streams a lot of output; report the tag it created and whether the
 upload succeeded.
 
-Then tell the user what is left by hand, because none of it is automatable from here:
+## Phase 6 — Submit for review
 
-- The build takes minutes to process before it can be attached to a version.
-- Paste the notes into App Store Connect against that build. Never post them anywhere
-  automatically — that review step is deliberate.
-- Any screenshot or copy fix phase 3 flagged.
-- If this is the first release that ships the feedback screen, the privacy nutrition label
-  must be updated from "Data Not Collected" — `store-listing.md` records the exact answers.
+The same yes covers this. Finish in App Store Connect with the user-level
+`app-store-connect` skill, app `verses`:
 
-Export compliance is **not** on that list: phase 0 verified the build carries the
+```
+ASC=~/.claude/skills/app-store-connect/asc.py
+python3 $ASC version verses <X.Y>
+python3 $ASC localize verses <X.Y> whatsNew=@<file holding the What's New paragraphs>
+python3 $ASC attach verses <X.Y>            # waits for the build to finish processing
+python3 $ASC review-info verses <X.Y>       # inherited from the last version; update notes if needed
+python3 $ASC submit verses <X.Y>
+```
+
+The notes posted are exactly the ones the user approved in phase 4, from `store-listing.md`.
+If phase 3 flagged a tile, upload the restaged one with `screenshots … --type APP_IPHONE_67`
+before submitting, or say plainly that it ships stale. Report the version, build and review
+state from `python3 $ASC status verses`.
+
+One thing stays by hand, because the API doesn't expose it: if this is the first release
+that ships the feedback screen, the privacy nutrition label must be updated from "Data Not
+Collected" — `store-listing.md` records the exact answers.
+
+Export compliance needs no hand either: phase 0 verified the build carries the
 exemption, so the build should arrive submittable rather than "Missing Compliance". If it
 still shows that status, the key did not reach the archive — check it survived in both
 configurations rather than answering the prompt by hand, since a hand-answered build fixes

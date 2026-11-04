@@ -19,12 +19,15 @@
    ```
 
 4. Copy the **Key ID** (next to the key) and the **Issuer ID** (above the key list) into
-   `scripts/release.env`, which is gitignored:
+   `~/.appstoreconnect/config.env`. It lives outside the repo and is shared with the other
+   apps' build scripts and the `app-store-connect` skill, so one key serves them all:
 
    ```
    ASC_KEY_ID=XXXXXXXXXX
    ASC_ISSUER_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
    ```
+
+   Values already in the environment win over the file.
 
 The first upload on a machine stops partway while `codesign` waits on a keychain dialog for
 the login password — it looks like a hang, since nothing is printed and the window can sit

@@ -32,7 +32,7 @@ Bumps the build number, archives Release, and uploads to App Store Connect.
   --allow-dirty     proceed with uncommitted changes
   -h, --help        show this message
 
-Credentials come from scripts/release.env or the environment:
+Credentials come from the environment or ~/.appstoreconnect/config.env:
   ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_PATH (default ~/.appstoreconnect/private_keys/AuthKey_$ASC_KEY_ID.p8)
 EOF
 }
@@ -50,15 +50,15 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ -f "$REPO/scripts/release.env" ]]; then
-  set -a
-  source "$REPO/scripts/release.env"
-  set +a
+ASC_CONFIG="$HOME/.appstoreconnect/config.env"
+if [[ -f "$ASC_CONFIG" ]]; then
+  ASC_KEY_ID="${ASC_KEY_ID:-$(sed -n 's/^ASC_KEY_ID=//p' "$ASC_CONFIG")}"
+  ASC_ISSUER_ID="${ASC_ISSUER_ID:-$(sed -n 's/^ASC_ISSUER_ID=//p' "$ASC_CONFIG")}"
 fi
 
 if [[ $export_only -eq 0 ]]; then
-  : "${ASC_KEY_ID:?set ASC_KEY_ID in scripts/release.env — see scripts/README.md}"
-  : "${ASC_ISSUER_ID:?set ASC_ISSUER_ID in scripts/release.env — see scripts/README.md}"
+  : "${ASC_KEY_ID:?set ASC_KEY_ID in ~/.appstoreconnect/config.env — see scripts/README.md}"
+  : "${ASC_ISSUER_ID:?set ASC_ISSUER_ID in ~/.appstoreconnect/config.env — see scripts/README.md}"
   ASC_KEY_PATH="${ASC_KEY_PATH:-$HOME/.appstoreconnect/private_keys/AuthKey_$ASC_KEY_ID.p8}"
   if [[ ! -f "$ASC_KEY_PATH" ]]; then
     echo "App Store Connect key not found at $ASC_KEY_PATH — see scripts/README.md" >&2
