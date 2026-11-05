@@ -91,6 +91,10 @@ final class VoiceRecitationController {
         return true
     }
 
+    func hasPassed(_ index: Int) -> Bool {
+        index < reached
+    }
+
     func stop() {
         guard state != .idle else { return }
         if state != .micDenied { state = .idle }

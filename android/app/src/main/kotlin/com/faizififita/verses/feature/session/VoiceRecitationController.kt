@@ -75,6 +75,8 @@ class VoiceRecitationController(context: Context) {
         if (owed.isEmpty()) stop()
     }
 
+    fun hasPassed(index: Int): Boolean = index < reached
+
     fun reveal(index: Int): Boolean {
         if (state != State.Listening || index !in owed) return false
         show(index)

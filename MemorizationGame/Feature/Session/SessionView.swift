@@ -334,7 +334,7 @@ struct SessionView: View {
         } else if vm.isMarked(idx) {
             if !voice.reveal(idx) { showMissedWord(idx) }
         } else {
-            highlights.putAside(idx)
+            if voice.hasPassed(idx) { highlights.putAside(idx) }
             withAnimation(Motion.toggle) { vm.toggleWord(idx) }
         }
     }

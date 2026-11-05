@@ -46,6 +46,8 @@ or left out, save. `Tools/RecitationBench/pull-takes.sh` copies every new take o
 Misses show as a flash and shake on the owed word: something was said after the reciter reached
 it, then 2 s of quiet passed without it being credited. Silence alone never flashes. The second miss
 on the same word un-hides it for good, like a manual reveal (`VoiceRecitationController.missesBeforeShowing`). Tapping a blank while
-reciting does the same at once (`reveal`) and recitation carries on. Tapping a showing word hides it,
-but it sits out the rest of that recitation (`RecitationHighlights.putAside`) — a word behind the
-reciter would otherwise be owed forever. Only a tap off the words stops.
+reciting does the same at once (`reveal`) and recitation carries on. Tapping a showing word hides it.
+If it is still ahead of the reciter it is owed like any hidden word, and saying it reveals it; if
+the reciter has already passed it (`VoiceRecitationController.hasPassed`) it sits out the rest of
+that recitation (`RecitationHighlights.putAside`), since a credited word is never credited again and
+would be owed forever. Only a tap off the words stops.

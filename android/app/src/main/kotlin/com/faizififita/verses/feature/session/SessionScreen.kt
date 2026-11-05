@@ -372,7 +372,7 @@ fun SessionScreen(
                     if (voice.reveal(index)) Feedback.reveal() else toggleWord(index)
                 }
                 else -> {
-                    highlights.putAside(index)
+                    if (voice.hasPassed(index)) highlights.putAside(index)
                     toggleWord(index)
                 }
             }
