@@ -85,7 +85,7 @@ enum class TourStep(val title: String, private val pieces: List<Piece>) {
     OpenPassage("Open a Memorization", listOf(w("Tap the prayer to start memorizing it."))),
     HideMany("Hiding Words (Option 1)", listOf(w("Tap the "), s(Icons.Outlined.VisibilityOff), w(" button to hide a handful of words in the paragraph marked with ¶. Press and hold the button to choose how many words it should hide."))),
     HideWord("Hiding Words (Option 2)", listOf(w("You can also tap a word directly to hide it. Hidden words look faded, and disappear while you recite. Tap one again to bring it back. Press, hold, and glide over multiple words to hide or reveal them at once."))),
-    Recite("Reciting Words", listOf(w("Tap the "), s(Icons.Outlined.Mic), w(" Recite button and say the prayer out loud. Everything else fades away while you recite. Tap the page when you want to stop."))),
+    Recite("Reciting Words", listOf(w("Tap the "), s(Icons.Outlined.Mic), w(" Recite button and say the prayer out loud. Everything else fades away while you recite. Tap words to show or hide them as you go, and tap off the words to stop."))),
     StartAnywhere("Starting Anywhere", listOf(w("Practice starts at the paragraph at the top of the screen. Scroll to any paragraph, or tap the ¶ beside it, to start there. The bar under the buttons is the whole prayer, brighter where more words are hidden. Tap or drag it to jump."))),
     Finished("That's it", listOf(w("You're ready to start memorizing.")));
 

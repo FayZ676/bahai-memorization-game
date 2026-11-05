@@ -17,6 +17,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Android
 import androidx.compose.material.icons.outlined.GraphicEq
 import androidx.compose.material.icons.outlined.Mic
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,6 +42,14 @@ data class ReleaseNote(val version: String, val headline: String, val highlights
 
 object ReleaseNotes {
     val all = listOf(
+        ReleaseNote(
+            version = "1.0.2",
+            headline = "You can now show or hide words while you say the prayer out loud.",
+            highlights = listOf(
+                ReleaseHighlight(Icons.Outlined.Visibility, "See a word you forgot", "Forgot a word while you say the prayer? Tap the empty space where it goes. The word shows, and you can keep going."),
+                ReleaseHighlight(Icons.Outlined.VisibilityOff, "Hide words as you go", "Tap a word while you say the prayer to hide it. Tap away from the words when you want to stop."),
+            ),
+        ),
         ReleaseNote(
             version = "1.0.0",
             headline = "Verses is now on Android.",

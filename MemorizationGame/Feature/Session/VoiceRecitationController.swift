@@ -85,6 +85,12 @@ final class VoiceRecitationController {
         if owed.isEmpty { stop() }
     }
 
+    func reveal(_ index: Int) -> Bool {
+        guard state == .listening, owed.contains(index) else { return false }
+        show(index)
+        return true
+    }
+
     func stop() {
         guard state != .idle else { return }
         if state != .micDenied { state = .idle }
@@ -115,6 +121,10 @@ final class VoiceRecitationController {
         onMiss?(index)
         misses[index, default: 0] += 1
         guard misses[index, default: 0] >= Self.missesBeforeShowing else { return }
+        show(index)
+    }
+
+    private func show(_ index: Int) {
         owed.remove(index)
         listener?.updateHidden(Array(owed))
         onWordShown?(index)

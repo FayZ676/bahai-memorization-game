@@ -139,7 +139,7 @@ struct RecitationBar: View {
         }
         .accessibilityElement()
         .accessibilityLabel("Recite aloud")
-        .accessibilityHint("Tap the page to stop.")
+        .accessibilityHint("Tap away from the words to stop.")
         .accessibilityAddTraits(.isButton)
     }
 

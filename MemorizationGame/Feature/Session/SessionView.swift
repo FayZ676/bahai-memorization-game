@@ -311,13 +311,31 @@ struct SessionView: View {
     private var stopSurface: some View {
         Color.clear
             .contentShape(Rectangle())
-            .onTapGesture {
-                Feedback.tap()
-                stopRecitation()
-            }
+            .gesture(
+                SpatialTapGesture(coordinateSpace: .global)
+                    .onEnded { tapWhileReciting(at: $0.location) }
+            )
             .accessibilityElement()
             .accessibilityLabel("Stop reciting")
             .accessibilityAddTraits(.isButton)
+    }
+
+    private func tapWhileReciting(at location: CGPoint) {
+        let point = CGPoint(x: location.x - textOrigin.global.x, y: location.y - textOrigin.global.y)
+        guard let idx = pageCache.current?.wordIndex(at: point) else {
+            Feedback.tap()
+            return stopRecitation()
+        }
+        RecitationTrace.emit("ui", "tapped \(idx)")
+        if highlights.recited.contains(idx) {
+            Feedback.hideTick()
+            highlights.putAside(idx)
+        } else if vm.isMarked(idx) {
+            if !voice.reveal(idx) { showMissedWord(idx) }
+        } else {
+            highlights.putAside(idx)
+            withAnimation(Motion.toggle) { vm.toggleWord(idx) }
+        }
     }
 
     private func registerRecited(_ indices: [Int]) {

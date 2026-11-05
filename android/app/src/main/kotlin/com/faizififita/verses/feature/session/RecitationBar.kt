@@ -260,7 +260,7 @@ private fun ReciteButton(state: VoiceRecitationController.State, labelStyle: and
             .height(BUTTON_HEIGHT)
             .clip(RoundedCornerShape(50))
             .background(if (unavailable) Theme.bg else Theme.accent.copy(alpha = 0.1f))
-            .semantics { contentDescription = "Recite aloud. Tap the page to stop." }
+            .semantics { contentDescription = "Recite aloud. Tap away from the words to stop." }
             .pointerInput(Unit) { detectTapGestures(onTap = { onTap() }) },
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,

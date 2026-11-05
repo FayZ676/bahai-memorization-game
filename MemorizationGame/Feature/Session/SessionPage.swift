@@ -26,6 +26,8 @@ final class PageCache {
     private var key: Key?
     private var cached: PageLayout?
 
+    var current: PageLayout? { cached }
+
     private struct Key: Equatable {
         let text: String
         let width: CGFloat

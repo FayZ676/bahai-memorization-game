@@ -2,11 +2,18 @@ import CoreGraphics
 
 struct RecitationHighlights {
     private(set) var recited: Set<Int> = []
+    private var setAside: Set<Int> = []
     private var shakes = 0
     private var flashing: Int?
 
     mutating func clear() {
         recited = []
+        setAside = []
+    }
+
+    mutating func putAside(_ index: Int) {
+        recited.remove(index)
+        setAside.insert(index)
     }
 
     mutating func recite(_ indices: [Int]) {
@@ -31,6 +38,6 @@ struct RecitationHighlights {
     }
 
     func unattempted(in passage: Passage, from start: Int) -> [Int] {
-        passage.recitableIndices(from: start).filter { !recited.contains($0) }
+        passage.recitableIndices(from: start).filter { !recited.contains($0) && !setAside.contains($0) }
     }
 }

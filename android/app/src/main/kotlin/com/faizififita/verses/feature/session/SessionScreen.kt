@@ -138,12 +138,19 @@ private class Highlights {
     var recited by mutableStateOf(emptySet<Int>())
     var flashing by mutableStateOf<Int?>(null)
     var shakes by mutableIntStateOf(0)
+    private var setAside = emptySet<Int>()
 
     fun clear() {
         recited = emptySet()
+        setAside = emptySet()
     }
 
-    fun unattempted(passage: Passage, from: Int) = passage.recitableIndices(from).filter { it !in recited }
+    fun putAside(index: Int) {
+        recited = recited - index
+        setAside = setAside + index
+    }
+
+    fun unattempted(passage: Passage, from: Int) = passage.recitableIndices(from).filter { it !in recited && it !in setAside }
 }
 
 @Composable
@@ -343,6 +350,29 @@ fun SessionScreen(
             val target = paintTarget ?: !hidden
             paintTarget = target
             if (hidden != target) toggleWord(index)
+        }
+
+        fun tapWhileReciting(at: Offset) {
+            val index = layout.wordIndex(Offset(at.x - metrics.textMargin, at.y + scroll.value + collapse - topInset))
+            if (index == null) {
+                Feedback.tap()
+                stopRecitation()
+                return
+            }
+            ConformerRecitation.trace("tapped $index")
+            when {
+                index in highlights.recited -> {
+                    Feedback.hideTick()
+                    highlights.putAside(index)
+                }
+                index in current.hiddenWords -> {
+                    if (voice.reveal(index)) Feedback.reveal() else toggleWord(index)
+                }
+                else -> {
+                    highlights.putAside(index)
+                    toggleWord(index)
+                }
+            }
         }
 
         val cursorIndex = if (voice.isListening && chromeCleared) voice.cursorIndex else null
@@ -583,11 +613,8 @@ fun SessionScreen(
                 Modifier
                     .fillMaxSize()
                     .semantics { contentDescription = "Stop reciting" }
-                    .pointerInput(Unit) {
-                        detectTapGestures {
-                            Feedback.tap()
-                            stopRecitation()
-                        }
+                    .pointerInput(layout, topInset, metrics) {
+                        detectTapGestures { tapWhileReciting(it) }
                     }
             )
         }

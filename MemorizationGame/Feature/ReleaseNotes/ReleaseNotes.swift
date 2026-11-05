@@ -19,6 +19,22 @@ struct ReleaseNote: Identifiable {
 enum ReleaseNotes {
     static let all: [ReleaseNote] = [
         ReleaseNote(
+            version: "2.2",
+            headline: "You can now show or hide words while you say the prayer out loud.",
+            highlights: [
+                ReleaseHighlight(
+                    symbol: "eye",
+                    title: "See a word you forgot",
+                    text: "Forgot a word while you say the prayer? Tap the empty space where it goes. The word shows, and you can keep going."
+                ),
+                ReleaseHighlight(
+                    symbol: "hand.tap",
+                    title: "Hide words as you go",
+                    text: "Tap a word while you say the prayer to hide it. Tap away from the words when you want to stop."
+                )
+            ]
+        ),
+        ReleaseNote(
             version: "2.1",
             headline: "The words in the app now grow with the text size on your phone.",
             highlights: [

@@ -48,25 +48,25 @@ class ConformerRecitation private constructor(
     private val main = Handler(Looper.getMainLooper())
     private val session = ConformerSession(words, hidden.toSet(), start, loaded.tokenizer, loaded.tokenizer.blank + 1)
     private val predictor = loaded.predictor
-    @Volatile private var finished = false
+    private var closed = false
 
+    @Synchronized
     fun append(chunk: FloatArray) {
-        queue.execute {
-            if (finished) return@execute
-            listen(false) { session.append(chunk, predictor) }
-        }
+        if (closed) return
+        queue.execute { listen(false) { session.append(chunk, predictor) } }
     }
 
+    @Synchronized
     fun updateHidden(hidden: List<Int>) {
+        if (closed) return
         queue.execute { session.setHidden(hidden.toSet()) }
     }
 
+    @Synchronized
     fun finish() {
-        queue.execute {
-            if (finished) return@execute
-            finished = true
-            listen(true) { session.finish(predictor) }
-        }
+        if (closed) return
+        closed = true
+        queue.execute { listen(true) { session.finish(predictor) } }
         queue.shutdown()
     }
 

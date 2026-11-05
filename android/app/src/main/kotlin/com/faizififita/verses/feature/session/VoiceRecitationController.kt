@@ -75,6 +75,12 @@ class VoiceRecitationController(context: Context) {
         if (owed.isEmpty()) stop()
     }
 
+    fun reveal(index: Int): Boolean {
+        if (state != State.Listening || index !in owed) return false
+        show(index)
+        return true
+    }
+
     fun stop() {
         if (state == State.Idle) return
         if (state != State.MicDenied) state = State.Idle
@@ -105,6 +111,10 @@ class VoiceRecitationController(context: Context) {
         onMiss(index)
         misses[index] = (misses[index] ?: 0) + 1
         if ((misses[index] ?: 0) < MISSES_BEFORE_SHOWING) return
+        show(index)
+    }
+
+    private fun show(index: Int) {
         owed.remove(index)
         listener?.updateHidden(owed.toList())
         onWordShown(index)

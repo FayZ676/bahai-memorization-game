@@ -27,6 +27,11 @@ No account. No sign-in. No ads. Your prayers, your progress, and your voice stay
 
 Hide what you know. Read what you don't. Come back tomorrow.
 
+## What's New — 2.2 (4000)
+Stuck on a word while you recite? Tap its blank to see it and keep going. The other blanks stay hidden.
+
+You can also hide a word while you recite by tapping it. To stop, tap anywhere off the words.
+
 ## What's New — 2.1 (4000)
 Verses now follows the text size you set for your iPhone. Make the text bigger, and every part of the app grows with it — the prayer, the buttons, the labels, and the small print — so nothing is left too small to read.
 
