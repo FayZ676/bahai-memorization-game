@@ -29,6 +29,7 @@ import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.ScrollScope
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -392,8 +393,10 @@ fun SessionScreen(
             ParagraphSnap(scroll, decay, tops.filter { it <= maxScrollTop + 1 }, viewportHeight * SNAP_REACH, active = !focused)
         }
 
-        LaunchedEffect(scroll.isScrollInProgress) {
-            if (scroll.isScrollInProgress && !painting) armedParagraph = null
+        LaunchedEffect(scroll) {
+            scroll.interactionSource.interactions.collect {
+                if (it is DragInteraction.Start && !painting) armedParagraph = null
+            }
         }
 
         Box(
