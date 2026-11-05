@@ -17,6 +17,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Android
 import androidx.compose.material.icons.outlined.GraphicEq
 import androidx.compose.material.icons.outlined.Mic
+import androidx.compose.material.icons.outlined.QuestionMark
+import androidx.compose.material.icons.outlined.TouchApp
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Icon
@@ -42,6 +44,14 @@ data class ReleaseNote(val version: String, val headline: String, val highlights
 
 object ReleaseNotes {
     val all = listOf(
+        ReleaseNote(
+            version = "1.0.5",
+            headline = "A word you hide while you say the prayer now comes back when you say it.",
+            highlights = listOf(
+                ReleaseHighlight(Icons.Outlined.TouchApp, "Hide it, then say it", "Tap a word while you say the prayer to hide it. When you get to that word and say it, it shows again."),
+                ReleaseHighlight(Icons.Outlined.QuestionMark, "Help in the corner", "In the welcome tour, the question mark button now sits in the bottom corner. When a prayer is open, it sits just above the buttons."),
+            ),
+        ),
         ReleaseNote(
             version = "1.0.2",
             headline = "You can now show or hide words while you say the prayer out loud.",

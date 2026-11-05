@@ -27,6 +27,11 @@ No account. No sign-in. No ads. Your prayers, your progress, and your voice stay
 
 Hide what you know. Read what you don't. Come back tomorrow.
 
+## What's New — 2.2.1 (4000)
+Hide a word while you recite, and it now comes back when you say it, just like the words you hid before you started.
+
+The help button in the welcome tour now sits in the bottom corner, above the controls when a prayer is open.
+
 ## What's New — 2.2 (4000)
 Stuck on a word while you recite? Tap its blank to see it and keep going. The other blanks stay hidden.
 
