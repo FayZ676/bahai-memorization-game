@@ -1,6 +1,7 @@
 package com.faizififita.verses.feature.onboarding
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -32,6 +33,7 @@ import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
@@ -50,6 +52,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import com.faizififita.verses.support.Feedback
@@ -121,6 +124,7 @@ class Tour(private val scope: CoroutineScope) {
     var isPromptVisible by mutableStateOf(true)
         private set
     var isPaused by mutableStateOf(false)
+    var bottomClearance by mutableStateOf(0.dp)
     private var pendingPrompt: Job? = null
 
     fun complete(completed: TourStep, onlyIfCurrent: Boolean = false) {
@@ -169,9 +173,19 @@ fun CompletesTourStep(step: TourStep, onlyIfCurrent: Boolean = false) {
 }
 
 @Composable
+fun ClearsTourButton(height: Dp) {
+    val tour = LocalTour.current ?: return
+    DisposableEffect(tour, height) {
+        tour.bottomClearance = height
+        onDispose { tour.bottomClearance = 0.dp }
+    }
+}
+
+@Composable
 fun TourOverlay(tour: Tour, onSkip: () -> Unit, onFinish: () -> Unit) {
     val scale = LocalFontScale.current
     val alpha = animatedAlpha(!tour.isPaused)
+    val clearance by animateDpAsState(tour.bottomClearance, label = "clearance")
     Box(Modifier.fillMaxSize().alpha(alpha)) {
         AnimatedVisibility(tour.isPromptVisible && !tour.isPaused, enter = fadeIn(), exit = fadeOut()) {
             Box(
@@ -219,7 +233,7 @@ fun TourOverlay(tour: Tour, onSkip: () -> Unit, onFinish: () -> Unit) {
             !tour.isPromptVisible && !tour.isPaused,
             enter = fadeIn() + scaleIn(initialScale = 0.8f),
             exit = fadeOut() + scaleOut(targetScale = 0.8f),
-            modifier = Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(end = Spacing.lg, bottom = 150.dp),
+            modifier = Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(end = Spacing.lg, bottom = clearance + Spacing.md),
         ) {
             Box(
                 Modifier

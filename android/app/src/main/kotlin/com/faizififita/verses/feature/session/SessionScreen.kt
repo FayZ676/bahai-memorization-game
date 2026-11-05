@@ -108,6 +108,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.faizififita.verses.feature.onboarding.LocalTour
 import com.faizififita.verses.feature.onboarding.TourStep
+import com.faizififita.verses.feature.onboarding.ClearsTourButton
 import com.faizififita.verses.feature.onboarding.CompletesTourStep
 import com.faizififita.verses.logic.Passage
 import com.faizififita.verses.store.AppStore
@@ -195,6 +196,7 @@ fun SessionScreen(
     val current by rememberUpdatedState(passage)
 
     CompletesTourStep(TourStep.OpenPassage)
+    ClearsTourButton(with(density) { controlsHeight.toDp() } + Spacing.xs)
 
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         val start = pendingStart

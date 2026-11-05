@@ -80,6 +80,7 @@ final class Tour {
     private(set) var step: TourStep = .openBrowse
     private(set) var isPromptVisible = true
     var isPaused = false
+    var bottomClearance: CGFloat = 0
 
     private var pendingPrompt: Task<Void, Never>?
 
@@ -140,6 +141,21 @@ extension EnvironmentValues {
 extension View {
     func completesTourStep(_ step: TourStep, onlyIfCurrent: Bool = false) -> some View {
         modifier(TourStepReporter(step: step, onlyIfCurrent: onlyIfCurrent))
+    }
+
+    func clearsTourButton(_ height: CGFloat) -> some View {
+        modifier(TourButtonClearance(height: height))
+    }
+}
+
+private struct TourButtonClearance: ViewModifier {
+    @Environment(\.tour) private var tour
+    let height: CGFloat
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: height, initial: true) { _, height in tour?.bottomClearance = height }
+            .onDisappear { tour?.bottomClearance = 0 }
     }
 }
 

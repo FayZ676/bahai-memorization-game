@@ -4,6 +4,7 @@ struct TourOverlay: View {
     let step: TourStep
     let isPromptVisible: Bool
     let isPaused: Bool
+    let bottomClearance: CGFloat
     let canGoBack: Bool
     let canGoForward: Bool
     let onBack: () -> Void
@@ -26,6 +27,7 @@ struct TourOverlay: View {
         }
         .animation(Motion.standard, value: step)
         .animation(Motion.standard, value: isPromptVisible)
+        .animation(Motion.standard, value: bottomClearance)
         .opacity(isPaused ? 0 : 1)
         .allowsHitTesting(!isPaused)
         .animation(Motion.focus, value: isPaused)
@@ -175,6 +177,6 @@ struct TourOverlay: View {
             }
         }
         .padding(.trailing, Spacing.lg)
-        .padding(.bottom, Spacing.md)
+        .padding(.bottom, Spacing.md + bottomClearance)
     }
 }

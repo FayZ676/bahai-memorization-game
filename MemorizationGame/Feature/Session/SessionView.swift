@@ -259,6 +259,7 @@ struct SessionView: View {
         .padding(.horizontal, Spacing.lg)
         .padding(.bottom, Spacing.xs)
         .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { controlsHeight = $0 }
+        .clearsTourButton(controlsHeight)
     }
 
     private var currentTitle: String {

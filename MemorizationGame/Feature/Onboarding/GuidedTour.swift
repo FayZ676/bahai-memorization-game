@@ -32,6 +32,7 @@ private struct GuidedTourModifier: ViewModifier {
                         step: tour.step,
                         isPromptVisible: tour.isPromptVisible,
                         isPaused: tour.isPaused,
+                        bottomClearance: tour.bottomClearance,
                         canGoBack: tour.canGoBack,
                         canGoForward: tour.canGoForward,
                         onBack: tour.goBack,
