@@ -170,6 +170,7 @@ fun SessionScreen(
     val scope = rememberCoroutineScope()
     val tour = LocalTour.current
     val passage = store.passage(passageID) ?: return
+    LaunchedEffect(passageID) { store.markPracticed(passageID) }
     val voice = remember { VoiceRecitationController(context.applicationContext) }
     val highlights = remember { Highlights() }
     val hint = remember { SessionHint() }
@@ -178,6 +179,7 @@ fun SessionScreen(
     var chromeCleared by remember { mutableStateOf(false) }
     var armedParagraph by remember { mutableStateOf<Int?>(null) }
     var startWord by remember { mutableIntStateOf(0) }
+    var celebration by remember { mutableIntStateOf(0) }
     var headerHeight by remember { mutableFloatStateOf(0f) }
     var controlsHeight by remember { mutableFloatStateOf(0f) }
     var viewportHeight by remember { mutableFloatStateOf(0f) }
@@ -225,6 +227,21 @@ fun SessionScreen(
         voice.onCompleted = {
             Feedback.sessionComplete()
             highlights.clear()
+            if (startWord == 0 && store.passage(passageID)?.isMemorized == true) {
+                celebration += 1
+                val shown = celebration
+                scope.launch {
+                    delay(Motion.CELEBRATION_DWELL)
+                    if (celebration == shown) celebration = 0
+                }
+                if (ReviewPrompt.shouldAsk(store.memorizedPassageIDs.size, store.settings)) {
+                    scope.launch {
+                        delay(ReviewPrompt.DELAY_AFTER_CELEBRATION)
+                        store.markReviewRequested()
+                        (context as? Activity)?.let { ReviewPrompt.request(it) }
+                    }
+                }
+            }
         }
         voice.prepare()
     }
@@ -253,15 +270,6 @@ fun SessionScreen(
             voice.stop()
             tour?.isPaused = false
         }
-    }
-
-    LaunchedEffect(store.passageJustMemorized) {
-        if (!store.passageJustMemorized) return@LaunchedEffect
-        store.passageJustMemorized = false
-        if (!ReviewPrompt.shouldAsk(store.memorizedPassageIDs.size, store.settings)) return@LaunchedEffect
-        delay(ReviewPrompt.DELAY_AFTER_CELEBRATION)
-        store.markReviewRequested()
-        (context as? Activity)?.let { ReviewPrompt.request(it) }
     }
 
     fun cascade(mutate: () -> Unit) {
@@ -623,6 +631,8 @@ fun SessionScreen(
                     }
             )
         }
+
+        MemorizedMoment(visible = celebration > 0, title = passage.title) { celebration = 0 }
     }
 
     if (micAlert) {

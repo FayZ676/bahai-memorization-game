@@ -2,7 +2,7 @@ import Foundation
 
 enum ReviewPrompt {
     static let minimumMemorizedPassages = 2
-    static let delayAfterCelebration = Duration.seconds(3.6)
+    static let delayAfterCelebration = Duration.seconds(3.8)
 
     static var currentVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown"

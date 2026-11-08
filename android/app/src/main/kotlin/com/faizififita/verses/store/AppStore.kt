@@ -10,6 +10,11 @@ import com.faizififita.verses.logic.HiddenWordAlignment
 import com.faizififita.verses.logic.Passage
 import com.faizififita.verses.logic.Snapshot
 import com.faizififita.verses.support.ReminderScheduler
+import com.faizififita.verses.widget.PracticeWidget
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.util.concurrent.Executors
@@ -18,12 +23,13 @@ class AppStore(private val context: Context) {
     private val file = File(context.filesDir, "verses.json")
     private val writer = Executors.newSingleThreadExecutor()
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+    private val scope = MainScope()
+    private var widgetRefresh: Job? = null
 
     var passages by mutableStateOf<List<Passage>>(emptyList())
         private set
     var settings by mutableStateOf(AppSettings())
         private set
-    var passageJustMemorized by mutableStateOf(false)
 
     init {
         val snapshot = runCatching { json.decodeFromString(Snapshot.serializer(), file.readText()) }.getOrNull()
@@ -96,15 +102,19 @@ class AppStore(private val context: Context) {
 
     fun toggleWord(passage: Passage, index: Int) = mutate(passage) { it.togglingWord(index) }
 
+    fun markPracticed(passageID: String) {
+        val current = passage(passageID) ?: return
+        replace(current.copy(lastPracticed = System.currentTimeMillis()))
+        persist()
+    }
+
     fun markReviewRequested() = updateSettings { it.copy(lastReviewRequestVersion = BuildConfig.VERSION_NAME) }
 
     fun markReleaseNotesSeen() = updateSettings { it.copy(lastSeenReleaseNotesVersion = BuildConfig.VERSION_NAME) }
 
     private fun mutate(passage: Passage, change: (Passage) -> Passage) {
         val current = passage(passage.id) ?: return
-        val memorizedPassagesBefore = memorizedPassageIDs
         replace(change(current))
-        if ((memorizedPassageIDs - memorizedPassagesBefore).isNotEmpty()) passageJustMemorized = true
         persist()
     }
 
@@ -119,5 +129,18 @@ class AppStore(private val context: Context) {
             temporary.writeText(text)
             temporary.renameTo(file)
         }
+        refreshWidget()
+    }
+
+    private fun refreshWidget() {
+        widgetRefresh?.cancel()
+        widgetRefresh = scope.launch {
+            delay(WIDGET_REFRESH_DELAY)
+            PracticeWidget.refresh(context)
+        }
+    }
+
+    private companion object {
+        const val WIDGET_REFRESH_DELAY = 1_000L
     }
 }

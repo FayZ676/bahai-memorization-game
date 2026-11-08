@@ -19,6 +19,27 @@ struct ReleaseNote: Identifiable {
 enum ReleaseNotes {
     static let all: [ReleaseNote] = [
         ReleaseNote(
+            version: "2.3",
+            headline: "Put a prayer on your home screen, and see a star when you say a prayer from memory.",
+            highlights: [
+                ReleaseHighlight(
+                    symbol: "square.grid.2x2",
+                    title: "A prayer on your home screen",
+                    text: "The Verses widget shows the prayer you have gone longest without practicing. Tap it to open that prayer."
+                ),
+                ReleaseHighlight(
+                    symbol: "hand.tap",
+                    title: "How to add it",
+                    text: "Touch and hold an empty spot on your home screen. Tap Edit, then Add Widget, then find Verses."
+                ),
+                ReleaseHighlight(
+                    symbol: "mic",
+                    title: "Said from memory",
+                    text: "Hide every word, then say the whole prayer from the start. When you finish, you see a star."
+                )
+            ]
+        ),
+        ReleaseNote(
             version: "2.2.1",
             headline: "A word you hide while you say the prayer now comes back when you say it.",
             highlights: [

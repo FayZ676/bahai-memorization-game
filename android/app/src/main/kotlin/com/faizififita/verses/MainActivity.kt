@@ -1,5 +1,6 @@
 package com.faizififita.verses
 
+import android.content.Intent
 import android.graphics.Color as AndroidColor
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -59,6 +60,7 @@ import com.faizififita.verses.theme.LocalDark
 import com.faizififita.verses.theme.LocalFontScale
 import com.faizififita.verses.theme.Motion
 import com.faizififita.verses.theme.Theme
+import com.faizififita.verses.widget.PracticeWidget
 import kotlinx.coroutines.delay
 
 sealed interface Route {
@@ -116,17 +118,27 @@ class Navigator {
 }
 
 class MainActivity : ComponentActivity() {
+    private var requestedPassage by mutableStateOf<String?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         val store = (application as VersesApplication).store
         ReminderScheduler.sync(this, store.settings)
-        setContent { VersesApp(this, store) }
+        if (savedInstanceState == null) requestedPassage = PracticeWidget.passageID(intent)
+        setContent {
+            VersesApp(this, store, requestedPassage) { requestedPassage = null }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        PracticeWidget.passageID(intent)?.let { requestedPassage = it }
     }
 }
 
 @Composable
-private fun VersesApp(activity: ComponentActivity, store: AppStore) {
+private fun VersesApp(activity: ComponentActivity, store: AppStore, requestedPassage: String?, onPassageOpened: () -> Unit) {
     val dark = when (store.settings.appTheme) {
         AppTheme.System -> isSystemInDarkTheme()
         AppTheme.Light -> false
@@ -138,12 +150,12 @@ private fun VersesApp(activity: ComponentActivity, store: AppStore) {
         activity.enableEdgeToEdge(style, style)
     }
     CompositionLocalProvider(LocalDark provides dark, LocalFontScale provides store.settings.fontSize.scale) {
-        Shell(store)
+        Shell(store, requestedPassage, onPassageOpened)
     }
 }
 
 @Composable
-private fun Shell(store: AppStore) {
+private fun Shell(store: AppStore, requestedPassage: String?, onPassageOpened: () -> Unit) {
     val navigator = remember { Navigator() }
     val scope = rememberCoroutineScope()
     var splashFinished by remember { mutableStateOf(false) }
@@ -159,6 +171,12 @@ private fun Shell(store: AppStore) {
             store.updateSettings { it.copy(hasSeenWelcomeTour = true) }
             tour = Tour(scope)
         }
+    }
+
+    LaunchedEffect(requestedPassage) {
+        val id = requestedPassage ?: return@LaunchedEffect
+        if (store.passage(id) != null) navigator.openInLibrary(id)
+        onPassageOpened()
     }
 
     LaunchedEffect(splashFinished) {

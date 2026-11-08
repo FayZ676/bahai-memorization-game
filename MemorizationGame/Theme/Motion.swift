@@ -11,6 +11,8 @@ enum Motion {
     static let focusDuration = 0.25
     static let reveal   = Animation.easeOut(duration: 0.12)
     static let focus    = Animation.easeInOut(duration: focusDuration)
+    static let celebrate = Animation.spring(duration: 0.9, bounce: 0.25)
+    static let celebrationDwell = Duration.seconds(3.2)
 
     static let cascadeSpan = 0.6
 

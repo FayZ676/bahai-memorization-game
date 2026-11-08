@@ -5,7 +5,7 @@ import re
 import sys
 
 PBXPROJ = pathlib.Path(__file__).resolve().parent.parent / "MemorizationGame.xcodeproj" / "project.pbxproj"
-APP_BUNDLE_ID = "com.faizififita.MemorizationGame"
+APP_BUNDLE_IDS = ("com.faizififita.MemorizationGame", "com.faizififita.MemorizationGame.VersesWidget")
 
 BLOCK = re.compile(
     r"(?P<head>\t\t[0-9A-F]+ /\* \w+ \*/ = \{\n\t\t\tisa = XCBuildConfiguration;\n\t\t\tbuildSettings = \{\n)"
@@ -18,7 +18,7 @@ BLOCK = re.compile(
 def app_blocks(text):
     for match in BLOCK.finditer(text):
         settings = match.group("settings")
-        if f"PRODUCT_BUNDLE_IDENTIFIER = {APP_BUNDLE_ID};" in settings:
+        if any(f"PRODUCT_BUNDLE_IDENTIFIER = {bundle_id};" in settings for bundle_id in APP_BUNDLE_IDS):
             yield match
 
 

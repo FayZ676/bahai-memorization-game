@@ -4,7 +4,6 @@ import Observation
 @Observable
 final class AppStore {
     private(set) var passages: [Passage]
-    var passageJustMemorized = false
     var settings: AppSettings {
         didSet {
             persist()
@@ -34,6 +33,7 @@ final class AppStore {
             settings.hasSeenWelcomeTour = returning
             self.settings = settings
         }
+        PracticeWidgetFeed.publish(passages: passages)
     }
 
     private static func retireLegacyData() -> Bool {
@@ -134,19 +134,16 @@ final class AppStore {
         mutate(passage) { $0.toggleWord(index) }
     }
 
-    private func mutate(_ passage: Passage, _ change: (inout Passage) -> Void) {
+    func markPracticed(_ passage: Passage) {
         guard let index = passages.firstIndex(where: { $0.id == passage.id }) else { return }
-        var updated = passages[index]
-        change(&updated)
-        let memorizedPassagesBefore = memorizedPassageIDs
-        passages[index] = updated
-        notePassagesMemorized(before: memorizedPassagesBefore)
+        passages[index].lastPracticed = Date()
         persist()
     }
 
-    private func notePassagesMemorized(before: Set<UUID>) {
-        guard !memorizedPassageIDs.subtracting(before).isEmpty else { return }
-        passageJustMemorized = true
+    private func mutate(_ passage: Passage, _ change: (inout Passage) -> Void) {
+        guard let index = passages.firstIndex(where: { $0.id == passage.id }) else { return }
+        change(&passages[index])
+        persist()
     }
 
     func markReviewRequested() {
@@ -166,6 +163,7 @@ final class AppStore {
         let snapshot = Snapshot(passages: passages, settings: settings)
         guard let data = try? JSONEncoder().encode(snapshot) else { return }
         try? data.write(to: storeURL, options: .atomic)
+        PracticeWidgetFeed.publish(passages: passages)
     }
 
     private static var documentsDirectory: URL {

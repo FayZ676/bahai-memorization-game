@@ -20,6 +20,7 @@ import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.QuestionMark
 import androidx.compose.material.icons.outlined.TouchApp
 import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.Widgets
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -44,6 +45,22 @@ data class ReleaseNote(val version: String, val headline: String, val highlights
 
 object ReleaseNotes {
     val all = listOf(
+        ReleaseNote(
+            version = "1.0.7",
+            headline = "When you say a whole prayer from memory, you now see a star.",
+            highlights = listOf(
+                ReleaseHighlight(Icons.Outlined.Mic, "Said from memory", "Hide every word, then say the whole prayer from the start. When you finish, you see a star."),
+                ReleaseHighlight(Icons.Outlined.Widgets, "More of the prayer", "The widget on your home screen now shows more of the prayer, not just its first line."),
+            ),
+        ),
+        ReleaseNote(
+            version = "1.0.6",
+            headline = "Put a prayer on your home screen to remind you to practice.",
+            highlights = listOf(
+                ReleaseHighlight(Icons.Outlined.Widgets, "A prayer on your home screen", "The Verses widget shows the prayer you have gone longest without practicing. Tap it to open that prayer."),
+                ReleaseHighlight(Icons.Outlined.TouchApp, "How to add it", "Touch and hold an empty spot on your home screen, tap Widgets, then find Verses."),
+            ),
+        ),
         ReleaseNote(
             version = "1.0.5",
             headline = "A word you hide while you say the prayer now comes back when you say it.",

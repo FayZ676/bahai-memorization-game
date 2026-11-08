@@ -3,6 +3,8 @@ package com.faizififita.verses.theme
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
@@ -24,13 +26,13 @@ val LocalFontScale = staticCompositionLocalOf { 1f }
 private fun adaptive(light: Long, dark: Long) = Pair(Color(light or 0xFF000000), Color(dark or 0xFF000000))
 
 object Theme {
-    private val bgPair = adaptive(0xECEEE8, 0x121212)
-    private val raisedPair = adaptive(0xFAFBF7, 0x1E1E1E)
-    private val inkPair = adaptive(0x1C2521, 0xEDEDED)
-    private val mutedPair = adaptive(0x6A716B, 0x9A9A9A)
-    private val faintPair = adaptive(0x9DA39C, 0x6A6A6A)
-    private val hairlinePair = adaptive(0xDFE2DB, 0x2E2E2E)
-    private val accentPair = adaptive(0x2F6E5B, 0xC89A5A)
+    val bgPair = adaptive(0xECEEE8, 0x121212)
+    val raisedPair = adaptive(0xFAFBF7, 0x1E1E1E)
+    val inkPair = adaptive(0x1C2521, 0xEDEDED)
+    val mutedPair = adaptive(0x6A716B, 0x9A9A9A)
+    val faintPair = adaptive(0x9DA39C, 0x6A6A6A)
+    val hairlinePair = adaptive(0xDFE2DB, 0x2E2E2E)
+    val accentPair = adaptive(0x2F6E5B, 0xC89A5A)
     private val accentMutedPair = adaptive(0xB9BEBA, 0x4A3D28)
     private val warnPair = adaptive(0xB4443A, 0xD98A80)
 
@@ -88,6 +90,7 @@ object Motion {
     const val REVEAL = 120
     const val SCROLL = 400
     const val CASCADE_SPAN = 0.6
+    const val CELEBRATION_DWELL = 3200L
 
     fun <T> toggle() = tween<T>(TOGGLE, easing = easeInOut)
     fun <T> standard() = tween<T>(STANDARD, easing = easeInOut)
@@ -96,6 +99,7 @@ object Motion {
     fun <T> reveal() = tween<T>(REVEAL, easing = easeOut)
     fun <T> push() = tween<T>(STANDARD, easing = FastOutSlowInEasing)
     fun <T> settle() = tween<T>(TOGGLE, easing = LinearOutSlowInEasing)
+    fun <T> celebrate() = spring<T>(dampingRatio = 0.55f, stiffness = Spring.StiffnessLow)
 
     fun cascadeDelay(index: Int, count: Int): Double {
         if (count <= 1) return 0.0

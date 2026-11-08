@@ -30,6 +30,7 @@ struct SessionView: View {
     @State private var showingEdit = false
     @State private var showingReportIssue = false
     @State private var showingFeedback = false
+    @State private var celebration = 0
     let passage: Passage
     private let store: AppStore
 
@@ -89,6 +90,7 @@ struct SessionView: View {
             .overlay {
                 if isFocused { stopSurface }
             }
+            .overlay { memorizedMoment }
         }
         .toolbar(.hidden, for: .navigationBar)
         .navigationBarBackButtonHidden(true)
@@ -113,6 +115,7 @@ struct SessionView: View {
         .task {
             guard !started else { return }
             started = true
+            store.markPracticed(passage)
             voice.onWordsMatched = { registerRecited($0) }
             voice.onMiss = { registerMiss($0) }
             voice.onWordShown = { showMissedWord($0) }
@@ -155,19 +158,6 @@ struct SessionView: View {
             Button("Cancel", role: .cancel, action: Feedback.tapping {})
         } message: {
             Text("Allow microphone access in Settings to practice by reciting.")
-        }
-        .onChange(of: store.passageJustMemorized) { _, memorized in
-            guard memorized else { return }
-            store.passageJustMemorized = false
-            guard ReviewPrompt.shouldAsk(
-                memorizedPassageCount: store.memorizedPassageIDs.count,
-                settings: store.settings
-            ) else { return }
-            Task {
-                try? await Task.sleep(for: ReviewPrompt.delayAfterCelebration)
-                store.markReviewRequested()
-                requestReview()
-            }
         }
     }
 
@@ -366,6 +356,39 @@ struct SessionView: View {
         RecitationTrace.emit("ui", "recitation complete")
         Feedback.sessionComplete()
         withAnimation(.easeInOut(duration: 0.3)) { highlights.clear() }
+        guard startWord == 0, vm.passage?.isMemorized == true else { return }
+        celebrate()
+    }
+
+    private func celebrate() {
+        celebration += 1
+        let shown = celebration
+        Task {
+            try? await Task.sleep(for: Motion.celebrationDwell)
+            if celebration == shown { celebration = 0 }
+        }
+        guard ReviewPrompt.shouldAsk(
+            memorizedPassageCount: store.memorizedPassageIDs.count,
+            settings: store.settings
+        ) else { return }
+        Task {
+            try? await Task.sleep(for: ReviewPrompt.delayAfterCelebration)
+            store.markReviewRequested()
+            requestReview()
+        }
+    }
+
+    private var memorizedMoment: some View {
+        ZStack {
+            if celebration > 0 {
+                Button { celebration = 0 } label: {
+                    MemorizedMoment(title: vm.passage?.title ?? passage.title)
+                }
+                .buttonStyle(.haptic)
+                .transition(.opacity.combined(with: .scale(scale: 0.96)))
+            }
+        }
+        .animation(Motion.fade, value: celebration > 0)
     }
 
     private func focusedParagraph(_ layout: PageLayout) -> Int {

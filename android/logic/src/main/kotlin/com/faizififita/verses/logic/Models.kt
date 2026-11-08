@@ -15,6 +15,7 @@ data class Passage(
     val isArchived: Boolean = false,
     val text: String = "",
     val hiddenWords: Set<Int> = emptySet(),
+    val lastPracticed: Long? = null,
 ) {
     @Transient
     private val layout: WordLayout = WordLayoutStore.layout(text)

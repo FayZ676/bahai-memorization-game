@@ -7,7 +7,7 @@ import com.google.android.play.core.review.ReviewManagerFactory
 
 object ReviewPrompt {
     private const val MINIMUM_MEMORIZED_PASSAGES = 2
-    const val DELAY_AFTER_CELEBRATION = 3600L
+    const val DELAY_AFTER_CELEBRATION = 3800L
 
     fun shouldAsk(memorizedPassageCount: Int, settings: AppSettings): Boolean =
         memorizedPassageCount >= MINIMUM_MEMORIZED_PASSAGES && settings.lastReviewRequestVersion != BuildConfig.VERSION_NAME

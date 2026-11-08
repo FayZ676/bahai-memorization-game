@@ -50,17 +50,17 @@ struct LibraryView: View {
             .browseDestinations()
         }
         .environment(\.popToLibrary) { path = NavigationPath() }
-        .environment(\.openInLibrary) { passage in
-            var opened = NavigationPath()
-            opened.append(passage)
-            path = opened
-        }
+        .environment(\.openInLibrary, open)
         .guidedTour(
             isActive: isTourPresented,
             onRestart: { isTourPresented = true },
             onFinish: { isTourPresented = false }
         )
         .releaseNotes($releaseNote)
+        .onOpenURL { url in
+            guard let id = PracticeSnapshot.passageID(in: url), let passage = store.passage(withID: id) else { return }
+            open(passage)
+        }
         .onAppear {
             releaseNote = ReleaseNotes.unseen(version: AppInfo.version, settings: store.settings)
             store.markReleaseNotesSeen()
@@ -84,6 +84,12 @@ struct LibraryView: View {
         } message: { passage in
             Text("“\(shortened(passage.title))” and all its progress will be removed. This can't be undone.")
         }
+    }
+
+    private func open(_ passage: Passage) {
+        var opened = NavigationPath()
+        opened.append(passage)
+        path = opened
     }
 
     private func shortened(_ title: String) -> String {

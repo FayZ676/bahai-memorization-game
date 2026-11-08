@@ -80,6 +80,32 @@ class LogicTest {
         assertEquals(3, back.passages.single().wordCount)
         val old = Json { ignoreUnknownKeys = true }.decodeFromString(Snapshot.serializer(), """{"passages":[{"id":"x","title":"Old","text":"a"}]}""")
         assertEquals(emptySet(), old.passages.single().hiddenWords)
+        assertEquals(null, old.passages.single().lastPracticed)
         assertTrue(Json.parseToJsonElement(json.encodeToString(Snapshot.serializer(), Snapshot())).jsonObject.containsKey("settings"))
+    }
+
+    @Test
+    fun theWidgetOffersThePrayerLongestUnpracticed() {
+        val day = 86_400_000L
+        val practiced = Passage(title = "Practiced", dateAdded = 0, lastPracticed = 5 * day)
+        val stale = Passage(title = "Stale", dateAdded = 0, lastPracticed = 2 * day)
+        val newer = Passage(title = "Newer", dateAdded = 9 * day)
+        val older = Passage(title = "Older", dateAdded = 1 * day)
+        val archived = Passage(title = "Archived", dateAdded = 0, isArchived = true)
+        assertEquals("Stale", PracticeQueue.next(listOf(practiced, stale))?.title)
+        assertEquals("Older", PracticeQueue.next(listOf(practiced, newer, older, archived))?.title)
+        assertEquals(null, PracticeQueue.next(listOf(archived)))
+    }
+
+    @Test
+    fun practiceAgeCountsCalendarDays() {
+        val zone = java.time.ZoneOffset.UTC
+        val hour = 3_600_000L
+        val now = 50 * 24 * hour + 1 * hour
+        fun label(lastPracticed: Long?) = PracticeAge.label(lastPracticed, now, zone)
+        assertEquals("Not practiced yet", label(null))
+        assertEquals("Practiced today", label(now - hour))
+        assertEquals("Practiced yesterday", label(now - 2 * hour))
+        assertEquals("3 days since practice", label(now - 3 * 24 * hour))
     }
 }

@@ -2,4 +2,5 @@
 <resources>
     <string name="app_name">Verses</string>
     <string name="reminder_channel">Daily reminders</string>
+    <string name="widget_description">The prayer you have gone longest without practicing</string>
 </resources>

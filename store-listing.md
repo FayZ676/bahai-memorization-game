@@ -27,6 +27,11 @@ No account. No sign-in. No ads. Your prayers, your progress, and your voice stay
 
 Hide what you know. Read what you don't. Come back tomorrow.
 
+## What's New — 2.3 (4000)
+Add Verses to your home screen. The new widget shows the prayer you have gone longest without practicing, with its opening lines, and opens it when you tap.
+
+Hide every word and say the whole prayer from the start, and Verses now marks the moment you recite it from memory.
+
 ## What's New — 2.2.1 (4000)
 Hide a word while you recite, and it now comes back when you say it, just like the words you hid before you started.
 

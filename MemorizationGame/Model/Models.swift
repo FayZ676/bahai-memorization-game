@@ -10,6 +10,7 @@ struct Passage: Codable, Identifiable, Hashable {
     var isArchived: Bool
     var text: String
     var hiddenWords: Set<Int>
+    var lastPracticed: Date?
 
     init(
         id: UUID = UUID(),
@@ -20,7 +21,8 @@ struct Passage: Codable, Identifiable, Hashable {
         sourceID: Int? = nil,
         isArchived: Bool = false,
         text: String,
-        hiddenWords: Set<Int> = []
+        hiddenWords: Set<Int> = [],
+        lastPracticed: Date? = nil
     ) {
         self.id = id
         self.title = title
@@ -31,10 +33,11 @@ struct Passage: Codable, Identifiable, Hashable {
         self.isArchived = isArchived
         self.text = text
         self.hiddenWords = hiddenWords
+        self.lastPracticed = lastPracticed
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, title, dateAdded, author, section, sourceID, isArchived, text, hiddenWords
+        case id, title, dateAdded, author, section, sourceID, isArchived, text, hiddenWords, lastPracticed
     }
 
     init(from decoder: Decoder) throws {
@@ -48,6 +51,7 @@ struct Passage: Codable, Identifiable, Hashable {
         isArchived = try container.decodeIfPresent(Bool.self, forKey: .isArchived) ?? false
         text = try container.decodeIfPresent(String.self, forKey: .text) ?? ""
         hiddenWords = try container.decodeIfPresent(Set<Int>.self, forKey: .hiddenWords) ?? []
+        lastPracticed = try container.decodeIfPresent(Date.self, forKey: .lastPracticed)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -61,6 +65,7 @@ struct Passage: Codable, Identifiable, Hashable {
         try container.encode(isArchived, forKey: .isArchived)
         try container.encode(text, forKey: .text)
         try container.encode(hiddenWords, forKey: .hiddenWords)
+        try container.encodeIfPresent(lastPracticed, forKey: .lastPracticed)
     }
 
     static func paragraphs(in content: String) -> [String] {
