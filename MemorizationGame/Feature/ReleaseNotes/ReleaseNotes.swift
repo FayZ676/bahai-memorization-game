@@ -19,6 +19,17 @@ struct ReleaseNote: Identifiable {
 enum ReleaseNotes {
     static let all: [ReleaseNote] = [
         ReleaseNote(
+            version: "2.3.1",
+            headline: "Verses now works on more iPhones.",
+            highlights: [
+                ReleaseHighlight(
+                    symbol: "iphone",
+                    title: "Share it with others",
+                    text: "Friends and family whose iPhones do not have the newest update can now get Verses too."
+                )
+            ]
+        ),
+        ReleaseNote(
             version: "2.3",
             headline: "Put a prayer on your home screen, and see a star when you say a prayer from memory.",
             highlights: [
