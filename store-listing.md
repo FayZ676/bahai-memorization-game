@@ -27,6 +27,11 @@ No account. No sign-in. No ads. Your prayers, your progress, and your voice stay
 
 Hide what you know. Read what you don't. Come back tomorrow.
 
+## What's New — 2.4 (4000)
+Choose how hidden words look while you recite: a line under each one, or a blank page with nothing to lean on. Pick it from the ⋯ menu on a prayer, or in Settings.
+
+A soft glowing caret now marks your place as you recite, and each word you say fades back in gently, from left to right.
+
 ## What's New — 2.3.1 (4000)
 Verses now runs on iPhones with iOS 18 or later, so friends and family on older updates can practice with you.
 
