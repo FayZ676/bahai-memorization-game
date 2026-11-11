@@ -18,6 +18,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.calculateTargetValue
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.rememberSplineBasedDecay
@@ -51,6 +52,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Info
@@ -84,13 +86,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
@@ -111,6 +118,7 @@ import com.faizififita.verses.feature.onboarding.TourStep
 import com.faizififita.verses.feature.onboarding.ClearsTourButton
 import com.faizififita.verses.feature.onboarding.CompletesTourStep
 import com.faizififita.verses.logic.Passage
+import com.faizififita.verses.logic.Difficulty
 import com.faizififita.verses.store.AppStore
 import com.faizififita.verses.support.Feedback
 import com.faizififita.verses.support.ReviewPrompt
@@ -138,18 +146,28 @@ private const val SNAP_REACH = 0.3f
 @Stable
 private class Highlights {
     var recited by mutableStateOf(emptySet<Int>())
+        private set
+    var batchPlace by mutableStateOf(emptyMap<Int, Int>())
+        private set
     var flashing by mutableStateOf<Int?>(null)
     var shakes by mutableIntStateOf(0)
     private var setAside = emptySet<Int>()
 
     fun clear() {
         recited = emptySet()
+        batchPlace = emptyMap()
         setAside = emptySet()
     }
 
     fun putAside(index: Int) {
         recited = recited - index
         setAside = setAside + index
+    }
+
+    fun recite(indices: List<Int>) {
+        val fresh = (indices.toSet() - recited).sorted()
+        batchPlace = batchPlace + fresh.withIndex().associate { (place, index) -> index to place }
+        recited = recited + fresh
     }
 
     fun unattempted(passage: Passage, from: Int) = passage.recitableIndices(from).filter { it !in recited && it !in setAside }
@@ -208,7 +226,7 @@ fun SessionScreen(
 
     LaunchedEffect(Unit) {
         voice.onWordsMatched = { indices ->
-            highlights.recited = highlights.recited + indices
+            highlights.recite(indices)
             tour?.complete(TourStep.Recite)
         }
         voice.onMiss = { index ->
@@ -462,6 +480,7 @@ fun SessionScreen(
                             index = index,
                             highlights = highlights,
                             focused = focused,
+                            difficulty = store.settings.difficulty,
                             cascading = cascading,
                             modifier = Modifier.offset { IntOffset(metrics.textMargin.toInt(), (topInset + paragraph.frame.top).toInt()) },
                         )
@@ -613,6 +632,11 @@ fun SessionScreen(
                                     cascade { store.setAllWords(current, false) }
                                 }
                             },
+                            difficulty = store.settings.difficulty,
+                            onChooseDifficulty = { difficulty ->
+                                optionsOpen = false
+                                store.updateSettings { it.copy(difficulty = difficulty) }
+                            },
                             onReportIssue = { optionsOpen = false; onReportIssue() },
                             onFeedback = { optionsOpen = false; onFeedback() },
                         )
@@ -703,6 +727,7 @@ private fun PageParagraph(
     index: Int,
     highlights: Highlights,
     focused: Boolean,
+    difficulty: Difficulty,
     cascading: Boolean,
     modifier: Modifier,
 ) {
@@ -719,8 +744,11 @@ private fun PageParagraph(
                     top = paragraph.frame.top,
                     style = layout.style,
                     concealed = focused && hidden && !recited,
+                    difficulty = difficulty,
                     dimmed = !focused && hidden,
                     recited = recited,
+                    sweeping = focused && hidden && recited,
+                    sweepDelayMillis = (highlights.batchPlace[word] ?: 0) * Motion.SWEEP_STAGGER,
                     flashing = highlights.flashing == word,
                     shakes = if (highlights.flashing == word) highlights.shakes else 0,
                     staggerMillis = if (cascading) (Motion.cascadeDelay(word, passage.words.size) * 1000).toInt() else 0,
@@ -730,6 +758,8 @@ private fun PageParagraph(
     }
 }
 
+private const val SWEEP_SOFTNESS = 0.6f
+
 @Composable
 private fun Word(
     token: String,
@@ -737,8 +767,11 @@ private fun Word(
     top: Float,
     style: androidx.compose.ui.text.TextStyle,
     concealed: Boolean,
+    difficulty: Difficulty,
     dimmed: Boolean,
     recited: Boolean,
+    sweeping: Boolean,
+    sweepDelayMillis: Int,
     flashing: Boolean,
     shakes: Int,
     staggerMillis: Int,
@@ -756,12 +789,7 @@ private fun Word(
         label = "line",
     )
     val coreColor by animateColorAsState(if (dimmed) Theme.hiddenInk else Theme.ink, Motion.fade(staggerMillis), label = "dim")
-    val pulse = remember { Animatable(1f) }
-    LaunchedEffect(recited) {
-        if (!recited) return@LaunchedEffect
-        pulse.animateTo(1.07f, tween(120, easing = Motion.easeOut))
-        pulse.animateTo(1f, spring(0.7f, 300f))
-    }
+    val sweep by animateFloatAsState(if (sweeping) 1f else 0f, if (sweeping) Motion.sweep(sweepDelayMillis) else snap(), label = "sweep")
     val shake = remember { Animatable(0f) }
     LaunchedEffect(shakes) {
         if (shakes == 0) return@LaunchedEffect
@@ -775,11 +803,12 @@ private fun Word(
         else -> Theme.faint
     }
     val highlight by animateColorAsState(if (flashing) Theme.warn.copy(alpha = 0.2f) else Color.Transparent, tween(300), label = "flash")
-    val text = remember(parts, coreColor, coreAlpha, ink) {
+    val punctuation = if (difficulty == Difficulty.Blank) ink.copy(alpha = ink.alpha * coreAlpha) else ink
+    val text = remember(parts, coreColor, coreAlpha, punctuation) {
         buildAnnotatedString {
-            withStyle(SpanStyle(color = ink)) { append(parts.lead) }
+            withStyle(SpanStyle(color = if (parts.lead == "-") ink else punctuation)) { append(parts.lead) }
             withStyle(SpanStyle(color = coreColor.copy(alpha = coreColor.alpha * coreAlpha))) { append(parts.core) }
-            withStyle(SpanStyle(color = ink)) { append(parts.trail) }
+            withStyle(SpanStyle(color = punctuation)) { append(parts.trail) }
         }
     }
     val density = LocalDensity.current
@@ -791,9 +820,22 @@ private fun Word(
         modifier = Modifier
             .offset { IntOffset(frame.rect.left.toInt(), (frame.rect.top - top).toInt()) }
             .graphicsLayer {
-                scaleX = pulse.value
-                scaleY = pulse.value
                 translationX = with(density) { 4.dp.toPx() } * sin(shake.value * PI.toFloat() * 3)
+                compositingStrategy = if (sweeping) CompositingStrategy.Offscreen else CompositingStrategy.Auto
+            }
+            .drawWithContent {
+                drawContent()
+                if (sweeping) {
+                    val edge = sweep * (1 + SWEEP_SOFTNESS) - SWEEP_SOFTNESS
+                    drawRect(
+                        Brush.horizontalGradient(
+                            listOf(Color.Black, Color.Transparent),
+                            startX = edge * size.width,
+                            endX = (edge + SWEEP_SOFTNESS) * size.width,
+                        ),
+                        blendMode = BlendMode.DstIn,
+                    )
+                }
             }
             .drawBehind {
                 if (highlight.alpha > 0f) {
@@ -804,17 +846,10 @@ private fun Word(
                         CornerRadius(Radius.word.toPx()),
                     )
                 }
-                if (lineAlpha > 0f && frame.coreWidth > 0f) {
+                if (lineAlpha > 0f && frame.coreWidth > 0f && difficulty == Difficulty.Lines) {
                     val y = size.height - size.height * 0.2f
                     drawRect(
-                        Brush.horizontalGradient(
-                            0f to lineColor.copy(alpha = 0.5f * lineAlpha),
-                            0.14f to lineColor.copy(alpha = lineAlpha),
-                            0.86f to lineColor.copy(alpha = lineAlpha),
-                            1f to lineColor.copy(alpha = 0.5f * lineAlpha),
-                            startX = frame.coreStart,
-                            endX = frame.coreStart + frame.coreWidth,
-                        ),
+                        lineColor.copy(alpha = lineAlpha),
                         Offset(frame.coreStart, y),
                         Size(frame.coreWidth, 1.dp.toPx()),
                     )
@@ -847,52 +882,69 @@ private fun ParagraphMarker(isStart: Boolean, modifier: Modifier, enabled: Boole
 private fun RecitationCursor(target: androidx.compose.ui.geometry.Rect?, modifier: Modifier) {
     val density = LocalDensity.current
     val fontScale = LocalFontScale.current
-    val leading = remember { Animatable(0f) }
-    val trailing = remember { Animatable(0f) }
+    val context = LocalContext.current
+    val reduceMotion = remember {
+        Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
+    }
+    val x = remember { Animatable(0f) }
     val top = remember { Animatable(0f) }
     val height = remember { Animatable(0f) }
     val visible = remember { Animatable(0f) }
+    val pulse = remember { Animatable(1f) }
     LaunchedEffect(target) {
         if (target == null) {
             visible.animateTo(0f, tween(220, easing = Motion.easeOut))
             return@LaunchedEffect
         }
-        val side = with(density) { 4.dp.toPx() } * fontScale
-        val above = with(density) { 6.dp.toPx() } * fontScale
-        val below = with(density) { 2.dp.toPx() } * fontScale
-        val boxLeft = target.left - side
-        val boxRight = target.right + side
-        val boxTop = target.top + above
-        val boxHeight = target.height - above - below
-        if (visible.value < 0.01f) {
-            leading.snapTo(boxLeft); trailing.snapTo(boxRight); top.snapTo(boxTop); height.snapTo(boxHeight)
-            visible.animateTo(1f, tween(200, easing = Motion.easeOut))
+        val unit = with(density) { 1.dp.toPx() } * fontScale
+        val width = with(density) { CARET_WIDTH.toPx() }
+        val above = 6 * unit
+        val below = 2 * unit
+        val caretX = target.left - 3 * unit - width / 2
+        val caretTop = target.top + above
+        val caretHeight = target.height - above - below
+        launch {
+            pulse.snapTo(1f)
+            if (reduceMotion) return@launch
+            delay(Motion.CARET_HOLD.toLong())
+            while (true) {
+                pulse.animateTo(0f, tween(Motion.CARET_PULSE, easing = Motion.easeInOut))
+                pulse.animateTo(1f, tween(Motion.CARET_PULSE, easing = Motion.easeInOut))
+            }
+        }
+        if (visible.value < 0.01f || abs(caretTop - top.value) >= 1f) {
+            x.snapTo(caretX); top.snapTo(caretTop); height.snapTo(caretHeight)
+            if (visible.value < 1f) visible.animateTo(1f, tween(200, easing = Motion.easeOut))
             return@LaunchedEffect
         }
-        val fast = spring<Float>(0.86f, 1750f)
-        val slow = spring<Float>(0.9f, 815f)
-        val lineBreak = spring<Float>(0.86f, 685f)
-        if (abs(boxTop - top.value) >= 1f) {
-            launch { leading.animateTo(boxLeft, lineBreak) }
-            launch { trailing.animateTo(boxRight, lineBreak) }
-            launch { top.animateTo(boxTop, lineBreak) }
-            launch { height.animateTo(boxHeight, lineBreak) }
-            return@LaunchedEffect
-        }
-        val forward = boxLeft >= leading.value
-        launch { leading.animateTo(boxLeft, if (forward) fast else slow) }
-        launch { trailing.animateTo(boxRight, if (forward) slow else fast) }
-        launch { height.animateTo(boxHeight, fast) }
+        val glide = spring<Float>(0.88f, 1200f)
+        launch { x.animateTo(caretX, glide) }
+        launch { height.animateTo(caretHeight, glide) }
     }
     val accent = Theme.accent
     Canvas(modifier.size(1.dp)) {
-        if (visible.value <= 0f) return@Canvas
-        val width = maxOf(trailing.value - leading.value, 4.dp.toPx())
-        val radius = CornerRadius(Radius.word.toPx())
-        drawRoundRect(accent.copy(alpha = 0.12f * visible.value), Offset(leading.value, top.value), Size(width, height.value), radius)
-        drawRoundRect(accent.copy(alpha = visible.value), Offset(leading.value, top.value), Size(width, height.value), radius, style = Stroke(1.5.dp.toPx()))
+        val alpha = visible.value * pulse.value
+        if (alpha <= 0f) return@Canvas
+        val width = CARET_WIDTH.toPx()
+        val radius = 1.dp.toPx()
+        val left = x.value
+        val right = x.value + width
+        val bottom = top.value + height.value
+        drawIntoCanvas { canvas ->
+            for ((blur, strength) in listOf(10.dp.toPx() to 0.35f, 4.dp.toPx() to 0.85f)) {
+                val glow = android.graphics.Paint().apply {
+                    isAntiAlias = true
+                    color = accent.copy(alpha = strength * alpha).toArgb()
+                    maskFilter = android.graphics.BlurMaskFilter(blur, android.graphics.BlurMaskFilter.Blur.NORMAL)
+                }
+                canvas.nativeCanvas.drawRoundRect(left, top.value, right, bottom, radius, radius, glow)
+            }
+        }
+        drawRoundRect(accent.copy(alpha = alpha), Offset(left, top.value), Size(width, height.value), CornerRadius(radius))
     }
 }
+
+private val CARET_WIDTH = 2.5.dp
 
 @Composable
 private fun OptionsMenu(
@@ -901,6 +953,8 @@ private fun OptionsMenu(
     onEdit: () -> Unit,
     onHideAll: () -> Unit,
     onShowAll: () -> Unit,
+    difficulty: Difficulty,
+    onChooseDifficulty: (Difficulty) -> Unit,
     onReportIssue: () -> Unit,
     onFeedback: () -> Unit,
 ) {
@@ -915,16 +969,26 @@ private fun OptionsMenu(
         MenuItem("Hide Every Word", Icons.Outlined.VisibilityOff, onHideAll)
         MenuItem("Show Every Word", Icons.Outlined.Visibility, onShowAll)
         HorizontalDivider(color = Theme.hairline)
+        Text(
+            "Difficulty",
+            style = Typography.footnote.style(LocalFontScale.current),
+            color = Theme.faint,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+        )
+        for (option in Difficulty.entries) {
+            MenuItem(option.label, if (option == difficulty) Icons.Outlined.Check else null) { onChooseDifficulty(option) }
+        }
+        HorizontalDivider(color = Theme.hairline)
         MenuItem("Report Issue", Icons.Outlined.ErrorOutline, onReportIssue)
         MenuItem("Send Feedback", Icons.AutoMirrored.Outlined.Send, onFeedback)
     }
 }
 
 @Composable
-private fun MenuItem(title: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
+private fun MenuItem(title: String, icon: androidx.compose.ui.graphics.vector.ImageVector?, onClick: () -> Unit) {
     DropdownMenuItem(
         text = { Text(title, style = Typography.body.style(LocalFontScale.current), color = Theme.ink) },
-        trailingIcon = { Icon(icon, null, tint = Theme.muted, modifier = Modifier.size(18.dp)) },
+        trailingIcon = { if (icon != null) Icon(icon, null, tint = Theme.muted, modifier = Modifier.size(18.dp)) },
         onClick = {
             Feedback.tap()
             onClick()

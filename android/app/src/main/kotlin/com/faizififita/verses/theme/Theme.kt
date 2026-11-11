@@ -86,8 +86,12 @@ object Motion {
     const val HANDOFF = 950
     const val FADE = 350
     const val LINE_FADE_DELAY = 500
+    const val CARET_HOLD = 500
+    const val CARET_PULSE = 550
     const val FOCUS = 250
     const val REVEAL = 120
+    const val SWEEP = 400
+    const val SWEEP_STAGGER = 120
     const val SCROLL = 400
     const val CASCADE_SPAN = 0.6
     const val CELEBRATION_DWELL = 3200L
@@ -97,6 +101,7 @@ object Motion {
     fun <T> focus() = tween<T>(FOCUS, easing = easeInOut)
     fun <T> fade(delay: Int = 0) = tween<T>(FADE, delay, easeInOut)
     fun <T> reveal() = tween<T>(REVEAL, easing = easeOut)
+    fun <T> sweep(delayMillis: Int = 0) = tween<T>(SWEEP, delayMillis, easeOut)
     fun <T> push() = tween<T>(STANDARD, easing = FastOutSlowInEasing)
     fun <T> settle() = tween<T>(TOGGLE, easing = LinearOutSlowInEasing)
     fun <T> celebrate() = spring<T>(dampingRatio = 0.55f, stiffness = Spring.StiffnessLow)

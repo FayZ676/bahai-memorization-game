@@ -71,6 +71,12 @@ enum class FontSize(val label: String, val scale: Float) {
 }
 
 @Serializable
+enum class Difficulty(val label: String) {
+    Lines("Lines"),
+    Blank("Blank"),
+}
+
+@Serializable
 data class Reminder(
     val id: String = UUID.randomUUID().toString(),
     val minuteOfDay: Int = 9 * 60,
@@ -85,6 +91,7 @@ data class AppSettings(
     val fontSize: FontSize = FontSize.Medium,
     val hasSeenWelcomeTour: Boolean = false,
     val randomHideCount: Int = 2,
+    val difficulty: Difficulty = Difficulty.Lines,
     val lastReviewRequestVersion: String? = null,
     val lastSeenReleaseNotesVersion: String? = null,
 ) {

@@ -54,6 +54,11 @@ final class SessionViewModel {
         set { store.settings.randomHideCount = newValue }
     }
 
+    var difficulty: Difficulty {
+        get { store.settings.difficulty }
+        set { store.settings.difficulty = newValue }
+    }
+
     @discardableResult
     func hideRandomWords(_ count: Int, among visible: Set<Int>) -> Bool {
         guard let passage else { return false }

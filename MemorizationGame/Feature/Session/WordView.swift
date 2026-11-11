@@ -3,11 +3,13 @@ import SwiftUI
 struct WordView: View {
     let token: String
     let concealed: Bool
+    var difficulty: Difficulty = .lines
     var dimmed: Bool = false
     var recited: Bool = false
+    var sweeping: Bool = false
+    var sweepDelay: Double = 0
     var missFlashing: Bool = false
     var staggerDelay: Double = 0
-    @State private var pulsing = false
 
     static func parts(of token: String) -> (lead: String, core: String, trail: String) {
         let chars = Array(token)
@@ -26,19 +28,21 @@ struct WordView: View {
     var body: some View {
         let p = Self.parts(of: token)
         HStack(spacing: 0) {
-            if !p.lead.isEmpty { Text(p.lead).foregroundStyle(Theme.ink) }
+            if !p.lead.isEmpty { Text(p.lead).foregroundStyle(Theme.ink).opacity(p.lead == "-" ? 1 : punctuationOpacity) }
             if !p.core.isEmpty {
                 Text(p.core)
                     .foregroundStyle(dimmed ? Theme.hiddenInk : Theme.ink)
                     .opacity(concealed ? 0 : 1)
                     .overlay(alignment: .bottom) {
-                        reciteLine
+                        concealment
                             .opacity(concealed ? 1 : 0)
                             .animation(concealed ? Motion.lineFadeIn.delay(staggerDelay) : (recited ? Motion.reveal : .easeInOut(duration: 0.18)), value: concealed)
                     }
             }
-            if !p.trail.isEmpty { Text(p.trail).foregroundStyle(Theme.ink) }
+            if !p.trail.isEmpty { Text(p.trail).foregroundStyle(Theme.ink).opacity(punctuationOpacity) }
         }
+        .modifier(SweepReveal(progress: sweeping ? 1 : 0, active: sweeping))
+        .animation(sweeping ? Motion.sweep.delay(sweepDelay) : nil, value: sweeping)
         .background {
             if let highlight {
                 RoundedRectangle(cornerRadius: Radius.word, style: .continuous)
@@ -47,33 +51,24 @@ struct WordView: View {
                     .padding(.vertical, -3)
             }
         }
-        .scaleEffect(pulsing ? 1.07 : 1)
         .animation(recited && !concealed ? Motion.reveal : Motion.fade.delay(staggerDelay), value: concealed)
         .animation(Motion.fade.delay(staggerDelay), value: dimmed)
-        .onChange(of: recited) { wasRecited, isRecited in
-            guard isRecited, !wasRecited else { return }
-            withAnimation(.easeOut(duration: 0.12)) { pulsing = true }
-            Task {
-                try? await Task.sleep(for: .milliseconds(130))
-                withAnimation(.spring(response: 0.32, dampingFraction: 0.7)) { pulsing = false }
-            }
+    }
+
+    private var punctuationOpacity: Double {
+        concealed && difficulty == .blank ? 0 : 1
+    }
+
+    @ViewBuilder
+    private var concealment: some View {
+        switch difficulty {
+        case .lines: reciteLine
+        case .blank: EmptyView()
         }
     }
 
     private var reciteLine: some View {
-        let color = lineColor
-        return Rectangle()
-            .fill(LinearGradient(
-                stops: [
-                    .init(color: color.opacity(0.5), location: 0),
-                    .init(color: color, location: 0.14),
-                    .init(color: color, location: 0.86),
-                    .init(color: color.opacity(0.5), location: 1)
-                ],
-                startPoint: .leading,
-                endPoint: .trailing
-            ))
-            .frame(height: 1)
+        Rectangle().fill(lineColor).frame(height: 1)
     }
 
     private var lineColor: Color {
@@ -88,3 +83,29 @@ struct WordView: View {
     }
 }
 
+private struct SweepReveal: ViewModifier, Animatable {
+    var progress: Double
+    let active: Bool
+
+    private static let softness = 0.6
+
+    var animatableData: Double {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    func body(content: Content) -> some View {
+        if active {
+            let edge = progress * (1 + Self.softness) - Self.softness
+            content.mask {
+                LinearGradient(
+                    colors: [.black, .clear],
+                    startPoint: UnitPoint(x: edge, y: 0.5),
+                    endPoint: UnitPoint(x: edge + Self.softness, y: 0.5)
+                )
+            }
+        } else {
+            content
+        }
+    }
+}

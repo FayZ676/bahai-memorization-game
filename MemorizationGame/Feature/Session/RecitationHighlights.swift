@@ -2,12 +2,14 @@ import CoreGraphics
 
 struct RecitationHighlights {
     private(set) var recited: Set<Int> = []
+    private(set) var batchPlace: [Int: Int] = [:]
     private var setAside: Set<Int> = []
     private var shakes = 0
     private var flashing: Int?
 
     mutating func clear() {
         recited = []
+        batchPlace = [:]
         setAside = []
     }
 
@@ -17,7 +19,9 @@ struct RecitationHighlights {
     }
 
     mutating func recite(_ indices: [Int]) {
-        recited.formUnion(indices)
+        let fresh = Set(indices).subtracting(recited).sorted()
+        for (place, index) in fresh.enumerated() { batchPlace[index] = place }
+        recited.formUnion(fresh)
     }
 
     mutating func miss(_ index: Int) {

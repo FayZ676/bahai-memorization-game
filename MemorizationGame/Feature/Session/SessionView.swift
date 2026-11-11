@@ -174,6 +174,7 @@ struct SessionView: View {
                 highlights: highlights,
                 isFocused: isFocused,
                 cursor: recitationCursor,
+                difficulty: vm.difficulty,
                 fixedStart: isFocused ? layout.paragraphIndex(containing: startWord) : armedParagraph,
                 textOrigin: textOrigin,
                 onMarker: { tapMarker($0, layout: layout) },
@@ -537,6 +538,17 @@ struct SessionView: View {
                 )
             }
             Section {
+                Picker(selection: difficultySelection) {
+                    ForEach(Difficulty.allCases, id: \.self) { difficulty in
+                        Text(difficulty.label).tag(difficulty)
+                    }
+                } label: {
+                    Label("Difficulty", systemImage: "eye.slash")
+                    Text(vm.difficulty.label)
+                }
+                .pickerStyle(.menu)
+            }
+            Section {
                 Button(
                     "Report Issue",
                     systemImage: "exclamationmark.bubble",
@@ -556,7 +568,14 @@ struct SessionView: View {
         .buttonStyle(.icon)
     }
 
-    private var emptyQueue: some View {
+    private var difficultySelection: Binding<Difficulty> {
+        Binding(
+            get: { vm.difficulty },
+            set: { difficulty in Feedback.tapping { vm.difficulty = difficulty }() }
+        )
+    }
+
+        private var emptyQueue: some View {
         Text("Nothing to review yet.")
             .appFont(Typography.subtitle)
             .foregroundStyle(Theme.muted)
@@ -575,6 +594,7 @@ private struct PageContent: View {
     let highlights: RecitationHighlights
     let isFocused: Bool
     let cursor: Int?
+    let difficulty: Difficulty
     let fixedStart: Int?
     let textOrigin: PageOrigin
     let onMarker: (Int) -> Void
@@ -646,9 +666,11 @@ private struct PageContent: View {
             text: passage.text,
             hidden: passage.hiddenWords.filter { words.contains($0) },
             recited: highlights.recited.filter { words.contains($0) },
+            batchPlace: highlights.batchPlace.filter { words.contains($0.key) },
             flashing: flashing,
             shakes: flashing.map { highlights.shakeAmount(at: $0) } ?? 0,
             isFocused: isFocused,
+            difficulty: difficulty,
             cascading: cascading
         )
     }
@@ -661,9 +683,11 @@ private struct PageParagraph: View, Equatable {
     let text: String
     let hidden: Set<Int>
     let recited: Set<Int>
+    let batchPlace: [Int: Int]
     let flashing: Int?
     let shakes: CGFloat
     let isFocused: Bool
+    let difficulty: Difficulty
     let cascading: Bool
 
     static func == (lhs: PageParagraph, rhs: PageParagraph) -> Bool {
@@ -673,9 +697,11 @@ private struct PageParagraph: View, Equatable {
             && lhs.layout.font == rhs.layout.font
             && lhs.hidden == rhs.hidden
             && lhs.recited == rhs.recited
+            && lhs.batchPlace == rhs.batchPlace
             && lhs.flashing == rhs.flashing
             && lhs.shakes == rhs.shakes
             && lhs.isFocused == rhs.isFocused
+            && lhs.difficulty == rhs.difficulty
             && lhs.cascading == rhs.cascading
     }
 
@@ -689,8 +715,11 @@ private struct PageParagraph: View, Equatable {
                 WordView(
                     token: String(tokens[idx]),
                     concealed: isFocused && hidden.contains(idx) && !recited.contains(idx),
+                    difficulty: difficulty,
                     dimmed: !isFocused && hidden.contains(idx),
                     recited: recited.contains(idx),
+                    sweeping: isFocused && hidden.contains(idx) && recited.contains(idx),
+                    sweepDelay: Double(batchPlace[idx] ?? 0) * Motion.sweepStagger,
                     missFlashing: flashing == idx,
                     staggerDelay: cascading ? Motion.cascadeDelay(idx, of: tokens.count) : 0
                 )

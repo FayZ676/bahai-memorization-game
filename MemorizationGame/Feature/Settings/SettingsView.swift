@@ -31,6 +31,18 @@ struct SettingsView: View {
                         ) { store.settings.fontSize = $0 }
                     }
 
+                    OptionSection(
+                        label: "Difficulty",
+                        icon: "eye.slash",
+                        footer: "How hidden words look while you recite."
+                    ) {
+                        SegmentedPicker(
+                            options: Difficulty.allCases,
+                            label: \.label,
+                            selected: store.settings.difficulty
+                        ) { store.settings.difficulty = $0 }
+                    }
+
                     RemindersSection(permissionDenied: $permissionDenied)
 
                     OptionSection(label: "Help", icon: "questionmark.circle") {

@@ -5,35 +5,49 @@ struct RecitationCursor: View {
 
     @Environment(\.fontScale) private var fontScale
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    @State private var leading: CGFloat = 0
-    @State private var trailing: CGFloat = 0
+    @State private var x: CGFloat = 0
     @State private var top: CGFloat = 0
     @State private var height: CGFloat = 0
     @State private var visible = false
+    @State private var movedAt = Date()
 
-    private static let sidePad: CGFloat = 4
+    private static let width: CGFloat = 2.5
+    private static let cornerRadius: CGFloat = 1
+    private static let glow: CGFloat = 4
+    private static let glowOpacity = 0.85
+    private static let halo: CGFloat = 10
+    private static let haloOpacity = 0.35
+    private static let gap: CGFloat = 3
     private static let trimAboveCap: CGFloat = 6
     private static let trimBelowBaseline: CGFloat = 2
-    private static let leadingEdge = Animation.spring(response: 0.15, dampingFraction: 0.86)
-    private static let trailingEdge = Animation.spring(response: 0.22, dampingFraction: 0.9)
-    private static let lineBreak = Animation.spring(response: 0.24, dampingFraction: 0.86)
+    private static let glide = Animation.spring(response: 0.18, dampingFraction: 0.88)
 
     var body: some View {
-        RoundedRectangle(cornerRadius: Radius.word, style: .continuous)
-            .strokeBorder(Theme.accent, lineWidth: 1.5)
-            .background(
-                RoundedRectangle(cornerRadius: Radius.word, style: .continuous)
-                    .fill(Theme.accent.opacity(0.12))
-            )
-            .frame(width: max(trailing - leading, 4), height: height)
-            .offset(x: leading, y: top)
-            .opacity(visible ? 1 : 0)
-            .allowsHitTesting(false)
-            .onChange(of: target) { _, target in
-                move(to: target)
-            }
-            .onAppear { move(to: target) }
+        TimelineView(.animation(paused: !visible || reduceMotion)) { context in
+            RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous)
+                .fill(Theme.accent)
+                .shadow(color: Theme.accent.opacity(Self.glowOpacity), radius: Self.glow)
+                .shadow(color: Theme.accent.opacity(Self.haloOpacity), radius: Self.halo)
+                .opacity(reduceMotion ? 1 : pulse(at: context.date))
+        }
+        .frame(width: Self.width, height: height)
+        .offset(x: x, y: top)
+        .opacity(visible ? 1 : 0)
+        .allowsHitTesting(false)
+        .onChange(of: target) { _, target in
+            move(to: target)
+        }
+        .onAppear { move(to: target) }
+    }
+
+    private func pulse(at date: Date) -> Double {
+        let elapsed = date.timeIntervalSince(movedAt) - Motion.caretHold
+        guard elapsed > 0 else { return 1 }
+        let phase = (elapsed / Motion.caretPulse).truncatingRemainder(dividingBy: 2)
+        let fall = phase < 1 ? phase : 2 - phase
+        return 0.5 + 0.5 * cos(.pi * fall)
     }
 
     private func move(to target: CGRect?) {
@@ -42,46 +56,35 @@ struct RecitationCursor: View {
             return
         }
         let unit = fontScale * DynamicTypeScaling.factor(for: dynamicTypeSize)
-        let sidePad = Self.sidePad * unit
         let above = Self.trimAboveCap * unit
         let below = Self.trimBelowBaseline * unit
-        let box = CGRect(
-            x: target.minX - sidePad,
+        let caret = CGRect(
+            x: target.minX - Self.gap * unit - Self.width / 2,
             y: target.minY + above,
-            width: target.width + sidePad * 2,
+            width: Self.width,
             height: target.height - above - below
         )
-        guard visible else {
-            settle(on: box)
-            withAnimation(.easeOut(duration: 0.2)) { visible = true }
+        guard !isSettled(on: caret) else { return }
+        movedAt = Date()
+        let sameLine = abs(caret.minY - top) < 1
+        guard visible, sameLine else {
+            settle(on: caret)
+            if !visible { withAnimation(.easeOut(duration: 0.2)) { visible = true } }
             return
         }
-        let sameLine = abs(box.minY - top) < 1
-        guard !isSettled(on: box) else {
-            settle(on: box)
-            return
-        }
-        guard sameLine else {
-            withAnimation(Self.lineBreak) { settle(on: box) }
-            return
-        }
-        let forward = box.minX >= leading
-        withAnimation(forward ? Self.leadingEdge : Self.trailingEdge) { leading = box.minX }
-        withAnimation(forward ? Self.trailingEdge : Self.leadingEdge) { trailing = box.maxX }
-        withAnimation(Self.leadingEdge) { height = box.height }
+        withAnimation(Self.glide) { settle(on: caret) }
     }
 
-    private func settle(on box: CGRect) {
-        leading = box.minX
-        trailing = box.maxX
-        top = box.minY
-        height = box.height
+    private func settle(on caret: CGRect) {
+        x = caret.minX
+        top = caret.minY
+        height = caret.height
     }
 
-    private func isSettled(on box: CGRect) -> Bool {
-        abs(box.minX - leading) < 0.5
-            && abs(box.maxX - trailing) < 0.5
-            && abs(box.minY - top) < 0.5
-            && abs(box.height - height) < 0.5
+    private func isSettled(on caret: CGRect) -> Bool {
+        visible
+            && abs(caret.minX - x) < 0.5
+            && abs(caret.minY - top) < 0.5
+            && abs(caret.height - height) < 0.5
     }
 }

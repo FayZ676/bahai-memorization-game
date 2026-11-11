@@ -45,6 +45,18 @@ enum FontSize: String, Codable, CaseIterable {
     }
 }
 
+enum Difficulty: String, Codable, CaseIterable {
+    case lines
+    case blank
+
+    var label: String {
+        switch self {
+        case .lines: "Lines"
+        case .blank: "Blank"
+        }
+    }
+}
+
 struct Reminder: Codable, Equatable, Identifiable {
     var id: UUID = UUID()
     var minuteOfDay: Int = 9 * 60
@@ -61,6 +73,7 @@ struct AppSettings: Codable, Equatable {
     var fontSize: FontSize = .medium
     var hasSeenWelcomeTour: Bool = false
     var randomHideCount: Int = 2
+    var difficulty: Difficulty = .lines
     var lastReviewRequestVersion: String?
     var lastSeenReleaseNotesVersion: String?
 
@@ -73,6 +86,7 @@ struct AppSettings: Codable, Equatable {
         case lastReviewRequestVersion
         case lastSeenReleaseNotesVersion
         case randomHideCount
+        case difficulty
     }
 
     init() {}
@@ -89,6 +103,7 @@ struct AppSettings: Codable, Equatable {
         lastReviewRequestVersion = try container.decodeIfPresent(String.self, forKey: .lastReviewRequestVersion)
         lastSeenReleaseNotesVersion = try container.decodeIfPresent(String.self, forKey: .lastSeenReleaseNotesVersion)
         randomHideCount = try container.decodeIfPresent(Int.self, forKey: .randomHideCount) ?? d.randomHideCount
+        difficulty = try container.decodeIfPresent(String.self, forKey: .difficulty).flatMap(Difficulty.init(rawValue:)) ?? d.difficulty
         if let stored = try container.decodeIfPresent([Reminder].self, forKey: .reminders) {
             reminders = stored
         } else {
@@ -108,5 +123,6 @@ struct AppSettings: Codable, Equatable {
         try container.encodeIfPresent(lastReviewRequestVersion, forKey: .lastReviewRequestVersion)
         try container.encodeIfPresent(lastSeenReleaseNotesVersion, forKey: .lastSeenReleaseNotesVersion)
         try container.encode(randomHideCount, forKey: .randomHideCount)
+        try container.encode(difficulty, forKey: .difficulty)
     }
 }

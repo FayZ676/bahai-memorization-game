@@ -29,6 +29,7 @@ import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.FormatSize
 import androidx.compose.material.icons.outlined.HelpOutline
 import androidx.compose.material.icons.outlined.Mail
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
@@ -48,6 +49,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.faizififita.verses.logic.AppTheme
+import com.faizififita.verses.logic.Difficulty
 import com.faizififita.verses.logic.FontSize
 import com.faizififita.verses.logic.Reminder
 import com.faizififita.verses.store.AppStore
@@ -101,6 +103,11 @@ fun SettingsScreen(
                 }
             }
             RemindersSection(store)
+            OptionSection("Difficulty", Icons.Outlined.VisibilityOff, footer = "How hidden words look while you recite.") {
+                SegmentedPicker(Difficulty.entries.map { it.label }, store.settings.difficulty.ordinal) { index ->
+                    store.updateSettings { it.copy(difficulty = Difficulty.entries[index]) }
+                }
+            }
             OptionSection("Help", Icons.Outlined.HelpOutline) {
                 DisclosureRow(if (tourActive) "Restart welcome tour" else "Show welcome tour", onRestartTour)
                 HairlineDivider()

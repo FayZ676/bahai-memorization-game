@@ -19,6 +19,27 @@ struct ReleaseNote: Identifiable {
 enum ReleaseNotes {
     static let all: [ReleaseNote] = [
         ReleaseNote(
+            version: "2.4",
+            headline: "Choose how hidden words look, and see your place as you say a prayer.",
+            highlights: [
+                ReleaseHighlight(
+                    symbol: "eye.slash",
+                    title: "Lines or nothing",
+                    text: "When you say a prayer out loud, a hidden word can show as a line, or as an empty space. Tap the three dots at the top of a prayer to choose."
+                ),
+                ReleaseHighlight(
+                    symbol: "mic",
+                    title: "See where you are",
+                    text: "A soft green light sits where the next word goes, so you always know your place."
+                ),
+                ReleaseHighlight(
+                    symbol: "eye",
+                    title: "Words come back softly",
+                    text: "Each word you say shows again slowly, from left to right."
+                )
+            ]
+        ),
+        ReleaseNote(
             version: "2.3.1",
             headline: "Verses now works on more iPhones.",
             highlights: [

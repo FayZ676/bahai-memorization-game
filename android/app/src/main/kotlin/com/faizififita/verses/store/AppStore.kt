@@ -22,7 +22,7 @@ import java.util.concurrent.Executors
 class AppStore(private val context: Context) {
     private val file = File(context.filesDir, "verses.json")
     private val writer = Executors.newSingleThreadExecutor()
-    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+    private val json = Json { ignoreUnknownKeys = true; coerceInputValues = true; encodeDefaults = true }
     private val scope = MainScope()
     private var widgetRefresh: Job? = null
 
